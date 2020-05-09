@@ -17,17 +17,26 @@
 class parser_rep {
 public:
   bool parse (string s, int& pos) {
-    if (!can_parse(s, pos)) {
+    if (!can_parse (s, pos)) {
       return false;
     }
 
     int opos= pos;
     do_parse (s, pos);
+
     if (pos > opos) {
+      // Expressive logs for parser with start and end marked
+      // Commented by default for performance
+      // cout << get_parser_name() << " debugging:" << LF
+      //      << s << LF
+      //      << string(' ', opos) << "^" << LF
+      //      << string(' ', pos) << "^" << LF;
       return true;
     } else {
-      debug_packrat << "[" << get_parser_name() << "] "
-                    << pos << ":" << s << LF;
+      debug_packrat << "Illegal status for " << get_parser_name() << LF
+                    << s << LF
+                    << string(' ', opos) << "^" << LF
+                    << string(' ', pos) << "^" << LF;
       return false;
     }
   }
@@ -41,7 +50,7 @@ protected:
    * @param s     the string to parse
    * @param[out]  the position to parse
    */
-  virtual void do_parse (string s, int& pos) {}
+  virtual void do_parse (string s, int& pos) { (void) s; (void) pos; }
 
   /** Test if a string is parsable at the position
    * @param s     the string to parse

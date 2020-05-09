@@ -1,6 +1,15 @@
-# CMake file for TeXmacs
-# created by Massimiliano Gubinelli 
-# maintained by Darcy Shen
+
+###############################################################################
+#
+# MODULE      : CMakeLists.txt
+# DESCRIPTION : CMake file for TeXmacs
+# COPYRIGHT   : (C) 2008-2009  Massimiliano Gubinelli
+#               (C) 2017-2020  Darcy Shen
+#
+# This software falls under the GNU general public license version 3 or later.
+# It comes WITHOUT ANY WARRANTY WHATSOEVER. For details, see the file LICENSE
+# in the root directory or <http://www.gnu.org/licenses/gpl-3.0.html>.
+
 
 # The name of our project is "TEXMACS". CMakeLists files in this project can 
 # refer to the root source directory of the project as ${TEXMACS_SOURCE_DIR} and 
@@ -545,6 +554,10 @@ if (TEXMACS_GUI MATCHES "Qt.*")
     )
     include (${QT_USE_FILE})
   else (TEXMACS_GUI STREQUAL "Qt4")
+    # Homebrew installs Qt5 in /usr/local/opt/qt5
+    if (APPLE AND EXISTS /usr/local/opt/qt5)
+      list (APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt5")
+    endif()
     find_package (Qt5 COMPONENTS Core Gui Widgets PrintSupport REQUIRED)
     set (QT_LIBRARIES Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport)
     set (TeXmacs_Include_Dirs
@@ -678,7 +691,7 @@ include_directories (${TeXmacs_Include_Dirs})
 ### --------------------------------------------------------------------
 
 if (APPLE)
-  set (TeXmacs_binary_name "TeXmacs")
+  set (TeXmacs_binary_name "Xmacs")
 else (APPLE)
   set (TeXmacs_binary_name "texmacs.bin")
 endif (APPLE)
@@ -697,7 +710,7 @@ add_subdirectory (TeXmacs)
 ### --------------------------------------------------------------------
 
 if (APPLE)
-  install (FILES packages/macos/TeXmacs.icns DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install (FILES packages/macos/Xmacs.icns DESTINATION ${CMAKE_INSTALL_PREFIX})
   install (FILES packages/macos/TeXmacs-document.icns DESTINATION ${CMAKE_INSTALL_PREFIX})
   install (DIRECTORY src/Plugins/Cocoa/English.lproj DESTINATION ${CMAKE_INSTALL_PREFIX})
   install (DIRECTORY src/Plugins/Cocoa/zh_CN.lproj DESTINATION ${CMAKE_INSTALL_PREFIX})
@@ -709,12 +722,15 @@ install (FILES ${TEXMACS_BINARY_DIR}/misc/script/texmacs
         DESTINATION bin
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                     GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
-install (FILES  DESTINATION share/TeXmacs/bin
-  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ)
 ### include/
-install (DIRECTORY TeXmacs/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+install (DIRECTORY TeXmacs/include DESTINATION ${CMAKE_INSTALL_PREFIX}
+  FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ)
 ### share/
-install (DIRECTORY plugins DESTINATION share/TeXmacs PATTERN "bin" EXCLUDE)
+install (DIRECTORY plugins DESTINATION share/TeXmacs
+  FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+  PATTERN "bin" EXCLUDE
+  PATTERN "CMakeLists.txt" EXCLUDE
+  PATTERN ".gitignore" EXCLUDE)
 install (FILES TeXmacs/misc/mime/texmacs.desktop DESTINATION share/applications)
 install (FILES TeXmacs/misc/images/texmacs.svg DESTINATION share/icons/gnome/scalable/apps)
 install (FILES TeXmacs/misc/images/text-x-texmacs.svg DESTINATION share/icons/gnome/scalable/mimetypes)

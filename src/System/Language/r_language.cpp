@@ -18,8 +18,6 @@
 
 static void parse_string (string s, int& pos);
 static bool is_in_str( char c, const char *str )  ;
-static bool is_number_start( char c ) ;
-//static inline bool is_identifier_start( char c ) ;
 static void advance_till( string s, int & pos, char c) ;
 
 r_language_rep::r_language_rep (string name):
@@ -32,32 +30,25 @@ r_language_rep::r_language_rep (string name):
     l= l->next;
   }
   number_parser.use_r_style ();
+
+  array<char> start_chars, extra_chars;
+  start_chars << '.';
+  extra_chars << '.' << '_';
+  identifier_parser.set_start_chars (start_chars);
+  identifier_parser.set_extra_chars (extra_chars);
 }
 
 text_property
 r_language_rep::advance (tree t, int& pos) {
   string s= t->label;
+  if (pos==N(s)) return &tp_normal_rep;
 
-  if (pos==N(s)) {  return &tp_normal_rep; }
-
-  char c= s[pos];
-
-  if (c == ' ') {
-    pos++; return &tp_space_rep; 
-  } 
-
-  if (is_number_start(c)) {
-    if (number_parser.parse (s, pos)) {
-      return &tp_normal_rep;
-    }
-  }
-
-  if (is_alpha (c) || is_in_str (c, "_.")
-      //|| (c == '$') // For some reason, when this is uncommented, TeXmacs gets stuck on entering $.
-      ) {
-    parse_alpha (s, pos); 
+  if (blanks_parser.parse (s, pos))
+    return &tp_space_rep;
+  if (number_parser.parse (s, pos))
+    return &tp_normal_rep;
+  if (identifier_parser.parse (s, pos))
     return &tp_normal_rep; 
-  } 
 
   tm_char_forwards (s, pos);
   return &tp_normal_rep;
@@ -163,11 +154,6 @@ r_language_rep::belongs_to_identifier (char c) {
   return ( is_digit(c) ||
 	   is_alpha(c) ||
 	   is_in_str( c, "_." ) ) ;
-}
-
-static inline bool 
-is_number_start( char c ) {
-  return( is_digit(c) || is_in_str( c, "." ) ) ;
 }
 
 /*

@@ -15,7 +15,7 @@ rm $APP_HOME/config.sub
 rm $APP_HOME/config.guess
 rm $APP_HOME/Makefile.in
 cp $APP_HOME/debian/control.in $APP_HOME/debian/control
-sed -e "s/@DEVEL_VERSION@/1.99.12/" -e "s/@DEVEL_RELEASE@/3/" \
+sed -e "s/@DEVEL_VERSION@/1.99.12/" -e "s/@DEVEL_RELEASE@/5/" \
   $APP_HOME/debian/changelog.in \
   > $APP_HOME/debian/changelog
 

@@ -337,6 +337,7 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
           (mods & Qt::AltModifier) == 0 &&
           (mods & Qt::MetaModifier) == 0)
         set_shift_preference (kc, (char) unic);
+
       if (unic < 32 && key < 128 && key > 0) {
         // NOTE: For some reason, the 'shift' modifier key is not applied
         // to 'key' when 'control' is pressed as well.  We perform some
@@ -350,6 +351,7 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
                  (mods & Qt::ShiftModifier) != 0 &&
                  (mods & Qt::ControlModifier) != 0)
           key= (int) (unsigned char) get_shift_preference (kc) [0];
+
         mods &=~ Qt::ShiftModifier;
         r= string ((char) key);
       }
@@ -357,7 +359,7 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
         switch (unic) {
           case 96:   r= "`"; 
             // unicode to cork conversion not appropriate for this case...
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
             // CHECKME: are these two MAC exceptions really needed?
             if (mods & Qt::AltModifier) r= "grave";
 #endif
@@ -384,10 +386,27 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
               r= tstr (1, len-1);
             else
               r= tstr;
+
             if (r == "less") r= "<";
             else if (r == "gtr") r= ">";
         }
-#ifdef Q_WS_MAC
+
+#ifdef OS_MINGW
+        // See https://savannah.gnu.org/bugs/?57850
+        array<char> keys;
+        keys << '-' << '=' << '\\' << '`'
+          << '[' << ']' << ';' << '\''
+          << ',' << '.' << '/';
+        
+        if ((mods & Qt::ShiftModifier) &&
+            (mods & Qt::ControlModifier) &&
+            N(r) == 1 &&
+            (is_digit (r[0]) || contains (r[0], keys))) {
+          r= string ((char) key);
+        }
+#endif
+
+#ifdef Q_OS_MAC
           // Alt produces many symbols in Mac keyboards: []|{} etc.
         mods &= ~Qt::AltModifier; //unset Alt
 #endif
@@ -398,7 +417,7 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
     if (mods & Qt::ShiftModifier) r= "S-" * r;
     if (mods & Qt::AltModifier) r= "A-" * r;
     //if (mods & Qt::KeypadModifier) r= "K-" * r;
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     if (mods & Qt::MetaModifier) r= "C-" * r;        // The "Control" key
     if (mods & Qt::ControlModifier) r= "M-" * r;  // The "Command" key
 #else
@@ -423,7 +442,7 @@ mouse_state (QMouseEvent* event, bool flag) {
   if ((bstate & Qt::RightButton    ) != 0) i += 4;
   if ((bstate & Qt::XButton1       ) != 0) i += 8;
   if ((bstate & Qt::XButton2       ) != 0) i += 16;
-#ifdef Q_WS_MAC
+#ifdef Q_OS_MAC
     // We emulate right and middle clicks with ctrl and option, but we pass the
     // modifiers anyway: old code continues to work and new one can use them.
   if ((kstate & Qt::MetaModifier   ) != 0) i = 1024+4; // control key

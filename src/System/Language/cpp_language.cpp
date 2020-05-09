@@ -15,48 +15,6 @@
 #include "impl_language.hpp"
 #include "scheme.hpp"
 
-extern tree the_et;
-
-/*
- static bool
- is_line (tree t) {
- path p= obtain_ip (t);
- if (is_nil (p) || last_item (p) < 0) return false;
- tree pt= subtree (the_et, reverse (p->next));
- if (!is_func (pt, DOCUMENT)) return false;
- return true;
- }
- */
-
-static int
-line_number (tree t) {
-  path p= obtain_ip (t);
-  if (is_nil (p) || last_item (p) < 0) return -1;
-  tree pt= subtree (the_et, reverse (p->next));
-  if (!is_func (pt, DOCUMENT)) return -1;
-  return p->item;
-}
-
-static int
-number_of_lines (tree t) {
-  path p= obtain_ip (t);
-  if (is_nil (p) || last_item (p) < 0) return -1;
-  tree pt= subtree (the_et, reverse (p->next));
-  if (!is_func (pt, DOCUMENT)) return -1;
-  return N(pt);
-}
-
-static tree
-line_inc (tree t, int i) {
-  if (i == 0) return t;
-  path p= obtain_ip (t);
-  if (is_nil (p) || last_item (p) < 0) return tree (ERROR);
-  tree pt= subtree (the_et, reverse (p->next));
-  if (!is_func (pt, DOCUMENT)) return tree (ERROR);
-  if ((p->item + i < 0) || (p->item + i >= N(pt))) return tree (ERROR);
-  return pt[p->item + i];
-}
-
 static void parse_string (string s, int& pos);
 
 cpp_language_rep::cpp_language_rep (string name):
@@ -66,26 +24,58 @@ cpp_language_rep::cpp_language_rep (string name):
   array<string> starts;
   starts << string ("//");
   inline_comment_parser.set_starts (starts);
+
+  array<char> escape_chars;
+  escape_chars << '\\' << '\'' << '\"'
+    << 'b' << 'f' << 'n' << 'r' << 't';
+  escaped_char_parser.set_chars (escape_chars);
+  // TODO: hex/octal escaped sequence
+
+  string_parser.set_escaped_char_parser (escaped_char_parser);
+  hashmap<string, string> pairs;
+  pairs("\"") = "\"";
+  pairs("\'")= "\'";
+  string_parser.set_pairs(pairs);
 }
 
 text_property
 cpp_language_rep::advance (tree t, int& pos) {
   string s= t->label;
-  if (pos == N(s)) return &tp_normal_rep;
-  char c= s[pos];
-  if (c == ' ') {
-    pos++;
+  current_parser= "";
+
+  if (pos >= N(s)) return &tp_normal_rep;
+
+  if (string_parser.unfinished ()) {
+    if (string_parser.escaped () && string_parser.parse_escaped (s, pos)) {
+      current_parser= escaped_char_parser.get_parser_name ();
+      return &tp_normal_rep;
+    }
+    if (string_parser.parse (s, pos)) {
+      current_parser= string_parser.get_parser_name ();
+      return &tp_normal_rep;
+    }
+  }
+
+  if (blanks_parser.parse (s, pos)) {
+    current_parser= blanks_parser.get_parser_name ();
     return &tp_space_rep;
   }
-  if (is_digit (c)) {
-    number_parser.parse (s, pos);
+  if (string_parser.parse (s, pos)) {
+    current_parser= string_parser.get_parser_name ();
     return &tp_normal_rep;
   }
-  if (is_alpha (c) || c == '_') {
-    parse_alpha (s, pos);
+  if (number_parser.parse (s, pos)) {
+    current_parser= number_parser.get_parser_name ();
     return &tp_normal_rep;
   }
+  if (identifier_parser.parse (s, pos)) {
+    current_parser= identifier_parser.get_parser_name ();
+    return &tp_normal_rep;
+  }
+
   tm_char_forwards (s, pos);
+  current_parser= "";
+
   return &tp_normal_rep;
 }
 
@@ -265,47 +255,11 @@ cpp_color_setup_otherlexeme (hashmap<string, string>& t) {
 }
 
 static void
-parse_string (string s, int& pos) {
-  if (pos >= N(s)) return;
-  switch (s[pos])  {
-    case '\042':
-      do pos++;
-      while (pos < N(s) &&
-             ((s[pos-1]=='\\' && s[pos]=='\042') || s[pos]!='\042'));
-      if (s[pos] == '\042') pos++;
-      return;
-    case '/':
-      if (pos + 1 < N(s) && s[pos+1] == '\042') {
-        pos += 2;
-        do {
-          if (pos + 1 < N(s) && s[pos] == '\042' && s[pos + 1] == '/') {
-            pos += 2;
-            return;
-          }
-          pos++;
-        } while (pos < N(s));
-      }
-  }
-}
-
-static void
 parse_other_lexeme (hashmap<string,string>& t, string s, int& pos) {
   int i;
   for (i=12; i>=1; i--)
     if (t->contains (s (pos, pos+i)))
       pos+= i;
-}
-
-static void
-parse_comment_multi_lines (string s, int& pos) {
-  if (pos+1 < N(s) && s[pos] == '/' && s[pos+1] == '*')
-    pos += 2;
-}
-
-static void
-parse_end_comment (string s, int& pos) {
-  if (pos+1 < N(s) && s[pos] == '*' && s[pos+1] == '/')
-    pos += 2;
 }
 
 static void
@@ -330,88 +284,6 @@ cpp_language_rep::parse_preprocessing (string s, int & pos) {
       r == "undef" ||
       r == "pragma" ||
       r == "error") { pos=i; return; }
-}
-
-static bool
-begin_comment (string s, int i) {
-  bool comment= false;
-  int opos, pos= 0;
-  do {
-    do {
-      opos= pos;
-      parse_string (s, pos);
-      if (opos < pos) break;
-      parse_comment_multi_lines (s, pos);
-      if (opos < pos) {
-        comment = true;
-        break;
-      }
-      pos++;
-    } while (false);
-  } while (pos <= i);
-  return comment;
-}
-
-static bool
-end_comment (string s, int i) {
-  int opos, pos= 0;
-  do {
-    do {
-      opos= pos;
-      parse_string (s, pos);
-      if (opos < pos) break;
-      parse_end_comment (s, pos);
-      if (opos < pos && pos>i) return true;
-      pos++;
-    } while (false);
-  } while (pos < N(s));
-  return false;
-}
-
-static int
-after_begin_comment (int i, tree t) {
-  tree   t2= t;
-  string s2= t->label;
-  int  line= line_number (t2);
-  do {
-    if (begin_comment (s2, i)) return line;
-    t2= line_inc (t2, -1);
-    --line;
-      // line_inc returns tree(ERROR) upon error
-    if (!is_atomic (t2)) return -1; // FIXME
-    s2= t2->label;
-    i = N(s2) - 1;
-  } while (line > -1);
-  return -1;
-}
-
-static int
-before_end_comment (int i, tree t) {
-  int   end= number_of_lines (t);
-  tree   t2= t;
-  string s2= t2->label;
-  int  line= line_number (t2);
-  do {
-    if (end_comment (s2, i)) return line;
-    t2= line_inc (t2, 1);
-    ++line;
-      // line_inc returns tree(ERROR) upon error
-    if (!is_atomic (t2)) return -1; // FIXME
-    s2= t2->label;
-    i = 0;
-  } while (line <= end);
-  return -1;
-}
-
-static bool
-in_comment (int pos, tree t) {
-  int beg= after_begin_comment (pos, t);
-  if (beg >= 0) {
-    int cur= line_number (t);
-    int end= before_end_comment (pos, line_inc (t, beg - cur));
-    return end >= beg && cur <= end;
-  }
-  return false;
 }
 
 static bool end_preprocessing(string s) {
@@ -443,6 +315,28 @@ static bool in_preprocessing (string s, tree t) {
 }
 
 string
+cpp_language_rep::get_identifier_type (string s, int& pos) {
+  int opos= pos;
+  parse_keyword (colored, s, pos);
+  if (opos < pos) {
+    return "keyword";
+  }
+  parse_type (colored, s, pos);
+  if (opos < pos) {
+    return "constant_type";
+  }
+  parse_other_lexeme (colored, s, pos);  //not left parenthesis
+  if (opos < pos) {
+    return "";
+  }
+  parse_constant (colored, s, pos);
+  if (opos < pos) {
+    return "constant";
+  }
+  return "";
+}
+
+string
 cpp_language_rep::get_color (tree t, int start, int end) {
   static bool setup_done= false;
   if (!setup_done) {
@@ -454,13 +348,18 @@ cpp_language_rep::get_color (tree t, int start, int end) {
   }
   
   static string none= "";
+  string type;
+
   if (start >= end) return none;
+
+  // Coloring as muliti-line comment
   if (in_comment (start, t))
     return decode_color ("cpp", encode_color ("comment"));
   string s= t->label;
+
+  // Coloring as preprocessor
   int  pos= 0;
   int opos= 0;
-  string type;
   if (in_preprocessing(s, t)) {
     do {
       do {
@@ -484,50 +383,28 @@ cpp_language_rep::get_color (tree t, int start, int end) {
       decode_color("cpp", encode_color (type));
     return decode_color("cpp", encode_color("preprocessor"));
   }
+
+  // Coloring as inline comment
   pos= 0;
-  do {
+  while (pos <= start) {
+    if (inline_comment_parser.can_parse (s, pos)) {
+      return decode_color ("cpp", encode_color ("comment"));
+    }
+    pos ++;
+  }
+
+  pos= start;
+  if (current_parser == "string_parser") {
+    type= "constant_string";
+  } else if (current_parser == "escaped_char_parser") {
+    type= "constant_char";
+  } else if (current_parser == "number_parser") {
+    type= "constant_number";
+  } else if (current_parser == "identifier_parser") {
+    type = get_identifier_type (s, pos);
+  } else {
     type= none;
-    do {
-      opos= pos;
-      if (blanks_parser.parse (s, pos)) break;
-      parse_string (s, pos);
-      if (opos < pos) {
-        type= "constant_string";
-        break;
-      }
-      if (inline_comment_parser.parse (s, pos)) {
-        type= "comment";
-        break;
-      }
-      parse_keyword (colored, s, pos);
-      if (opos < pos) {
-        type= "keyword";
-        break;
-      }
-      parse_type (colored, s, pos);
-      if (opos < pos) {
-        type= "constant_type";
-        break;
-      }
-      parse_other_lexeme (colored, s, pos);  //not left parenthesis
-      if (opos < pos)
-        break;
-      parse_constant (colored, s, pos);
-      if (opos < pos) {
-        type= "constant";
-        break;
-      }
-      number_parser.parse (s, pos);
-      if (opos < pos) {
-        type= "constant_number";
-        break;
-      }
-      parse_identifier (colored, s, pos);
-      if (opos < pos)
-        break;
-      pos= opos + 1;
-    } while (false);
-  } while (pos <= start);
-  if (type == none) return none;
+  }
+
   return decode_color ("cpp", encode_color (type));
 }

@@ -1,4 +1,4 @@
-<TeXmacs|1.99.11>
+<TeXmacs|1.99.12>
 
 <style|<tuple|source|std>>
 
@@ -196,6 +196,8 @@
 
   <assign|mmx|<macro|body|<with|mode|prog|prog-language|mathemagix|font-family|rm|<arg|body>>>>
 
+  <assign|dot-lang|<macro|body|<with|mode|prog|prog-language|dot|font-family|rm|<arg|body>>>>
+
   <\active*>
     <\src-comment>
       Blocks of code for standard languages
@@ -229,6 +231,12 @@
   <assign|cpp-code|<\macro|body>
     <\pseudo-code>
       <cpp|<arg|body>>
+    </pseudo-code>
+  </macro>>
+
+  <assign|dot-code|<\macro|body>
+    <\pseudo-code>
+      <dot-lang|<arg|body>>
     </pseudo-code>
   </macro>>
 

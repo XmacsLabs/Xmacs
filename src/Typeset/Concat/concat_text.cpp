@@ -173,7 +173,7 @@ concater_rep::typeset_prog_string (tree t, path ip, int pos, int end) {
     start= pos;
     text_property tp= env->lan->advance (t, pos);
     if (pos > end) pos= end;
-    if ((pos>start) && (s[start]==' ')) { // spaces
+    if ((pos-start == 1) && (s[start]==' ')) { // spaces
       if (start == 0) typeset_substring ("", ip, 0);
       penalty_min (tp->pen_after);
       PRINT_SPACE (tp->spc_before);
@@ -184,8 +184,11 @@ concater_rep::typeset_prog_string (tree t, path ip, int pos, int end) {
     else { // strings
       penalty_max (tp->pen_before);
       PRINT_SPACE (tp->spc_before)
-      typeset_colored_substring (s (start, pos), ip, start,
-				 env->lan->get_color (t, start, pos));
+      string color= env->lan->get_color (t, start, pos);
+      string content= s (start, pos);
+      // cout << "[" << start << "," << pos << ") "
+      //      << content << " (" << color << ")" << LF;
+      typeset_colored_substring (content, ip, start, color);
       penalty_min (tp->pen_after);
       PRINT_SPACE (tp->spc_after)
     }
