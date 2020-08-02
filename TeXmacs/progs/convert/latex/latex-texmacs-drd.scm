@@ -106,7 +106,10 @@
   tmsubtitle tmrunningtitle tmrunningauthor
   tmaffiliation tmemail tmhomepage
   tmfnaffiliation tmfnemail tmfnhomepage
-  tmacmhomepage tmacmmisc tmieeeemail tmnote tmmisc)
+  tmacmhomepage tmacmmisc tmieeeemail tmnote tmmisc
+  uhat uwidehat utilde uwidetilde
+  uvec ubreve uinvbreve ucheck uring uacute ugrave
+  underdot uddot udddot uddddot)
 
 (logic-group latex-texmacs-1*%
   tmcodeinline)
@@ -168,6 +171,10 @@
   ("tmcode" 0)
   ("tmparmod" 3)
   ("tmparsep" 1)
+  ("tmcompact" 0)
+  ("tmcompressed" 0)
+  ("tmamplified" 0)
+  ("tmjumpin" 0)
   ("tmindent" 0)
   ("tmlisting" 0)
   ("elsequation" 0)
@@ -179,6 +186,7 @@
 
 (logic-group latex-texmacs-environment-0%
   begin-proof begin-leftaligned begin-rightaligned begin-quoteenv
+  begin-tmcompact begin-tmcompressed begin-tmamplified begin-tmjumpin
   begin-tmindent begin-tmlisting begin-elsequation begin-elsequation*)
 
 (logic-group latex-texmacs-environment-0*%

@@ -1,13 +1,27 @@
-<TeXmacs|1.99.11>
+<TeXmacs|1.99.12>
 
 <style|<tuple|tmdoc|english|old-spacing|old-dots>>
 
 <\body>
   <tmdoc-title|<TeXmacs> changelog>
 
-  <section|Changes from version 1.99.1 to 1.99.12>
+  <section|Changes from version 1.99.1 to 1.99.13>
 
   <\itemize>
+    <item>Continued bug fixes (1.99.13).
+
+    <item>Switch to Python 3 for plug-ins programmed in Python (1.99.13).
+
+    <item>A Parser Framework for programming languages (1.99.13).
+
+    <item>Improved Graphviz plugin with documentation in Chinese and syntax
+    highlight (1.99.13).
+
+    <item>Improved Maxima plugin with documentation in Chinese and bug fixes
+    (1.99.13).
+
+    <item>Improved Octave plugin on Windows for Octave 5.x (1.99.13).
+
     <item>Many bug fixes (1.99.12).
 
     <item>Make it easier to cite work on <TeXmacs> (1.99.12).

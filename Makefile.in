@@ -47,14 +47,13 @@ STRIP = @CONFIG_STRIP@
 TOUCH = touch
 SIGN = misc/admin/sign_update
 
-
 .NOTPARALLEL:
 
 ###############################################################################
 # Main makes
 ###############################################################################
 
-TEXMACS: EMPTY_DIRS 
+TEXMACS: EMPTY_DIRS @MKGUILE@
 	if test "$(TEXMACS_DEPS)" != "no"; then \
 	  cd src; $(MAKE) -f makefile deps; \
 	fi
@@ -88,6 +87,9 @@ STATIC_TEXMACS: EMPTY_DIRS
 	@echo ----------------------------------------------------
 	@echo static TeXmacs has been successfully compiled
 
+@MKGUILE@: tm-guile168
+	cd @DIRGUILE@ && make -j1 && make -j1 install
+	
 DEPS: EMPTY_DIRS
 	cd src; $(MAKE) -f makefile deps
 
@@ -430,7 +432,7 @@ SPARKLE_FRAMEWORK_PATH = @SPARKLE_FRAMEWORK_PATH@
 MACOS_PACKAGE_SRC = packages/macos
 MACOS_PACKAGE_DIR = ../distr/macos
 
-MACOS_PACKAGE_APP = ../distr/$(tm_devel)@REVISION@.app
+MACOS_PACKAGE_APP := $$(pwd)/../distr/TeXmacs.app
 MACOS_PACKAGE_DMG = ../distr/$(tm_devel)@REVISION@@MACOSX_TARGET@.dmg
 MACOS_PACKAGE_ZIP = ../distr/$(tm_devel).zip
 
@@ -481,7 +483,7 @@ MACOS_PACKAGE: MACOS_BUNDLE
 
 MACOS_RELEASE: MACOS_BUNDLE
 	$(RM) $(MACOS_PACKAGE_ZIP)
-	(cd ../distr; zip -r9Tq $(tm_devel).zip $(tm_devel).app)
+	(cd ../distr; zip -r9Tq $(tm_devel).zip $MACOS_PACKAGE_APP)
 	$(SIGN) $(MACOS_PACKAGE_ZIP) @SVNREV@ $(tm_devel_version)
 
 .PHONY: MACOS_BUNDLE MACOS_PACKAGE MACOS_RELEASE
@@ -550,7 +552,7 @@ SCLEAN:
 
 CLEAN: SCLEAN RCLEAN CLEAN_PLUGINS
 
-DISTCLEAN: CLEAN
+DISTCLEAN: CLEAN @CLNGUILE@
 	$(RM) src/Objects/* 2>/dev/null || :
 	$(RM) misc/doxygen/Doxyfile
 	$(RM) misc/man/texmacs.1
@@ -578,6 +580,11 @@ SVN_CLEAN:
 DISTR_CLEAN: DISTCLEAN SVN_CLEAN
 
 .PHONY: CLEAN_DOC RDISTR DISTR RCLEAN SCLEAN DISTCLEAN SVN_CLEAN DISTR_CLEAN
+
+CLNGUILE:
+	-cd @DIRGUILE@ && make uninstall
+	-cd @DIRGUILE@ && make distclean
+	-cd @DIRGUILE@ && rm -rf build
 
 ###############################################################################
 # Miscellaneous targets

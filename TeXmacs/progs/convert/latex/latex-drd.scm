@@ -55,6 +55,8 @@
   (!verbatim* "alltt")
   (begin-alltt "alltt")
 
+  (begin-tabularx "tabularx")
+
   (geometry "geometry")
   (epsfig "epsfig")
   (includegraphics "graphicx")
@@ -100,7 +102,14 @@
   (underset "amsmath")
   (operatorname "amsmath")
   (boldsymbol "amsmath")
+  (overleftrightarrow "amsmath")
+  (underleftarrow "amsmath")
+  (underrightarrow "amsmath")
+  (underleftrightarrow "amsmath")
 
+  (underaccent "accents")
+  (ring "accents")
+  
   (ifthenelse "ifthen")
   (captionof "capt-of")
   (widthof "calc")

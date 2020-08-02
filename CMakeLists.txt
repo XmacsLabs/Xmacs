@@ -50,18 +50,22 @@ project (TEXMACS CXX C) # check for C/C++ compiler
 
 set (PACKAGE TeXmacs)
 set (CMAKE_MODULE_PATH ${TEXMACS_SOURCE_DIR}/cmake)
-set (DEVEL_VERSION "1.99.12")
-set (DEVEL_RELEASE "3")
-set (STABLE_VERSION "1.99.12")
-set (STABLE_RELEASE "3")
-set (TEXMACS_REVISION "1.99.12")
+set (DEVEL_VERSION "1.99.13")
+set (DEVEL_RELEASE "1")
+set (STABLE_VERSION "1.99.13")
+set (STABLE_RELEASE "1")
+set (TEXMACS_REVISION "1.99.13")
 
 
 ### --------------------------------------------------------------------
 ### Options
 ### --------------------------------------------------------------------
 if (NOT TEXMACS_GUI)
-  set (TEXMACS_GUI "Qt4" CACHE STRING "TeXmacs Gui (Qt, X11, Aqua)")
+  if (APPLE)
+    set (TEXMACS_GUI "Qt4" CACHE STRING "TeXmacs Gui (Qt, X11, Aqua)")
+  else (APPLE)
+    set (TEXMACS_GUI "Qt" CACHE STRING "TeXmacs Gui (Qt, X11, Aqua)")
+  endif (APPLE)
 endif (NOT TEXMACS_GUI)
 
 option (QTPIPES "use Qt pipes" ON)

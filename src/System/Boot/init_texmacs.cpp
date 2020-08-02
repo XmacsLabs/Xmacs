@@ -223,6 +223,30 @@ init_user_dirs () {
 }
 
 /******************************************************************************
+* Boot locks
+******************************************************************************/
+
+static void
+acquire_boot_lock () {
+  //cout << "Acquire lock\n";
+  url lock_file= "$TEXMACS_HOME_PATH/system/boot_lock";
+  if (exists (lock_file)) {
+    remove (url ("$TEXMACS_HOME_PATH/system/settings.scm"));
+    remove (url ("$TEXMACS_HOME_PATH/system/setup.scm"));
+    remove (url ("$TEXMACS_HOME_PATH/system/cache") * url_wildcard ("*"));
+    remove (url ("$TEXMACS_HOME_PATH/fonts/error") * url_wildcard ("*"));    
+  }
+  else save_string (lock_file, "", false);
+}
+
+void
+release_boot_lock () {
+  //cout << "Release lock\n";
+  url lock_file= "$TEXMACS_HOME_PATH/system/boot_lock";
+  remove (lock_file);
+}
+
+/******************************************************************************
 * Detection of guile
 ******************************************************************************/
 
@@ -475,14 +499,16 @@ setup_texmacs () {
 
 void
 init_texmacs () {
-  //cout << "Initialize -- Succession status table\n";
-  init_succession_status_table ();
-  //cout << "Initialize -- Succession standard DRD\n";
-  init_std_drd ();
   //cout << "Initialize -- Main paths\n";
   init_main_paths ();
   //cout << "Initialize -- User dirs\n";
   init_user_dirs ();
+  //cout << "Initialize -- Boot lock\n";
+  acquire_boot_lock ();
+  //cout << "Initialize -- Succession status table\n";
+  init_succession_status_table ();
+  //cout << "Initialize -- Succession standard DRD\n";
+  init_std_drd ();
   //cout << "Initialize -- User preferences\n";
   load_user_preferences ();
   //cout << "Initialize -- Guile\n";
@@ -501,9 +527,10 @@ init_texmacs () {
 
 void
 init_plugins () {
-  install_status= 0;
   url old_settings= "$TEXMACS_HOME_PATH/system/TEX_PATHS";
   url new_settings= "$TEXMACS_HOME_PATH/system/settings.scm";
+
+  install_status= 0;
   string s;
   if (load_string (new_settings, s, false)) {
     if (load_string (old_settings, s, false)) {
@@ -513,6 +540,7 @@ init_plugins () {
     else get_old_settings (s);
   }
   else texmacs_settings= block_to_scheme_tree (s);
+
   if (get_setting ("VERSION") != TEXMACS_VERSION) {
     init_upgrade ();
     url ch ("$TEXMACS_HOME_PATH/doc/about/changes/changes-recent.en.tm");

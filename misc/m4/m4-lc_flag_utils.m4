@@ -3,7 +3,7 @@
 #
 # MODULE      : m4_lc_flag_utils.m4
 # DESCRIPTION : Various utilities for manipulating groups of flags
-# COPYRIGHT   : (C) 2016, 2017  Denis Raux
+# COPYRIGHT   : (C) 2016, 2020  Denis Raux
 #
 # This software falls under the GNU general public license version 3 or later.
 # It comes WITHOUT ANY WARRANTY WHATSOEVER. For details, see the file LICENSE
@@ -14,6 +14,26 @@
 # NOTE: due to compatibilty problem with regex in bash before 3.2,
 # always rely on 'echo' when using pattern strings
 
+------------------------------------------------------------------
+# Shell functions
+#-------------------------------------------------------------------
+#
+AC_DEFUN([LC_SHELL_FUNCTIONS],[
+# compare dotted numbers
+# return true if the first is biggest
+function cmp_dot_number {
+  local -i n1 n2 i=0
+  n1=(${1//./ })
+  n2=(${2//./ })
+  while test -n "${n1@<:@$i@:>@}" -a -n "${n2@<:@$i@:>@}"
+  do ((${n1@<:@$i@:>@} > ${n2@<:@$i@:>@}))  && return 0
+     ((${n1@<:@$i@:>@} < ${n2@<:@$i@:>@}))  && return 1
+     i+=1
+  done
+  test -n ${n1@<:@$i@:>@} && return 0
+  return 1
+}
+])
 ------------------------------------------------------------------
 # General functions
 #-------------------------------------------------------------------
@@ -127,7 +147,7 @@ AC_DEFUN([LC_GETPOP_FLAG],[
     $2=${[$0]_tail%% -*}        # get flag and data
     if test "$$2" = "$[$0]_tail"  # is there someting after the flag
     then $1=$(echo $$1)
-    else $1=$(echo $$1${[$0]_tail@%:@$$2})
+    else $1=$(echo $$1${[$0]_tail@%:@"$$2"})
     fi
     LC_NORMALIZE_FLAG([$2])
     if [[ $$0_sepa != - ]]    # just return the value
@@ -215,12 +235,12 @@ m4_define([merged_flags],[[LDFLAGS],[LIBS]])
 m4_define([all_flags],[superseded_flags, merged_flags])
 
 # generic transfert flag $1 within the superseded list $2 and the merged list $3
-AC_DEFUN([_LC_TRANSFERT_FLAGS],
-  [m4_foreach([_tmp1], [$2], [ 
+m4_define([_LC_TRANSFERT_FLAGS],[
+  m4_foreach([_tmp1], [$2], [
     _tmp1="$BASE_[]_tmp1 $$1_[]_tmp1"
-  ])]
-  [m4_foreach([_tmp1], [$3], [LC_MERGE_FLAGS([$$1_[]_tmp1], [_tmp1])])]
-)
+  ])
+  m4_foreach([_tmp1], [$3], [LC_MERGE_FLAGS([$$1_[]_tmp1], [_tmp1])])
+])
 
 # set compile flags from the LIBRARY ($1) flags into standard flags
 # in order to test static linking set the -static if needed
@@ -231,7 +251,6 @@ AC_DEFUN([LC_SET_FLAGS],[
 # merge the LIBRARY ($1) flags into general compile flags
 AC_DEFUN([LC_COMBINE_FLAGS],[
   _LC_TRANSFERT_FLAGS([$1],[],[merged_flags])
-  unset ${![$0]_*}
 ])
 
 # supersede the $2 empty flags  by $1 flags 
@@ -300,6 +319,7 @@ AC_DEFUN([LC_SCATTER_FLAGS],[
               LC_APPEND_FLAG([$[$0]_flag],[lc_libname([$2],[LDFLAGS])])
       ;;
       -Wl,-F*@:}@ LC_APPEND_FLAG([$[$0]_flag],[lc_libname([$2],[LDFLAGS])]);;
+      -Wl,-*@:}@ LC_APPEND_FLAG([$[$0]_flag],[lc_libname([$2],[LDFLAGS])]);;
       -Wl,*@:}@ AC_MSG_WARN(Flag $[$0]_flag dropped for lib $2);;
       -*@:}@ 
         AX_CHECK_COMPILE_FLAG($[$0]_flag,[

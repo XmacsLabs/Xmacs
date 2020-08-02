@@ -65,7 +65,9 @@
   footnote overline underline <sub> <sup> not left middle right
   big Big bigg Bigg bigl Bigl biggl Biggl
   bigm Bigm biggm Biggm bigr Bigr biggr Biggr
-  bar Bar hat Hat tilde Tilde widehat widetilde vec Vec bm
+  bar Bar hat Hat tilde Tilde widehat widetilde vec Vec bm ring
+  overrightarrow overleftarrow overleftrightarrow
+  underrightarrow underleftarrow underleftrightarrow
   grave Grave acute Acute check Check breve Breve invbreve abovering mathring
   dot Dot ddot Ddot dddot ddddot mod pod pmod
   label ref pageref index hspace hspace* vspace vspace*
@@ -91,7 +93,7 @@
 
 (logic-group latex-command-2%
   binom tbinom dbinom cfrac tfrac equal href
-  sideset stackrel
+  sideset stackrel underaccent
   setcounter addtocounter setlength addtolength
   colorbox scalebox texorpdfstring raisebox foreignlanguage
   Call Function Procedure SetKw SetKwData SetKwFunction SetKwInOut
@@ -205,15 +207,18 @@
 
 (logic-group latex-enunciation%
   begin-theorem begin-proposition begin-lemma begin-corollary begin-proof
-  begin-axiom begin-definition begin-notation begin-conjecture begin-remark
-  begin-note begin-example begin-exercise begin-problem begin-warning
-  begin-convention begin-quote-begin-env begin-quotation begin-verse
-  begin-solution begin-question begin-answer begin-acknowledgments
+  begin-axiom begin-definition begin-notation begin-conjecture
+  begin-remark begin-note begin-example begin-warning
+  begin-convention begin-acknowledgments
+  begin-exercise begin-problem
+  begin-solution begin-question begin-answer
+  begin-quote-env begin-quotation begin-verse
 
   begin-theorem* begin-proposition* begin-lemma* begin-corollary*
   begin-axiom* begin-definition* begin-notation* begin-conjecture*
   begin-remark* begin-note* begin-example* begin-warning*
-  begin-convention* begin-exercise* begin-problem*
+  begin-convention* begin-acknowledgments*
+  begin-exercise* begin-problem*
   begin-solution* begin-question* begin-answer*
 
   ;; guessed

@@ -65,6 +65,15 @@ get_editor_status_report () {
     return r;
   }
 
+  // If an error happens too early then there is no current view
+  // and get_current_editor() will raise an exception leading to
+  // an infinite loop. So we stop before.
+  
+  if (!has_current_view()) {
+    r << "TeXmacs does not yet have a current view";
+    return r;
+  }
+  
   server sv= get_server ();
   r << "Editor status:\n";
   editor ed= get_current_editor ();

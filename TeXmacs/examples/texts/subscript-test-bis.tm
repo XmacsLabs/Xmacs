@@ -1,6 +1,6 @@
-<TeXmacs|1.99.6>
+<TeXmacs|1.99.12>
 
-<style|generic>
+<style|<tuple|generic|old-spacing|old-dots|fira-font>>
 
 <\body>
   <section*|Subscript <math|a>>
@@ -69,7 +69,6 @@
 
 <\initial>
   <\collection>
-    <associate|font|termes>
     <associate|math-font|math-termes>
   </collection>
 </initial>

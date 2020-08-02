@@ -1,6 +1,6 @@
-<TeXmacs|1.99.6>
+<TeXmacs|1.99.12>
 
-<style|generic>
+<style|<tuple|generic|old-spacing|old-dots|fira-font>>
 
 <\body>
   <\equation*>
@@ -94,7 +94,6 @@
 
 <\initial>
   <\collection>
-    <associate|font|pagella>
     <associate|math-font|math-pagella>
   </collection>
 </initial>

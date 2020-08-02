@@ -12,6 +12,7 @@
 #ifndef QT_WIDGET_HPP
 #define QT_WIDGET_HPP
 
+#include "fast_alloc.hpp"
 #include "widget.hpp"
 #include "message.hpp"
 #include <QPointer>
@@ -191,6 +192,7 @@ public:
   }
 };
 
+template <> void tm_delete<qt_widget_rep>(qt_widget_rep *);
 
 /*! Reference counting mechanism.
 

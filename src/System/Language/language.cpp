@@ -255,7 +255,9 @@ initialize_color_encodings () {
 
 void
 initialize_color_decodings (string lan_name) {
-  language lan= prog_language(lan_name);
+  debug_packrat << "Initialize color decodings for " << lan_name << LF;
+
+  language lan= prog_language (lan_name);
   string pfx= "syntax:" * lan->lan_name * ":";
   lan->color_decoding (-1)= get_preference (pfx * "none", "red");
   lan->color_decoding (1) = get_preference (pfx * "comment", "brown");
@@ -492,10 +494,16 @@ spell_check (string lan, string s) {
     }
   }
   else {
-    spell_start (lan);
-    tree r= spell_check (lan, s);
-    spell_done (lan);
-    return r;
+    if (spell_start (lan) == "ok"){
+      tree r= spell_check (lan, s);
+      spell_done (lan);
+      return r;
+    }
+    else {
+      spell_active= false;
+      spell_done (lan);
+      return "ok";  
+    }
   }
 }
 

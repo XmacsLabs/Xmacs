@@ -11,11 +11,17 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define octave-launcher (if (os-mingw?) "tm_octave.bat" "tm_octave"))
+(define (octave-source-path)
+  (if (url-exists? "$TEXMACS_HOME_PATH/plugins/octave")
+      (string-append (getenv "TEXMACS_HOME_PATH") "/plugins/octave/octave")
+      (string-append (getenv "TEXMACS_PATH") "/plugins/octave/octave")))
+
+(define octave-launcher
+  (string-append "octave-cli -qi \"" (octave-source-path) "/tmstart.m\""))
 
 (plugin-configure octave
   (:winpath "Octave*" "bin")
-  (:require (url-exists-in-path? "octave"))
+  (:require (url-exists-in-path? "octave-cli"))
   (:launch ,octave-launcher)
   (:session "Octave"))
 

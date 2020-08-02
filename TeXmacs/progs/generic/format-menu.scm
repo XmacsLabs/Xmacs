@@ -77,7 +77,7 @@
     (if (not (allow-pattern-colors?))
         (pick-color (setter answer)))
     ---
-    ("Palette" (interactive-color setter) '())
+    ("Palette" (interactive-color setter '()))
     (if (allow-pattern-colors?)
         ("Pattern" (open-pattern-selector setter "1cm")))
     ("Other" (make-interactive-with "color"))))
@@ -101,7 +101,7 @@
     ---
     ("Smash" (make 'smash))
     ("Reduce" (make-reduce-by "0.5ex"))
-    ("Swell" (make 'swell))))
+    ("Inflate" (make 'inflate))))
 
 (menu-bind linear-transform-menu
   (when (not (selection-active-large?))
@@ -135,6 +135,7 @@
   ("Magnify vertically" (make 'vmagnified))
   ("Condensed" (make 'condensed))
   ("Extended" (make 'extended))
+  ("Monospaced" (make 'monospaced))
   ---
   ("Degraded" (make 'degraded))
   ("Distorted" (make 'distorted))

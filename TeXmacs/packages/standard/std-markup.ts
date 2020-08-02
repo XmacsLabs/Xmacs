@@ -1,4 +1,4 @@
-<TeXmacs|1.99.11>
+<TeXmacs|1.99.12>
 
 <style|<tuple|source|std>>
 
@@ -383,11 +383,11 @@
 
   <assign|extend-right|<macro|body|right|<resize|<arg|body>|||<maximum|1r|<arg|right>>|>>>
 
-  <assign|swell|<macro|body|<resize|<arg|body>||<minimum|1b|1fnbot>||<maximum|1t|1fntop>>>>
+  <assign|inflate|<macro|body|<resize|<arg|body>||<minimum|1b|1fnbot>||<maximum|1t|1fntop>>>>
 
-  <assign|swell-bottom|<macro|body|<resize|<arg|body>||<minimum|1b|1fnbot>||>>>
+  <assign|inflate-bottom|<macro|body|<resize|<arg|body>||<minimum|1b|1fnbot>||>>>
 
-  <assign|swell-top|<macro|body|<resize|<arg|body>||||<maximum|1t|1fntop>>>>
+  <assign|inflate-top|<macro|body|<resize|<arg|body>||||<maximum|1t|1fntop>>>>
 
   \;
 
@@ -578,6 +578,8 @@
 
   <assign|extended-factor|1.2>
 
+  <assign|monospaced-factor|0.75>
+
   <assign|degraded-threshold|0.667>
 
   <assign|degraded-frequency|1.0>
@@ -605,6 +607,8 @@
   <assign|condensed|<macro|body|<add-font-effect|hextended|<value|condensed-factor>|<arg|body>>>>
 
   <assign|extended|<macro|body|<add-font-effect|hextended|<value|extended-factor>|<arg|body>>>>
+
+  <assign|monospaced|<macro|body|<add-font-effect|mono|<value|monospaced-factor>|<arg|body>>>>
 
   <assign|degraded|<macro|body|<add-font-effect|degraded|<merge|<value|degraded-threshold>|;|<value|degraded-frequency>>|<arg|body>>>>
 

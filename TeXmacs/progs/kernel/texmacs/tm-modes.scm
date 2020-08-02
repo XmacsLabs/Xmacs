@@ -131,6 +131,12 @@
   (in-plugin-with-converters%
    (plugin-supports-math-input-ref (get-env "prog-language")))
   (in-screens% (inside? 'screens))
+  (in-article% (style-has? "header-article-package"))
+  (in-book% (style-has? "header-book-package"))
+  (in-letter% (style-has? "header-letter-package"))
+  (in-seminar% (style-has? "header-seminar-package"))
+  (in-generic% (style-has? "generic-style"))
+  (in-browser% (style-has? "browser-style"))
   (in-beamer% (style-has? "beamer-style"))
   (in-poster% (style-has? "poster-style"))
   (in-edu% (style-has? "std-edu-dtd"))
@@ -142,6 +148,8 @@
   (in-prog-cpp% #t in-prog% in-cpp%)
   (in-dot% (== (get-env "prog-language") "dot"))
   (in-prog-dot% #t in-prog% in-dot%)
+  (in-octave% (== (get-env "prog-language") "octave"))
+  (in-prog-octave% #t in-prog% in-octave%)
   (in-java% (== (get-env "prog-language") "java"))
   (in-prog-java% #t in-prog% in-java%)
   (in-fortran% (== (get-env "prog-language") "fortran"))
@@ -255,7 +263,8 @@
   (remote-control-mode% (== remote-control-flag? #t))
   (in-cyrillic-jcuken% (cyrillic-input-method? "jcuken") in-cyrillic%)
   (in-cyrillic-translit% (cyrillic-input-method? "translit") in-cyrillic%)
-  (in-cyrillic-yawerty% (cyrillic-input-method? "yawerty") in-cyrillic%))
+  (in-cyrillic-yawerty% (cyrillic-input-method? "yawerty") in-cyrillic%)
+  (in-math-like-macos% #t in-math% like-macos%))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lazy initializations

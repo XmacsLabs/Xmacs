@@ -173,6 +173,18 @@ TeXmacs_init_paths (int& argc, char** argv) {
   // system("set");
 #endif
 
+#ifdef OS_HAIKU
+  // Initialization inside the Haiku package management environment
+  // TEXMACS_PATH is set relative to the executable which is in $prefix/app
+  // to $prefix/data/TeXmacs
+
+  if (is_empty (current_texmacs_path))
+    set_env ("TEXMACS_PATH", as_string (exedir * "../data/TeXmacs"));
+
+  set_env ("PATH", get_env("PATH") * ":" *
+           as_string (exedir * "/system/lib/TeXmacs/bin"));
+#endif
+
   // check on the latest $TEXMACS_PATH
   current_texmacs_path = get_env ("TEXMACS_PATH");
   if (is_empty (current_texmacs_path) ||
@@ -418,7 +430,7 @@ TeXmacs_main (int argc, char** argv) {
   if (DEBUG_STD) debug_boot << "Opening display...\n";
   
 #if defined(X11TEXMACS) && defined(MACOSX_EXTENSIONS)
-  init_mac_application ();
+ // init_mac_application ();
 #endif
     
   gui_open (argc, argv);
@@ -426,12 +438,6 @@ TeXmacs_main (int argc, char** argv) {
   if (DEBUG_STD) debug_boot << "Starting server...\n";
   { // opening scope for server sv
   server sv;
-
-  // HACK:
-  // Qt and Guile want to change the locale. 
-  // We need to force it to C to parse correctly the configuration files
-  // (see as_double() in string.cpp)
-  setlocale(LC_NUMERIC, "C");    
     
   string where= "";
   for (i=1; i<argc; i++) {
@@ -459,10 +465,8 @@ TeXmacs_main (int argc, char** argv) {
   }
   if (install_status == 1) {
     if (DEBUG_STD) debug_boot << "Loading welcome message...\n";
-    url u= "tmfs://help/plain/tm/doc/about/welcome/first.en.tm";
-    string b= scm_quote (as_string (u));
-    string cmd= "(load-buffer " * b * " " * where * ")";
-    where= " :new-window";
+    string cmd= "(load-help-article \"about/welcome/new-welcome\")";
+    // FIXME: force to load welcome message into new window
     exec_delayed (scheme_cmd (cmd));
   }
   else if (install_status == 2) {
@@ -487,6 +491,7 @@ TeXmacs_main (int argc, char** argv) {
   texmacs_started= true;
   if (!disable_error_recovery) signal (SIGSEGV, clean_exit_on_segfault);
   if (start_server_flag) server_start ();
+  release_boot_lock ();
   if (N(extra_init_cmd) > 0) exec_delayed (scheme_cmd (extra_init_cmd));
   gui_start_loop ();
 
@@ -556,6 +561,8 @@ immediate_options (int argc, char** argv) {
         set_env ("HOME", get_env("USERPROFILE"));
     set_env ("TEXMACS_HOME_PATH", get_env ("APPDATA") * "\\TeXmacs");
 	}
+#elif defined(OS_HAIKU)
+    set_env ("TEXMACS_HOME_PATH", get_env ("HOME") * "/config/settings/TeXmacs");
 #else
     set_env ("TEXMACS_HOME_PATH", get_env ("HOME") * "/.TeXmacs");
 #endif

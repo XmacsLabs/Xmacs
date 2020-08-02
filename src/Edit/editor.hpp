@@ -29,7 +29,7 @@
 #  include "../Style/Memorizer/memorizer.hpp"
 #endif
 #include "new_data.hpp"
-#define TEXMACS_COPYRIGHT (string("(c) 1999-2019 by Joris van der Hoeven and others"))
+#define TEXMACS_COPYRIGHT (string("(c) 1999-2020 by Joris van der Hoeven and others"))
 
 #define THE_CURSOR 1
 #define THE_FOCUS 2
@@ -595,6 +595,8 @@ public:
   friend void   set_current_view (url u);
   friend void   focus_on_editor (editor ed);
 };
+
+template<> void tm_delete<editor_rep> (editor_rep* ptr);
 
 class editor {
 EXTEND_NULL(widget,editor);

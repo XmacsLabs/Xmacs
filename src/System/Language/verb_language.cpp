@@ -75,33 +75,3 @@ verb_language_rep::get_color (tree t, int start, int end) {
     return decode_color (res_name, cols[start]);
   return "";
 }
-
-/******************************************************************************
-* Interface
-******************************************************************************/
-
-language
-prog_language (string s) {
-  if (language::instances -> contains (s)) return language (s);
-  if (s == "scheme")
-    return make (language, s, tm_new<scheme_language_rep> (s));
-  if (s == "mathemagix" || s == "mmi" || s == "caas")
-    return make (language, s, tm_new<mathemagix_language_rep> (s));
-  if (s == "cpp")
-    return make (language, s, tm_new<cpp_language_rep> (s));
-  if (s == "dot")
-    return make (language, s, tm_new<dot_language_rep> (s));
-  if (s == "java")
-    return make (language, s, tm_new<java_language_rep> (s));
-  if (s == "scilab")
-    return make (language, s, tm_new<scilab_language_rep> (s));
-  if (s == "python")
-    return make (language, s, tm_new<python_language_rep> (s));
-  if (s == "scala")
-    return make (language, s, tm_new<scala_language_rep> (s));
-  if (s == "r")
-    return make (language, s, tm_new<r_language_rep> (s));
-  if (s == "fortran")
-    return make (language, s, tm_new<fortran_language_rep> (s));
-  return make (language, s, tm_new<verb_language_rep> (s));
-}

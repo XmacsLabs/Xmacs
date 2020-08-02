@@ -210,3 +210,70 @@ abstract_language_rep::parse_constant (hashmap<string,string>& t, string s, int&
   if (t->contains (s (pos, i)))
     pos= i;
 }
+
+void
+abstract_language_rep::customize_keyword (keyword_parser_rep keyword_parser, tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree group_of_keywords= config[i];
+    string group= get_label (group_of_keywords);
+    for (int j=0; j<N(group_of_keywords); j++) {
+      string word= get_label (group_of_keywords[j]);
+      keyword_parser.put (word, group);
+    }
+  }
+}
+
+void
+abstract_language_rep::customize_operator (operator_parser_rep operator_parser, tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree group_of_opers= config[i];
+    string group= get_label (group_of_opers);
+    for (int j=0; j<N(group_of_opers); j++) {
+      string word= get_label (group_of_opers[j]);
+      operator_parser.put (word, group);
+    }
+  }
+}
+
+void
+abstract_language_rep::customize_number (number_parser_rep number_parser, tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree feature= config[i];
+    string name= get_label (feature);
+    if (name == "bool_features") {
+      for (int j=0; j<N(feature); j++) {
+        string key= get_label (feature[j]);
+        number_parser.insert_bool_feature (key);
+      }
+    } else if (name == "separator" && N(feature) == 1) {
+      string key= get_label (feature[0]);
+      number_parser.support_separator (key);
+    } else if (name == "suffix") {
+      customize_keyword (number_parser.get_suffix_parser(), feature);
+    }
+  }
+}
+
+/******************************************************************************
+* Interface
+******************************************************************************/
+
+language
+prog_language (string s) {
+  if (language::instances -> contains (s)) return language (s);
+  if (s == "scheme")
+    return make (language, s, tm_new<scheme_language_rep> (s));
+  if (s == "mathemagix" || s == "mmi" || s == "caas")
+    return make (language, s, tm_new<mathemagix_language_rep> (s));
+  if (s == "cpp")
+    return make (language, s, tm_new<cpp_language_rep> (s));
+  if (s == "dot" || s == "java" || s == "octave" || s == "python" || s == "scala")
+    return make (language, s, tm_new<prog_language_rep> (s));
+  if (s == "scilab")
+    return make (language, s, tm_new<scilab_language_rep> (s));
+  if (s == "r")
+    return make (language, s, tm_new<r_language_rep> (s));
+  if (s == "fortran")
+    return make (language, s, tm_new<fortran_language_rep> (s));
+  return make (language, s, tm_new<verb_language_rep> (s));
+}

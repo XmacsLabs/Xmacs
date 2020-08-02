@@ -56,6 +56,13 @@
 #include "MacOS/mac_utilities.h"
 #endif
 
+#if (QT_VERSION >= 0x050000)
+#include <QtPlugin>
+#ifdef WIN32 
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+#endif
+#endif
+
 qt_gui_rep* the_gui = NULL;
 int nr_windows = 0; // FIXME: fake variable, referenced in tm_server
 
@@ -488,6 +495,22 @@ gui_open (int& argc, char** argv) {
 #ifdef MACOSX_EXTENSIONS
   mac_begin_remote();
 #endif
+
+  // Qt and Guile want to change the locale.
+  // We reset it to have POSIX functions parse correctly the configuration files
+  // (see as_double() in string.cpp)
+
+  setlocale (LC_NUMERIC, "C");
+
+  // From Qt docs:
+  // On Unix/Linux Qt is configured to use the system locale settings by
+  // default. This can cause a conflict when using POSIX functions, for
+  // instance, when converting between data types such as floats and strings,
+  // since the notation may differ between locales. To get around this problem,
+  // call the POSIX function setlocale(LC_NUMERIC,"C") right after initializing
+  // QApplication, QGuiApplication or QCoreApplication to reset the locale
+  // that is used for number formatting to "C"-locale.
+  // See https://doc.qt.io/qt-5/qcoreapplication.html#locale-settings
 }
 
 void
