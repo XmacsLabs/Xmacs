@@ -10,3 +10,6 @@ We do not encourage people to create pull requests to Xmacs. Please contribute t
 + Xmacs v2020.3 for macOS 10.14+ ([腾讯微云](https://share.weiyun.com/4q1mqqfD))
 + Xmacs v2020.2 for Windows 7+ ([腾讯微云](https://share.weiyun.com/MAX4p7RF))
 + Xmacs v2020.2 for macOS 10.14+ ([腾讯微云](https://share.weiyun.com/921w0ZlL))
+
+## Release Notes
++ [Xmacs v2020.3 发布了](https://mp.weixin.qq.com/s/Iqr5HTRhBGX6gCyeXZm2hA)
