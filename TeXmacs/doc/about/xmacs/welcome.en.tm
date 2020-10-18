@@ -1,9 +1,9 @@
 <TeXmacs|1.99.13>
 
-<style|<tuple|tmdoc|chinese|old-spacing|old-dots|xmacs>>
+<style|<tuple|tmdoc|chinese|old-spacing|old-dots>>
 
 <\body>
-  <tmdoc-title|Welcome to <name|Xmacs> <value|xmacs-version>>
+  <tmdoc-title|Welcome to <name|Xmacs>>
 
   Please read the Chinese welcome document:
   <hlink|\<#6B22\>\<#8FCE\>\<#4F7F\>\<#7528\><name|Xmacs>|welcome.zh.tm>
