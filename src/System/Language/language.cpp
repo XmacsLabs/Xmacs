@@ -43,6 +43,8 @@ text_property_rep tp_cjk_no_break_rep
   (TP_CJK_NO_BREAK, SPC_NONE, SPC_CJK_NORMAL, 0, HYPH_INVALID);
 text_property_rep tp_cjk_period_rep
   (TP_CJK_PERIOD, SPC_NONE, SPC_CJK_PERIOD, HYPH_INVALID, 0);
+text_property_rep tp_cjk_wide_period_rep
+  (TP_CJK_PERIOD, SPC_NONE, SPC_CJK_WIDE_PERIOD, HYPH_INVALID, 0);
 text_property_rep tp_cjk_no_break_period_rep
   (TP_CJK_PERIOD, SPC_NONE, SPC_CJK_PERIOD, HYPH_INVALID, HYPH_INVALID);
 text_property_rep tp_half_rep
@@ -255,7 +257,7 @@ initialize_color_encodings () {
 
 void
 initialize_color_decodings (string lan_name) {
-  debug_packrat << "Initialize color decodings for " << lan_name << LF;
+  //debug_packrat << "Initialize color decodings for " << lan_name << LF;
 
   language lan= prog_language (lan_name);
   string pfx= "syntax:" * lan->lan_name * ":";

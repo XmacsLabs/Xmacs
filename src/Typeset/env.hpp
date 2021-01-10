@@ -160,6 +160,7 @@ public:
   double       zoomf;
   SI           pixel;
   double       magn;
+  double       magn_len;
   double       mgfy;
   double       flexibility;
   int          first_page;
@@ -323,6 +324,8 @@ private:
   tree exec_greater (tree t);
   tree exec_greatereq (tree t);
   tree exec_blend (tree t);
+  tree exec_rgb_color (tree t);
+  tree exec_rgb_access (tree t);
 
   tree exec_cm_length ();
   tree exec_mm_length ();
@@ -347,6 +350,7 @@ private:
   tree exec_spc_length ();
   tree exec_xspc_length ();
   tree exec_par_length ();
+  tree exec_paw_length ();
   tree exec_pag_length ();
   tree exec_gw_length ();
   tree exec_gh_length ();
@@ -518,6 +522,9 @@ public:
 
   void      get_length_unit (string l, SI& un, string& un_str);
   string    add_lengths (string l1, string l2);
+  string    sub_lengths (string l1, string l2);
+  string    max_lengths (string l1, string l2);
+  string    min_lengths (string l1, string l2);
   string    multiply_length (double x, string l);
   double    divide_lengths (string l1, string l2);
 
@@ -525,6 +532,7 @@ public:
   SI        as_length (tree t);
   SI        as_length (tree t, string perc);
   SI        as_eff_length (tree t);
+  SI        as_real_length (tree t);
   space     as_hspace (tree t);
   space     as_vspace (tree t);
   point     as_point (tree t);

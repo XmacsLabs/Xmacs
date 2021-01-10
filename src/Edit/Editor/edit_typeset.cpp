@@ -51,6 +51,8 @@ edit_typeset_rep::set_data (new_data data) {
   set_style (data->style);
   set_init  (data->init);
   set_fin   (data->fin);
+  set_ref   (data->ref);
+  set_aux   (data->aux);
   set_att   (data->att);
   notify_page_change ();
   add_init (data->init);
@@ -69,6 +71,8 @@ edit_typeset_rep::get_data (new_data& data) {
   data->style= get_style ();
   data->init = get_init ();
   data->fin  = get_fin ();
+  data->ref  = get_ref ();
+  data->aux  = get_aux ();
   data->att  = get_att ();
 }
 
@@ -77,9 +81,92 @@ tree edit_typeset_rep::get_style () { return the_style; }
 void edit_typeset_rep::set_style (tree t) { the_style= copy (t); }
 hashmap<string,tree> edit_typeset_rep::get_init () { return init; }
 hashmap<string,tree> edit_typeset_rep::get_fin () { return fin; }
+hashmap<string,tree> edit_typeset_rep::get_ref () { return buf->data->ref; }
+hashmap<string,tree> edit_typeset_rep::get_aux () { return buf->data->aux; }
 hashmap<string,tree> edit_typeset_rep::get_att () { return buf->data->att; }
 void edit_typeset_rep::set_fin (hashmap<string,tree> H) { fin= H; }
+void edit_typeset_rep::set_ref (hashmap<string,tree> H) { buf->data->ref= H; }
+void edit_typeset_rep::set_aux (hashmap<string,tree> H) { buf->data->aux= H; }
 void edit_typeset_rep::set_att (hashmap<string,tree> H) { buf->data->att= H; }
+
+tree
+edit_typeset_rep::get_ref (string key) {
+  return buf->data->ref[key];
+}
+
+void
+edit_typeset_rep::set_ref (string key, tree im) {
+  buf->data->ref (key)= im;
+}
+
+void
+edit_typeset_rep::reset_ref (string key) {
+  buf->data->ref->reset (key);
+}
+
+static string
+concat_as_string (tree t) {
+  if (is_atomic (t)) return t->label;
+  else if (is_func (t, CONCAT)) {
+    string r;
+    for (int i=0; i<N(t); i++)
+      r << concat_as_string (t[i]);
+    return r;
+  }
+  else return "?";
+}
+
+array<string>
+edit_typeset_rep::find_refs (string val, bool global) {
+  tree a= (tree) buf->data->ref;
+  if (global && buf->prj != NULL) a= buf->prj->data->ref;
+  array<string> v;
+  int i, n= N(a);
+  for (i=0; i<n; i++)
+    if (N(a[i]) >= 2 && N(a[i][1]) >= 1 &&
+        concat_as_string (a[i][1][0]) == val)
+      v << a[i][0]->label;
+  return v;
+}
+
+array<string>
+edit_typeset_rep::list_refs (bool global) {
+  tree a= (tree) buf->data->ref;
+  if (global && buf->prj != NULL) a= buf->prj->data->ref;
+  array<string> v;
+  int i, n= N(a);
+  for (i=0; i<n; i++)
+    v << a[i][0]->label;
+  merge_sort (v);
+  return v;
+}
+
+tree
+edit_typeset_rep::get_aux (string key) {
+  return buf->data->aux[key];
+}
+
+void
+edit_typeset_rep::set_aux (string key, tree im) {
+  buf->data->aux (key)= im;
+}
+
+void
+edit_typeset_rep::reset_aux (string key) {
+  buf->data->aux->reset (key);
+}
+
+array<string>
+edit_typeset_rep::list_auxs (bool global) {
+  tree a= (tree) buf->data->aux;
+  if (global && buf->prj != NULL) a= buf->prj->data->aux;
+  array<string> v;
+  int i, n= N(a);
+  for (i=0; i<n; i++)
+    v << a[i][0]->label;
+  merge_sort (v);
+  return v;
+}
 
 tree
 edit_typeset_rep::get_att (string key) {
@@ -97,8 +184,9 @@ edit_typeset_rep::reset_att (string key) {
 }
 
 array<string>
-edit_typeset_rep::list_atts () {
+edit_typeset_rep::list_atts (bool global) {
   tree a= (tree) buf->data->att;
+  if (global && buf->prj != NULL) a= buf->prj->data->att;
   array<string> v;
   int i, n= N(a);
   for (i=0; i<n; i++)
@@ -137,6 +225,18 @@ edit_typeset_rep::as_length (string l) {
 string
 edit_typeset_rep::add_lengths (string l1, string l2) {
   return env->add_lengths (l1, l2); }
+
+string
+edit_typeset_rep::sub_lengths (string l1, string l2) {
+  return env->sub_lengths (l1, l2); }
+
+string
+edit_typeset_rep::max_lengths (string l1, string l2) {
+  return env->max_lengths (l1, l2); }
+
+string
+edit_typeset_rep::min_lengths (string l1, string l2) {
+  return env->min_lengths (l1, l2); }
 
 string
 edit_typeset_rep::multiply_length (double x, string l) {
@@ -329,6 +429,9 @@ table_descend (tree& t, path& p, tree& fm) {
 
 void
 edit_typeset_rep::typeset_exec_until (path p) {
+  // FIXME: we should ensure that p is inside the document
+  // if (!(rp <= p)) p= correct_cursor (et, rp * 0);
+
   //time_t t1= texmacs_time ();
   if (has_changed (THE_TREE + THE_ENVIRONMENT))
     if (p != correct_cursor (et, rp * 0)) {
@@ -660,6 +763,8 @@ edit_typeset_rep::exec_html (tree t, path p) {
     w << string ("html-head-javascript") << H["html-head-javascript"];
   if (H->contains ("html-head-javascript-src"))
     w << string ("html-head-javascript-src") << H["html-head-javascript-src"];
+  if (H->contains ("html-head-favicon"))
+    w << string ("html-head-favicon") << H["html-head-favicon"];
   if (H->contains ("html-extra-css"))
     w << string ("html-extra-css") << H["html-extra-css"];
   if (H->contains ("html-extra-javascript-src"))

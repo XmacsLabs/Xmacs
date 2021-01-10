@@ -24,7 +24,7 @@
 
 (tm-define (disable-pre-edit? key)
   (:mode in-math?)
-  (in? key (list "^" "~" "`")))
+  (in? key (list "^" "~" "`" "'" "\"")))
 
 (tm-define (downgrade-pre-edit key)
   (:mode in-math?)
@@ -61,66 +61,6 @@
         ((in? key (list "Ỳ" "Ý" "Ŷ" "Ỹ" "Ÿ")) "Y")
         ((in? key (list "Ẑ")) "Z")
         (else "")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Hacks to work around the problem that MacOS reserves Alt-based shortcuts
-;; for its own personal use
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(when (os-macos?)
-  (kbd-map
-    (:mode in-math?)
-    ("\xe5" (make-above)) ;; Alt-a
-    ("\xc5" (make-wide "<invbreve>")) ;; Alt-A
-    ("big-int" (make-below)) ;; Alt-b
-    ("\xc7" (make-wide "<check>")) ;; Alt-C
-    ("<#192>" (make-fraction)) ;; Alt-f
-    ("<#192> var" (make 'tfrac))
-    ("<#192> var var" (make 'dfrac))
-    ("<#192> var var var" (make 'frac*))
-    ("<#192> var var var var" (make 'cfrac))
-    ("\xd8" (make 'op)) ;; Alt-O
-    ("\xff" (make-sqrt)) ;; Alt-s
-    ("\xff var" (make-var-sqrt))
-    ("dagger" (make 'tabular*)) ;; Alt-t
-    ("dagger var" (make 'matrix))
-    ("dagger var var" (make 'det))
-    ("dagger var var var" (make 'bmatrix))
-    ("dagger var var var var" (make 'choice))
-    ("dagger var var var var var" (make 'stack))
-    ("\xfe" (make 'tabular*)) ;; Alt-t
-    ("\xfe var" (make 'matrix))
-    ("\xfe var var" (make 'det))
-    ("\xfe var var var" (make 'bmatrix))
-    ("\xfe var var var var" (make 'choice))
-    ("\xfe var var var var var" (make 'stack))
-    ("lozenge" (make-wide "<vect>")) ;; Alt-V
-
-    ("geq" (make-wide "<dot>")) ;; Alt-.
-    ("geq var" (make-wide "<ddot>"))
-    ("geq var var" (make-wide "<dddot>"))
-    ("geq var var var" (make-wide "<ddddot>"))
-    ("\xe6" (make-wide "<acute>")) ;; Alt-'
-    ("\xc6" (make-wide "<ddot>")) ;; Alt-"
-    ("\xc6 var" (make-wide "<dddot>"))
-    ("\xc6 var var" (make-wide "<ddddot>"))
-    ("\x1d" (make-wide "^")) ;; Alt-^
-    ("\x15" (make-wide "<wide-bar>")) ;; Alt--
-    ("\x16" (make-wide-under "<wide-bar>")) ;; Alt-_
-
-    ("{ dagger" (make 'choice)) ;; { Alt-t
-    ("( dagger" (make 'matrix))
-    ("[ dagger" (make 'bmatrix))
-    ("| dagger" (make 'det))
-    ("{ \xfe" (make 'choice)) ;; { Alt-t
-    ("( \xfe" (make 'matrix))
-    ("[ \xfe" (make 'bmatrix))
-    ("| \xfe" (make 'det))))
-
-(when (os-macos?)
-  (kbd-map
-    (:mode in-math-like-macos?)
-    ("math A-n" (make-wide "~"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main keyboard shortcuts
@@ -246,7 +186,7 @@
   ("math -" (make-wide "<wide-bar>"))
   ("math ." (make-wide "<dot>"))
   ("math . var" (make-wide "<ddot>"))
-  ("math . var var" (make-wide "<ddot>"))
+  ("math . var var" (make-wide "<dddot>"))
   ("math . var var var" (make-wide "<ddddot>"))
   ("math \"" (make-wide "<ddot>"))
   ("math \" var" (make-wide "<dddot>"))
@@ -280,7 +220,7 @@
   ("math:under . var var var" (make-wide-under "<ddddot>"))
   ("math:under \"" (make-wide-under "<ddot>"))
   ("math:under \" var" (make-wide-under "<dddot>"))
-  ("math:under \" var var" (make-wide-under "<dddot>"))
+  ("math:under \" var var" (make-wide-under "<ddddot>"))
   ("math:under @" (make-wide-under "<abovering>"))
   ("math:under {" (make-wide-under "<wide-overbrace*>"))
   ("math:under }" (make-wide-under "<wide-underbrace>"))
@@ -588,8 +528,8 @@
   ("}" (math-bracket-close "}" "{" 'default))
   ("} var" (math-bracket-close "<rangle>" "<langle>" 'default))
   ("} var var" (math-bracket-close "<rrangle>" "<llangle>" #f))
-  ("} }" (twice (math-bracket-open "}" "{" 'default)))
-  ("} } var" (math-bracket-open "<rrangle>" "<llangle>" #f))
+  ("} }" (twice (math-bracket-close "}" "{" 'default)))
+  ("} } var" (twice (math-bracket-close "<rrangle>" "<llangle>" #f)))
   ("|" (math-bracket-open "|" "|" 'default))
   ("| |" (math-bracket-open "<||>" "<||>" 'default))
   ("| | |" (math-bracket-open "<interleave>" "<interleave>" #f))
@@ -1301,7 +1241,9 @@
   ("@ / var" "<oslash>")
   ("@ \\" "<obslash>")
   ("@ <" "<olessthan>")
+  ("@ < var" "<circlearrowleft>")
   ("@ >" "<ogreaterthan>")
+  ("@ > var" "<circlearrowright>")
   ("@ &" "<owedge>")
   ("@ |" "<obar>")
   ("@ | var" "<ovee>")
@@ -2569,105 +2511,145 @@
 
 (kbd-map
   (:mode in-math-english?)
-  ("a n d" (make 'infix-and))
-  ("a n d space" (make 'infix-and))
+  ;;("a n d" (make 'infix-and))
+  ;;("a n d space" (make 'infix-and))
   ("space a" " a")
+  ("space a var" (begin (kbd-space) (insert "<alpha>")))
   ("space a n" " an")
   ("space a n d" (make 'infix-and))
   ("space a n d space" (make 'infix-and))
-  ("a n d var" "and")
-  ("o r" (make 'infix-or))
-  ("o r space" (make 'infix-or))
+  ;;("a n d var" "and")
+  ;;("o r" (make 'infix-or))
+  ;;("o r space" (make 'infix-or))
   ("space o" " o")
+  ("space o var" (begin (kbd-space) (insert "<omicron>")))
   ("space o r" (make 'infix-or))
   ("space o r space" (make 'infix-or))
-  ("o r var" "or")
-  ("o r d" "ord")
-  ("i f f" (make 'infix-iff))
-  ("i f f space" (make 'infix-iff))
+  ;;("o r var" "or")
+  ;;("o r d" "ord")
+  ;;("i f f" (make 'infix-iff))
+  ;;("i f f space" (make 'infix-iff))
   ("space i" " i")
+  ("space i var" (begin (kbd-space) (insert "<iota>")))
+  ("space i var var" (begin (kbd-space) (insert "<mathi>")))
+  ("space i var var var" (begin (kbd-space) (insert "<imath>")))
   ("space i f" " if")
   ("space i f f" (make 'infix-iff))
   ("space i f f space" (make 'infix-iff))
-  ("i f f var" "iff")
+  ;;("i f f var" "iff")
   ("f o r space a l l" (make 'prefix-for-all))
   ("f o r space a l l space" (make 'prefix-for-all)))
 
 (kbd-map
   (:mode in-math-dutch?)
-  ("e n" (make 'infix-and))
-  ("e n space" (make 'infix-and))
+  ;;("e n" (make 'infix-and))
+  ;;("e n space" (make 'infix-and))
   ("space e" " e")
+  ("space e var" (begin (kbd-space) (insert "<varepsilon>")))
+  ("space e var var" (begin (kbd-space) (insert "<mathe>")))
+  ("space e var var var" (begin (kbd-space) (insert "<epsilon>")))
+  ("space e var var var var" (begin (kbd-space) (insert "<backepsilon>")))
   ("space e n" (make 'infix-and))
   ("space e n space" (make 'infix-and))
-  ("e n var" "en")
-  ("o f" (make 'infix-or))
-  ("o f space" (make 'infix-or))
+  ;;("e n var" "en")
+  ;;("o f" (make 'infix-or))
+  ;;("o f space" (make 'infix-or))
   ("space o" " o")
+  ("space o var" (begin (kbd-space) (insert "<omicron>")))
   ("space o f" (make 'infix-or))
   ("space o f space" (make 'infix-or))
-  ("o f var" "of")
-  ("d e s d a" (make 'infix-iff))
-  ("d e s d a space" (make 'infix-iff))
+  ;;("o f var" "of")
+  ;;("d e s d a" (make 'infix-iff))
+  ;;("d e s d a space" (make 'infix-iff))
   ("space d" " d")
+  ("space d var" (begin (kbd-space) (insert "<delta>")))
+  ("space d var var" (begin (kbd-space) (insert "<mathd>")))
+  ("space d var var var" (begin (kbd-space) (insert "<partial>")))
   ("space d e" " de")
   ("space d e s" " des")
   ("space d e s d" " desd")
   ("space d e s d a" (make 'infix-iff))
   ("space d e s d a space" (make 'infix-iff))
-  ("d e s d a var" "desda")
+  ;;("d e s d a var" "desda")
   ("v o o r space a l l e" (make 'prefix-for-all))
   ("v o o r space a l l e space" (make 'prefix-for-all)))
 
 (kbd-map
   (:mode in-math-french?)
-  ("e t" (make 'infix-and))
-  ("e t space" (make 'infix-and))
+  ;;("e t" (make 'infix-and))
+  ;;("e t space" (make 'infix-and))
   ("space e" " e")
+  ("space e var" (begin (kbd-space) (insert "<varepsilon>")))
+  ("space e var var" (begin (kbd-space) (insert "<mathe>")))
+  ("space e var var var" (begin (kbd-space) (insert "<epsilon>")))
+  ("space e var var var var" (begin (kbd-space) (insert "<backepsilon>")))
   ("space e t" (make 'infix-and))
   ("space e t space" (make 'infix-and))
-  ("e t var" "et")
-  ("o u" (make 'infix-or))
-  ("o u space" (make 'infix-or))
+  ;;("e t var" "et")
+  ;;("o u" (make 'infix-or))
+  ;;("o u space" (make 'infix-or))
   ("space o" " o")
+  ("space o var" (begin (kbd-space) (insert "<omicron>")))
   ("space o u" (make 'infix-or))
   ("space o u space" (make 'infix-or))
-  ("o u var" "ou")
-  ("s s i" (make 'infix-iff))
-  ("s s i space" (make 'infix-iff))
+  ;;("o u var" "ou")
+  ;;("s s i" (make 'infix-iff))
+  ;;("s s i space" (make 'infix-iff))
   ("space s" " s")
+  ("space s var" (begin (kbd-space) (insert "<sigma>")))
+  ("space s var var" (begin (kbd-space) (insert "<varsigma>")))
   ("space s s" " ss")
   ("space s s i" (make 'infix-iff))
   ("space s s i space" (make 'infix-iff))
-  ("s s i var" "ssi")
+  ;;("s s i var" "ssi")
   ("p o u r space t o u t" (make 'prefix-for-all))
   ("p o u r space t o u t space" (make 'prefix-for-all)))
 
 (kbd-map
   (:mode in-math-german?)
-  ("u n d" (make 'infix-and))
-  ("u n d space" (make 'infix-and))
+  ;;("u n d" (make 'infix-and))
+  ;;("u n d space" (make 'infix-and))
   ("space u" " u")
+  ("space u var" (begin (kbd-space) (insert "<upsilon>")))
   ("space u n" " un")
   ("space u n d" (make 'infix-and))
   ("space u n d space" (make 'infix-and))
-  ("u n d var" "und")
-  ("o d e r" (make 'infix-or))
-  ("o d e r space" (make 'infix-or))
+  ;;("u n d var" "und")
+  ;;("o d e r" (make 'infix-or))
+  ;;("o d e r space" (make 'infix-or))
   ("space o" " o")
+  ("space o var" (begin (kbd-space) (insert "<omicron>")))
   ("space o d" " od")
   ("space o d e" " ode")
   ("space o d e r" (make 'infix-or))
   ("space o d e r space" (make 'infix-or))
-  ("o d e r var" "oder")
-  ("g d w" (make 'infix-iff))
-  ("g d w space" (make 'infix-iff))
+  ;;("o d e r var" "oder")
+  ;;("g d w" (make 'infix-iff))
+  ;;("g d w space" (make 'infix-iff))
   ("space g" " g")
+  ("space g var" (begin (kbd-space) (insert "<gamma>")))
+  ("space g var var" (begin (kbd-space) (insert "<matheuler>")))
   ("space g d" " gd")
   ("space g d w" (make 'infix-iff))
   ("space g d w space" (make 'infix-iff))
-  ("g d w var" "gdw")
+  ;;("g d w var" "gdw")
   ("f u r space a l l e" (make 'prefix-for-all))
   ("f u r space a l l e space" (make 'prefix-for-all))
   ("f u e r space a l l e" (make 'prefix-for-all))
   ("f u e r space a l l e space" (make 'prefix-for-all)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Special toggles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(kbd-map
+  (:require (inside? 'equation*))
+  ("C-&" (equation->eqnarray (tree-innermost 'equation*))))
+
+(kbd-map
+  (:require (inside? 'equation))
+  ("C-&" (equation->eqnarray (tree-innermost 'equation))))
+
+(kbd-map
+  (:require (inside? 'eqnarray*))
+  ("C-&" (eqnarray->equation (tree-innermost 'eqnarray*))))

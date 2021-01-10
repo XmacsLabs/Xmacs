@@ -18,6 +18,9 @@ class parser_rep {
 public:
   bool parse (string s, int& pos) {
     if (!can_parse (s, pos)) {
+      // cout << get_parser_name () << " cannot parse:" << LF
+      //      << s << LF
+      //      << string(' ', pos) << "^" << LF;
       return false;
     }
 
@@ -33,10 +36,11 @@ public:
       //      << string(' ', pos) << "^" << LF;
       return true;
     } else {
-      debug_packrat << "Illegal status for " << get_parser_name() << LF
-                    << s << LF
-                    << string(' ', opos) << "^" << LF
-                    << string(' ', pos) << "^" << LF;
+      if (DEBUG_PARSER)
+        debug_packrat << "Illegal status for " << get_parser_name() << LF
+                      << s << LF
+                      << string(' ', opos) << "^" << LF
+                      << string(' ', pos) << "^" << LF;
       return false;
     }
   }
@@ -46,6 +50,7 @@ protected:
    * @return the name of the parser
    */
   virtual string get_parser_name () { return ""; }
+
   /** Parse a string at the position and advance the position
    * @param s     the string to parse
    * @param[out]  the position to parse
@@ -57,6 +62,20 @@ protected:
    * @param pos   the position to parse
    */
   virtual bool can_parse (string s, int pos) { return pos < N(s); }
+
+  /**
+   * @return if the parser has not finished
+   */
+  // virtual bool unfinished () { return false; }
+
+  /**
+   * @return string representation of the parser
+   */
+  virtual string to_string () {
+    string ret; 
+    ret << get_parser_name() << ":" << "\n";
+    return ret;
+  }
 };
 
 #endif

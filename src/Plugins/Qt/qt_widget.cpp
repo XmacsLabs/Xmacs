@@ -186,7 +186,7 @@ qt_widget_rep::get_qactionlist() {
  \return The new qt_window_widget.
 */
 widget
-qt_widget_rep::plain_window_widget (string name, command quit) {
+qt_widget_rep::plain_window_widget (string name, command quit, int border) {
   if (DEBUG_QT_WIDGETS)
     debug_widgets << "qt_widget_rep::plain_window_widget() around a "
                   << type_as_string() << LF;
@@ -213,7 +213,7 @@ qt_widget_rep::plain_window_widget (string name, command quit) {
   
   int l,t,r,b;
   win->layout()->getContentsMargins (&l, &t, &r, &b);
-  win->layout()->setContentsMargins (l+3, t+3, r+3, b+3);
+  win->layout()->setContentsMargins (l+border, t+border, r+border, b+border);
   win->setWindowTitle (to_qstring (name));  // HACK: remove me (see bug#40837)
   
   qt_window_widget_rep* wid = tm_new<qt_window_widget_rep> (win, name, quit);
@@ -241,6 +241,13 @@ qt_widget_rep::popup_window_widget (string s) {
   widget wid= make_popup_widget();
   ASSERT(concrete(wid) != this, "Loop in call to popup_window_widget()");
   return concrete(wid)->popup_window_widget(s);
+}
+
+widget
+qt_widget_rep::tooltip_window_widget (string s) {
+  widget wid= make_popup_widget();
+  ASSERT(concrete(wid) != this, "Loop in call to tooltip_window_widget()");
+  return concrete(wid)->tooltip_window_widget(s);
 }
 
 tm_ostream& operator << (tm_ostream& out, qt_widget w) {
@@ -284,6 +291,11 @@ plain_window_widget (widget w, string name, command q) {
 widget
 popup_window_widget (widget w, string s) {
   return concrete(w)->popup_window_widget (s);
+}
+
+widget
+tooltip_window_widget (widget w, string s) {
+  return concrete(w)->tooltip_window_widget (s);
 }
 
 /*! A factory for a popup widget container whose contents are to be unmapped as 

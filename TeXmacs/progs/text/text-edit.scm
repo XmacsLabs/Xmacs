@@ -318,8 +318,14 @@
   (tree-go-to t :end)
   (make 'label))
 
+(tm-define (focus-label t)
+  (:require (section-context? t))
+  (and-with p (tree-up t)
+    (and (tm-func? p 'concat)
+         (focus-search-label p))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Routines for lists, enumerations and description
+;; Routines for lists, enumerations and descriptions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (tm-define (list-context? t)
@@ -358,6 +364,13 @@
   (:require (tree-is? t 'item*))
   (go-end-of 'item*))
 
+(tm-define (focus-label t)
+  (:require (or (list-context? t) (tree-is? t 'bib-list)))
+  (and-with doc (tree-down t)
+    (and (tree-is? doc 'document)
+         (and-with par (tree-down doc)
+           (focus-search-label par)))))
+
 (tm-define (numbered-context? t)
   (:require (or (itemize-context? t) (enumerate-context? t)))
   #t)
@@ -376,15 +389,48 @@
 
 (tm-define (standard-parameters l)
   (:require (== l "itemize"))
-  (cons "itemize-levels" (search-parameters "itemize-1")))
+  (list-remove (cons* "itemize-levels"
+                      "item-tag" "item-1" "item-2" "item-3" "item-4"
+                      (search-parameters "itemize-1"))
+               "itemize-level"))
+
+(ahash-set! inhibit-global-table "item-tag" #t)
+(ahash-set! inhibit-local-table "item-1" #t)
+(ahash-set! inhibit-local-table "item-2" #t)
+(ahash-set! inhibit-local-table "item-3" #t)
+(ahash-set! inhibit-local-table "item-4" #t)
 
 (tm-define (standard-parameters l)
   (:require (== l "enumerate"))
-  (cons "enumerate-levels" (search-parameters "enumerate-1")))
+  (list-remove (cons* "enumerate-levels"
+                      "enum-tag" "enum-1" "enum-2" "enum-3" "enum-4"
+                      (search-parameters "enumerate-1"))
+               "enumerate-level"))
+
+(ahash-set! inhibit-global-table "enum-tag" #t)
+(ahash-set! inhibit-local-table "enum-1" #t)
+(ahash-set! inhibit-local-table "enum-2" #t)
+(ahash-set! inhibit-local-table "enum-3" #t)
+(ahash-set! inhibit-local-table "enum-4" #t)
 
 (tm-define (parameter-choice-list l)
   (:require (in? l (list "itemize-levels" "enumerate-levels")))
   (list "1" "2" "3" "4"))
+
+(tm-define (parameter-choice-list l)
+  (:require (in? l (list "item-tag" "item-1" "item-2" "item-3" "item-4")))
+  (list "<bullet>" "<circ>" "<minus>" "<cdot>" "*"
+        "<rightarrow>" "<Rightarrow>"
+        "<triangleright>" "<blacktriangleright>" :other))
+
+(tm-define (parameter-choice-list l)
+  (:require (in? l (list "enum-tag" "enum-1" "enum-2" "enum-3" "enum-4")))
+  (list (list "1, 2, 3, ..." '(macro "x" (arg "x")))
+        (list "a, b, c, ..." '(macro "x" (number (arg "x") "alpha")))
+        (list "A, B, C, ..." '(macro "x" (number (arg "x") "Alpha")))
+        (list "i, ii, iii, ..." '(macro "x" (number (arg "x") "roman")))
+        (list "I, II, III, ..." '(macro "x" (number (arg "x") "Roman")))
+        :other))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Hyphenation
@@ -399,7 +445,7 @@
     (insert ins)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Inserting formulas
+;; Formulas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (tm-define (make-equation)
@@ -416,6 +462,21 @@
   (:applicable (not (selection-active-non-small?)))
   (make 'eqnarray*)
   (temp-proof-fix))
+
+(tm-define (focus-label t)
+  (:require (tree-is? t 'equation))
+  (focus-list-search-label (tree-children t)))
+
+(define (down-to-row t)
+  (cond ((not (tree? t)) #f)
+        ((tree-is? t 'row) t)
+        ((tree-in? t '(document tformat table)) (down-to-row (tree-down t)))
+        (else #f)))
+
+(tm-define (focus-label t)
+  (:require (tree-in? t '(eqnarray eqnarray*)))
+  (and-with row (down-to-row (tree-down t))
+    (focus-search-label row)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routines for inserting miscellaneous content
@@ -505,6 +566,11 @@
   (tree-go-to t :last :start)
   (make 'dueto))
 
+(tm-define (focus-label t)
+  (:require (tree-in? t (enunciation-tag-list)))
+  (and (== (tree-arity t) 1)
+       (focus-search-label (tree-ref t 0))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Editing algorithms
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -583,6 +649,10 @@
 		 (tree-assign-node! t (symbol-append 'specified- r '*))))
 	  (tree-insert! t (- (tree-arity t) 1) '((document "")))
 	  (tree-go-to t (- (tree-arity t) 2) :start)))))
+
+(tm-define (focus-label t)
+  (:require (algorithm-context? t))
+  (focus-list-search-label (tree-children t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Possible to use a custom note symbol
@@ -797,6 +867,9 @@
 (tm-define (footnote-context? t)
   (tree-in? t '(footnote wide-footnote)))
 
+(tm-define (figure-context? t)
+  (tree-in? t (figure-tag-list)))
+
 (tm-define (float-or-footnote-context? t)
   (tree-in? t '(float wide-float footnote wide-footnote)))
 
@@ -911,3 +984,7 @@
   (if (cursor-at-anchor?)
       (go-to-float)
       (go-to-anchor)))
+
+(tm-define (focus-label t)
+  (:require (or (footnote-context? t) (figure-context? t)))
+  (focus-list-search-label (tree-children t)))

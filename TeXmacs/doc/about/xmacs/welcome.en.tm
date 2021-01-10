@@ -1,6 +1,6 @@
-<TeXmacs|1.99.13>
+<TeXmacs|1.99.18>
 
-<style|<tuple|tmdoc|chinese|old-spacing|old-dots>>
+<style|<tuple|tmdoc|chinese|old-spacing|old-dots|old-lengths>>
 
 <\body>
   <tmdoc-title|Welcome to <name|Xmacs>>
@@ -8,7 +8,7 @@
   Please read the Chinese welcome document:
   <hlink|\<#6B22\>\<#8FCE\>\<#4F7F\>\<#7528\><name|Xmacs>|welcome.zh.tm>
 
-  <tmdoc-copyright|2020|<name|Xmacs> Labs>
+  <tmdoc-copyright|2020\U2021|<name|Xmacs> Labs>
 </body>
 
 <initial|<\collection>

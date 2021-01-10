@@ -26,6 +26,7 @@
 (define latex-language "english")
 (define latex-style "generic")
 (define latex-packages '())
+(define latex-extra-packages '())
 (define latex-virtual-packages '())
 (define latex-all-packages '())
 (define latex-texmacs-style "generic")
@@ -54,6 +55,14 @@
   (set! latex-packages ps)
   (latex-set-dependencies))
 
+(tm-define (latex-set-extra ps)
+  (set! latex-extra-packages ps)
+  (latex-set-dependencies))
+
+(tm-define (latex-add-extra p)
+  (set! latex-extra-packages (cons p latex-extra-packages))
+  (latex-set-dependencies))
+
 (tm-define (latex-set-virtual-packages ps)
   (set! latex-virtual-packages ps)
   (latex-set-dependencies))
@@ -66,7 +75,9 @@
 
 (define (latex-set-dependencies)
   (set! latex-all-packages
-        (list-remove-duplicates (append latex-packages latex-virtual-packages)))
+        (list-remove-duplicates (append latex-packages
+                                        latex-extra-packages
+                                        latex-virtual-packages)))
   (set! latex-dependencies
         (latex-packages-dependencies (cons latex-style latex-all-packages))))
 
@@ -563,15 +574,16 @@
 ;; Clean-up the produced LaTeX for use with MathJax
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (latex-mathjax-text l x)
-  (cond ((or (npair? x) (nlist? x)) `(,l ,x))
-        ((func? x 'tmtextsf 1) (latex-mathjax-text 'textsf (cadr x)))
-        ((func? x 'tmtexttt 1) (latex-mathjax-text 'texttt (cadr x)))
-        ((func? x 'tmtextit 1) (latex-mathjax-text 'textit (cadr x)))
-        ((func? x 'tmtextbf 1) (latex-mathjax-text 'textbf (cadr x)))
-        ((func? x 'tmtextrm 1) (latex-mathjax-text l (cadr x)))
-        ((func? x 'tmtextup 1) (latex-mathjax-text l (cadr x)))
-        (else `(,l ,x))))
+(define (latex-mathjax-text l arg)
+  (with x (latex-mathjax-pre arg)
+    (cond ((or (npair? x) (nlist? x)) `(,l ,x))
+          ((func? x 'tmtextsf 1) (latex-mathjax-text 'textsf (cadr x)))
+          ((func? x 'tmtexttt 1) (latex-mathjax-text 'texttt (cadr x)))
+          ((func? x 'tmtextit 1) (latex-mathjax-text 'textit (cadr x)))
+          ((func? x 'tmtextbf 1) (latex-mathjax-text 'textbf (cadr x)))
+          ((func? x 'tmtextrm 1) (latex-mathjax-text l (cadr x)))
+          ((func? x 'tmtextup 1) (latex-mathjax-text l (cadr x)))
+          (else `(,l ,x)))))
 
 (tm-define (latex-mathjax-pre x)
   (:synopsis "Produce cleaner LaTeX for @x for use with MathJax, pass 1")
@@ -585,6 +597,7 @@
         ((func? x 'dotplus 0) `(dot "+"))
         ((func? x 'dottimes 0) `(dot (times)))
         ((func? x 'dotast 0) `(dot (ast)))
+        ((func? x 'dag) `(dagger))
         ((and (func? x 'color 2) (func? (cadr x) '!option 1))
          ;; NOTE : MathJax has broken color support, so ignore certain colors
          ;; FIXME: this hack may have to be suppressed when MathJax improves

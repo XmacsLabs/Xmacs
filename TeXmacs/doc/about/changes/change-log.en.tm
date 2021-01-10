@@ -1,13 +1,68 @@
-<TeXmacs|1.99.12>
+<TeXmacs|1.99.18>
 
-<style|<tuple|tmdoc|english|old-spacing|old-dots>>
+<style|<tuple|tmdoc|english|old-spacing|old-dots|old-lengths>>
 
 <\body>
   <tmdoc-title|<TeXmacs> changelog>
 
-  <section|Changes from version 1.99.1 to 1.99.13>
+  <section|Changes from version 1.99.1 to 1.99.18>
 
   <\itemize>
+    <item>Minor bug fixes (1.99.18).
+
+    <item>Minor progress on the remote editing tools (1.99.18).
+
+    <item>Continued bug fixes (1.99.17).
+
+    <item>Improved remote editing tools (1.99.17).
+
+    <item>New style package \P<tmpackage|comment>\Q for various kinds of
+    comments (1.99.17).
+
+    <item>Lightweight facility for managing user-defined keyboard shortcuts
+    (1.99.17).
+
+    <item>Improved customizability of item lists and enumerations (1.99.17).
+
+    <item>Further improvements for preview and help balloons (1.99.16).
+
+    <item>Possibility to find labels from their numeric value (1.99.16).
+
+    <item>Incorporation of a <verbatim|smart-ref> package for smart
+    references (1.99.16).
+
+    <item>Fix spell checking under Windows (1.99.16).
+
+    <item>Add <key|C-&> keyboard shortcut to toggle between equations and
+    equation arrays (1.99.16).
+
+    <item>Rudimentary support for Wacom-style pen tablets, Qt5 only
+    (1.99.16).
+
+    <item>Continued bug fixes (1.99.16).
+
+    <item>Improved help balloons and preview facility for references and
+    citations (1.99.15).
+
+    <item>Improved navigation and search tools for labels, references, and
+    citations (1.99.15).
+
+    <item>Indicate the current cursor position by shaking the mouse
+    (1.99.15).
+
+    <item>Various bug fixes (1.99.15).
+
+    <item>Release of <hlink|\PThe Jolly Writer\Q|https://www.scypress.com/book_info.html>\VYour
+    Guide to GNU <TeXmacs> (1.99.14).
+
+    <item>Many bug fixes (1.99.14).
+
+    <item>Improved Html export with better CSS stylability (1.99.14).
+
+    <item>Improved support for Qt5 (1.99.14).
+
+    <item>Improved Octave plugin (1.99.14).
+
     <item>Continued bug fixes (1.99.13).
 
     <item>Switch to Python 3 for plug-ins programmed in Python (1.99.13).
@@ -2008,7 +2063,7 @@
     <item>Implementation of symbol menus.
   </itemize>
 
-  <tmdoc-copyright|1998--2002|Joris van der Hoeven>
+  <tmdoc-copyright|1998\U2020|Joris van der Hoeven>
 
   <tmdoc-license|Permission is granted to copy, distribute and/or modify this
   document under the terms of the GNU Free Documentation License, Version 1.1

@@ -123,6 +123,7 @@
 ;(display "Booting utilities\n")
 (use-modules (utils library cpp-wrap))
 (lazy-define (utils library cursor) notify-cursor-moved)
+(lazy-define (utils edit variants) make-inline-tag-list make-wrapped-tag-list)
 (lazy-define (utils cas cas-out) cas->stree)
 (lazy-define (utils plugins plugin-cmd) pre-serialize verbatim-serialize)
 (lazy-define (utils test test-convert) delayed-quit
@@ -132,6 +133,9 @@
 (use-modules (utils misc markup-funcs))
 (use-modules (utils misc artwork))
 (use-modules (utils handwriting handwriting))
+(lazy-tmfs-handler (utils automate auto-tmfs) automate)
+(lazy-define (utils automate auto-tmfs) auto-load-help)
+(lazy-keyboard (utils automate auto-kbd) in-auto?)
 (define supports-email? (url-exists-in-path? "mmail"))
 (if supports-email? (use-modules (utils email email-tmfs)))
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
@@ -193,8 +197,8 @@
 (lazy-define (generic spell-widgets) spell-toolbar
              open-spell toolbar-spell-start interactive-spell)
 (lazy-define (generic format-widgets) open-paragraph-format open-page-format)
-(lazy-define (generic pattern-selector)
-             open-pattern-selector open-background-picture-selector)
+(lazy-define (generic pattern-selector) open-pattern-selector
+             open-gradient-selector open-background-picture-selector)
 (lazy-define (generic document-widgets) open-source-tree-preferences
              open-document-paragraph-format open-document-page-format
              open-document-metadata open-document-colors)
@@ -209,6 +213,7 @@
 (tm-property (open-document-metadata) (:interactive #t))
 (tm-property (open-document-colors) (:interactive #t))
 (tm-property (open-pattern-selector cmd w) (:interactive #t))
+(tm-property (open-gradient-selector cmd) (:interactive #t))
 (tm-property (open-background-picture-selector cmd) (:interactive #t))
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
 ;(display* "memory: " (texmacs-memory) " bytes\n")
@@ -235,7 +240,7 @@
 ;(display* "memory: " (texmacs-memory) " bytes\n")
 
 ;(display "Booting programming modes\n")
-(lazy-format (prog prog-format) cpp scheme)
+(lazy-format (prog prog-format) cpp scheme scala java python)
 (lazy-keyboard (prog prog-kbd) in-prog?)
 (lazy-menu (prog prog-menu) prog-format-menu prog-format-icons
 	   prog-menu prog-icons)
@@ -248,14 +253,19 @@
            source-transformational-menu source-executable-menu)
 (lazy-define (source macro-edit)
              has-macro-source? edit-macro-source edit-focus-macro-source)
+(lazy-menu (source macro-menu) insert-macro-menu)
 (lazy-define (source macro-widgets)
              editable-macro? open-macros-editor
 	     open-macro-editor create-table-macro
              edit-focus-macro edit-previous-macro)
+(lazy-define (source shortcut-edit) init-user-shortcuts has-user-shortcut?)
+(lazy-define (source shortcut-widgets) open-shortcuts-editor)
 (tm-property (open-macro-editor l mode) (:interactive #t))
 (tm-property (create-table-macro l mode) (:interactive #t))
 (tm-property (open-macros-editor mode) (:interactive #t))
 (tm-property (edit-focus-macro) (:interactive #t))
+(tm-property (open-shortcuts-editor . opt) (:interactive #t))
+(when (url-exists? "") (delayed (:idle 100) (init-user-shortcuts)))
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
 ;(display* "memory: " (texmacs-memory) " bytes\n")
 
@@ -337,13 +347,15 @@
 (lazy-define (doc tmweb) youtube-select
              tmweb-convert-dir tmweb-update-dir
              tmweb-convert-dir-keep-texmacs tmweb-update-dir-keep-texmacs
-             tmweb-interactive-build tmweb-interactive-update)
+             tmweb-interactive-build tmweb-interactive-update
+             open-website-builder)
 (lazy-define (doc apidoc) apidoc-all-modules apidoc-all-symbols)
 (lazy-menu (doc apidoc-menu) apidoc-menu)
 (lazy-tmfs-handler (doc docgrep) grep)
 (lazy-tmfs-handler (doc tmdoc) help)
 (lazy-tmfs-handler (doc apidoc) apidoc)
 (define-secure-symbols tmdoc-include youtube-select)
+(tm-property (open-website-builder) (:interactive #t))
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
 ;(display* "memory: " (texmacs-memory) " bytes\n")
 
@@ -358,6 +370,8 @@
 (lazy-define (convert images tmimage)
              export-selection-as-graphics clipboard-copy-image)
 (lazy-define (convert rewrite init-rewrite) texmacs->code texmacs->verbatim)
+(lazy-define (convert html tmhtml) ext-tmhtml-eqnarray*)
+(define-secure-symbols ext-tmhtml-eqnarray*)
 (lazy-define (convert html tmhtml-expand) tmhtml-env-patch)
 (lazy-define (convert latex latex-drd) latex-arity latex-type)
 (lazy-define (convert latex tmtex) tmtex-env-patch)
@@ -410,7 +424,8 @@
 ;(display "Booting remote facilities\n")
 (lazy-define (client client-tmfs) remote-home-directory)
 (lazy-menu (server server-menu) start-server-menu server-menu)
-(lazy-menu (client client-menu) start-client-menu client-menu)
+(lazy-menu (client client-menu) start-client-menu client-menu
+           remote-menu remote-icons)
 (lazy-tmfs-handler (client client-tmfs) remote-file)
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
 ;(display* "memory: " (texmacs-memory) " bytes\n")
@@ -423,6 +438,9 @@
              link-follow-ids)
 (lazy-define (link link-extern) get-constellation
              get-link-locations register-link-locations)
+(lazy-menu (link ref-menu) ref-menu)
+(lazy-define (link ref-edit) preview-reference)
+(define-secure-symbols preview-reference)
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
 ;(display* "memory: " (texmacs-memory) " bytes\n")
 
@@ -443,6 +461,9 @@
 
 ;(display "Booting editing modes for various special styles\n")
 (lazy-menu (various poster-menu) poster-block-menu)
+(lazy-menu (various theme-menu) basic-theme-menu)
+(lazy-define (various theme-edit) current-basic-theme)
+(lazy-define (various theme-menu) basic-theme-name)
 ;(display* "time: " (- (texmacs-time) boot-start) "\n")
 ;(display* "memory: " (texmacs-memory) " bytes\n")
 

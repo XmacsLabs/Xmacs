@@ -39,6 +39,7 @@
 
 hashmap<int,string> qtkeymap (0);
 hashmap<int,string> qtdeadmap (0);
+hashmap<int,string> qtcomposemap (0);
 
 inline void
 map (int code, string name) {
@@ -57,9 +58,9 @@ initkeymap () {
   fInit= true;
   if (DEBUG_QT && DEBUG_KEYBOARD) debug_qt << "Initializing keymap\n";
   map (Qt::Key_Space     , "space");
-  map (Qt::Key_Return    , "return");
   map (Qt::Key_Tab       , "tab");
-  map (Qt::Key_Backspace , "backspace");
+  map (Qt::Key_Backtab   , "tab");
+  map (Qt::Key_Return    , "return");
   map (Qt::Key_Enter     , "enter");
   map (Qt::Key_Escape    , "escape");
   map (Qt::Key_Backspace , "backspace");
@@ -169,14 +170,22 @@ static long int QTMWcounter = 0; // debugging hack
   \param _tmwid the TeXmacs widget who owns this object.
  */
 QTMWidget::QTMWidget (QWidget* _parent, qt_widget _tmwid)
-: QTMScrollView (_parent), tmwid (_tmwid),  imwidget (NULL)
+: QTMScrollView (_parent), tmwid (_tmwid),  imwidget (NULL),
+  preediting (false)
 {
   setObjectName (to_qstring ("QTMWidget" * as_string (QTMWcounter++)));// What is this for? (maybe only debugging?)
   setFocusPolicy (Qt::StrongFocus);
   setAttribute (Qt::WA_InputMethodEnabled);
   surface ()->setMouseTracking (true);
   surface ()->setAcceptDrops (true);
-  
+
+#if (QT_VERSION >= 0x050000)
+  surface ()->setTabletTracking (true);
+  for (QWidget *parent = surface()->parentWidget();
+       parent != nullptr; parent = parent->parentWidget())
+    parent->setTabletTracking(true);
+#endif
+
   if (DEBUG_QT)
     debug_qt << "Creating " << from_qstring(objectName()) << " of widget "
              << (tm_widget() ? tm_widget()->type_as_string() : "NULL") << LF;
@@ -278,6 +287,8 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
       debug_qt << "key  : " << key << LF;
       debug_qt << "text : " << event->text().toLatin1().data() << LF;
       debug_qt << "count: " << event->text().count() << LF;
+      debug_qt << "unic : " << event->text().data()[0].unicode() << LF;
+
 #ifdef OS_MINGW
       debug_qt << "nativeScanCode: " << event->nativeScanCode() << LF; 
       debug_qt << "nativeVirtualKey: " << event->nativeVirtualKey() << LF;
@@ -337,8 +348,14 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
           (mods & Qt::AltModifier) == 0 &&
           (mods & Qt::MetaModifier) == 0)
         set_shift_preference (kc, (char) unic);
-
-      if (unic < 32 && key < 128 && key > 0) {
+#ifdef Q_OS_WIN
+      if ((unic > 0 && unic < 32 && key > 0 && key < 128) ||
+          (unic > 0 && unic < 255 && key > 32 &&
+           (mods & Qt::ShiftModifier) != 0 &&
+           (mods & Qt::ControlModifier) != 0)) {
+#else
+      if (unic < 32 && key > 0 && key < 128) {
+#endif
         // NOTE: For some reason, the 'shift' modifier key is not applied
         // to 'key' when 'control' is pressed as well.  We perform some
         // dirty hacking to figure out the right shifted variant of a key
@@ -349,9 +366,12 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
         }
         else if (has_shift_preference (kc) &&
                  (mods & Qt::ShiftModifier) != 0 &&
-                 (mods & Qt::ControlModifier) != 0)
-          key= (int) (unsigned char) get_shift_preference (kc) [0];
-
+                 (mods & Qt::ControlModifier) != 0) {
+          string pref= get_shift_preference (kc);
+          if (N(pref) > 0) key= (int) (unsigned char) pref [0];
+          if (DEBUG_QT && DEBUG_KEYBOARD)
+            debug_qt << "Control+Shift " << kc << " -> " << key << LF;
+        }
         mods &=~ Qt::ShiftModifier;
         r= string ((char) key);
       }
@@ -386,29 +406,24 @@ QTMWidget::keyPressEvent (QKeyEvent* event) {
               r= tstr (1, len-1);
             else
               r= tstr;
-
             if (r == "less") r= "<";
             else if (r == "gtr") r= ">";
         }
-
-#ifdef OS_MINGW
-        // See https://savannah.gnu.org/bugs/?57850
-        array<char> keys;
-        keys << '-' << '=' << '\\' << '`'
-          << '[' << ']' << ';' << '\''
-          << ',' << '.' << '/';
-        
-        if ((mods & Qt::ShiftModifier) &&
-            (mods & Qt::ControlModifier) &&
-            N(r) == 1 &&
-            (is_digit (r[0]) || contains (r[0], keys))) {
-          r= string ((char) key);
-        }
-#endif
-
 #ifdef Q_OS_MAC
+        if (mods & Qt::AltModifier) {
           // Alt produces many symbols in Mac keyboards: []|{} etc.
-        mods &= ~Qt::AltModifier; //unset Alt
+          if ((N(r) != 1 ||
+               ((int) (unsigned char) r[0]) < 32 ||
+               ((int) (unsigned char) r[0]) >= 128) &&
+              key >= 32 && key < 128 &&
+              ((mods & (Qt::MetaModifier + Qt::ControlModifier)) == 0)) {
+            if ((mods & Qt::ShiftModifier) == 0 && key >= 65 && key <= 90)
+              key += 32;
+            qtcomposemap (key)= r;
+            r= string ((char) key);
+          }
+          else mods &= ~Qt::AltModifier; //unset Alt
+        }
 #endif
         mods &= ~Qt::ShiftModifier;
       }
@@ -469,110 +484,12 @@ mouse_decode (unsigned int mstate) {
   return "unknown";
 }
 
-#if 0 // NOT USED
-static void setRoundedMask (QWidget *widget)
-{
-  QPixmap pixmap (widget->size());
-  QPainter painter (&pixmap);
-  painter.fillRect (pixmap.rect(), Qt::white);
-  painter.setBrush (Qt::black);
-#if (QT_VERSION >= 0x040400)
-  painter.drawRoundedRect (pixmap.rect(),8,8, Qt::AbsoluteSize);
-#else
-  painter.drawRect (pixmap.rect());
-#endif
-  widget->setMask (pixmap.createMaskFromColor (Qt::white));
-}
-#endif
-
-
-#if 0 
-// OLD INPUT METHOD PREVIEW
 void
-QTMWidget::inputMethodEvent (QInputMethodEvent* event) {
-  if (! imwidget) {   
-    imwidget = new QLabel (this);
-    imwidget->setWindowFlags (Qt::Tool | Qt::FramelessWindowHint);
-  //  imwidget->setAttribute (Qt::WA_TranslucentBackground);
-//    imwidget->setAutoFillBackground (false);
-       imwidget->setAutoFillBackground (true);
-    imwidget->setWindowOpacity (0.5);
-    imwidget->setFocusPolicy (Qt::NoFocus);
-    QPalette pal = imwidget->palette();
-//    pal.setColor (QPalette::Window, QColor (0,0,255,80));
-    pal.setColor (QPalette::Window, QColor (0,0,255,255));
-    pal.setColor (QPalette::WindowText, Qt::white);
-    imwidget->setPalette (pal);
-    QFont f = imwidget->font();
-    f.setPointSize (qt_zoom (30));
-    imwidget->setFont (f);
-    imwidget->setMargin (5);
-  }
-
-  QString const & preedit_string = event->preeditString();
-  QString const & commit_string = event->commitString();
-
-  if (preedit_string.isEmpty()) {
-    imwidget->hide();
-  } else {
-    if (DEBUG_QT)
-      debug_qt << "IM preediting :" << preedit_string.toUtf8().data() << LF;
-    imwidget->setText (preedit_string);
-    imwidget->adjustSize();
-    QSize sz = size();
-    QRect g = imwidget->geometry();
-    QPoint c = mapToGlobal (cursor_pos);
-    c += QPoint (5,5);
-    // g.moveCenter (QPoint (sz.width()/2,sz.height()/2));
-    g.moveTopLeft (c);
-    if (DEBUG_QT)
-      debug_qt << "IM hotspot: " << cursor_pos.x() << "," << cursor_pos.y() << LF;
-    imwidget->setGeometry (g);
-    // setRoundedMask (imwidget);
-    imwidget->show();
-#ifdef QT_MAC_USE_COCOA
-    // HACK: we unexplicably loose the focus even when showing the small window,
-    // so we need to restore it manually.....
-    // The following fixes the problem (but I do not really understand why it 
-    // happens)
-    // Maybe this is a Qt/Cocoa bug.
-    this->window()->activateWindow();
-#endif    
-  }
-  
-  if (!commit_string.isEmpty()) {
-    if (DEBUG_QT)
-      debug_qt << "IM committing :" << commit_string.toUtf8().data() << LF;
-
-    int key = 0;
-#if 1
-    for (int i = 0; i < commit_string.size(); ++i) {
-      QKeyEvent ev (QEvent::KeyPress, key, Qt::NoModifier, commit_string[i]);
-      keyPressEvent (&ev);
-    }
-#else
-    QKeyEvent ev (QEvent::KeyPress, key, Qt::NoModifier, commit_string);
-    keyPressEvent (&ev);
-#endif
-  }
-  
-  event->accept();
-
-}  
-
-QVariant 
-QTMWidget::inputMethodQuery (Qt::InputMethodQuery query) const {
-  switch (query) {
-    case Qt::ImMicroFocus :
-      return QVariant (QRect (cursor_pos + QPoint (10,10),QSize (20,40)));
-    default:
-      return QVariant();
-  }
+QTMWidget::kbdEvent (int key, Qt::KeyboardModifiers mods, const QString& s) {
+  QKeyEvent ev (QEvent::KeyPress, key, mods, s);
+  keyPressEvent (&ev);
 }
 
-#else
-
-// NEW INPUT METHOD PREVIEW
 void
 QTMWidget::inputMethodEvent (QInputMethodEvent* event) {
   
@@ -580,19 +497,49 @@ QTMWidget::inputMethodEvent (QInputMethodEvent* event) {
   QString const & commit_string = event->commitString();
   
   if (!commit_string.isEmpty()) {
-    if (DEBUG_QT)
-      debug_qt << "IM committing :" << commit_string.toUtf8().data() << LF;
+    bool done= false;
+    string s= from_qstring (commit_string);
+#ifdef OS_MACOS
+#if (QT_VERSION < 0x050000)
+    // NOTE: this hack is only needed for Qt4 under MacOS,
+    // but it only works for standard US keyboards
+    done= true;
+    Qt::KeyboardModifiers SA= Qt::ShiftModifier | Qt::AltModifier;
+    if (s == "\17") kbdEvent (36, Qt::AltModifier, commit_string);
+    else if (s == "<ddagger>") kbdEvent (38, Qt::AltModifier, commit_string);
+    else if (s == "<leq>") kbdEvent (44, Qt::AltModifier, commit_string);
+    else if (s == "<geq>") kbdEvent (46, Qt::AltModifier, commit_string);
+    else if (s == "<trademark>") kbdEvent (50, Qt::AltModifier, commit_string);
+    else if (s == "<infty>") kbdEvent (53, Qt::AltModifier, commit_string);
+    else if (s == "<ldots>") kbdEvent (59, Qt::AltModifier, commit_string);
+    else if (s == "<#20AC>") kbdEvent (64, Qt::AltModifier, commit_string);
+    else if (s == "<partial>") kbdEvent (68, Qt::AltModifier, commit_string);
+    else if (s == "<#192>") kbdEvent (70, Qt::AltModifier, commit_string);
+    else if (s == "<dagger>") kbdEvent (84, Qt::AltModifier, commit_string);
+    else if (s == "<sqrt>") kbdEvent (86, Qt::AltModifier, commit_string);
+    else if (s == "\35") kbdEvent (94, Qt::AltModifier, commit_string);
+    else if (s == "\31") kbdEvent (66, SA, commit_string);
+    else if (s == "<lozenge>") kbdEvent (89, SA, commit_string);
+    else done= false;
+#endif
+#endif
     
-    int key = 0;
-#if 1
-    for (int i = 0; i < commit_string.size(); ++i) {
-      QKeyEvent ev (QEvent::KeyPress, key, Qt::NoModifier, commit_string[i]);
-      keyPressEvent (&ev);
+#ifdef OS_MINGW
+    if (commit_string.size() == 1 && is_alpha(s[0])) {
+      done= true; 
     }
-#else
-    QKeyEvent ev (QEvent::KeyPress, key, Qt::NoModifier, commit_string);
-    keyPressEvent (&ev);
 #endif
+
+    if (!done) {
+      if (DEBUG_QT)
+        debug_qt << "IM committing: " << commit_string.toUtf8().data() << LF;
+#if 1
+      for (int i = 0; i < commit_string.size(); ++i)
+        kbdEvent (0, Qt::NoModifier, commit_string[i]);
+#else
+      kbdEvent (0, Qt::NoModifier, commit_string);
+#endif
+    }
   }
   
   if (DEBUG_QT)
@@ -634,12 +581,10 @@ QTMWidget::inputMethodEvent (QInputMethodEvent* event) {
     r = r * as_string (pos) * ":" * from_qstring (preedit_string);
   }
   
-#if (QT_VERSION < 0x050000)
-  // hack for fixing #47338 [CJK] input disappears immediately
-  // see http://lists.gnu.org/archive/html/texmacs-dev/2017-09/msg00000.html
-  if (!is_nil (tmwid))
+  if (!is_nil (tmwid)) {
+    preediting = !preedit_string.isEmpty();
     the_gui->process_keypress (tm_widget(), r, texmacs_time());
-#endif 
+  }
   
   event->accept();
 }  
@@ -655,8 +600,6 @@ QTMWidget::inputMethodQuery (Qt::InputMethodQuery query) const {
       return QWidget::inputMethodQuery (query);
   }
 }
-
-#endif // input method variants
 
 void
 QTMWidget::mousePressEvent (QMouseEvent* event) {
@@ -694,6 +637,61 @@ QTMWidget::mouseMoveEvent (QMouseEvent* event) {
   event->accept();
 }
 
+#if (QT_VERSION >= 0x050000)
+static unsigned int
+tablet_state (QTabletEvent* event, bool flag) {
+  unsigned int i= 0;
+  Qt::MouseButtons bstate= event->buttons ();
+  Qt::MouseButton  tstate= event->button ();
+  if (flag) bstate= bstate | tstate;
+  if ((bstate & Qt::LeftButton     ) != 0) i += 1;
+  if ((bstate & Qt::MidButton      ) != 0) i += 2;
+  if ((bstate & Qt::RightButton    ) != 0) i += 4;
+  if ((bstate & Qt::XButton1       ) != 0) i += 8;
+  if ((bstate & Qt::XButton2       ) != 0) i += 16;
+  return i;
+}
+
+void
+QTMWidget::tabletEvent (QTabletEvent* event) {
+  if (is_nil (tmwid)) return; 
+  unsigned int mstate = tablet_state (event, true);
+  string s= "move";
+  if (event->button() != 0) {
+    if (event->pressure () == 0) s= "release-" * mouse_decode (mstate);
+    else s= "press-" * mouse_decode (mstate);
+  }
+  if ((mstate & 4) == 0 || s == "press-right") {
+    QPoint point = event->pos() + origin() - surface()->pos();
+    double x= point.x() + event->hiResGlobalX() - event->globalX();
+    double y= point.y() + event->hiResGlobalY() - event->globalY();
+    coord2 pt= coord2 ((SI) (x * PIXEL), (SI) (-y * PIXEL));
+    the_gui->process_mouse (tm_widget(), s, pt.x1, pt.x2, 
+                            mstate, texmacs_time ());
+  }
+  /*
+  cout << HRULE << LF;
+  cout << "button= " << event->button() << LF;
+  cout << "globalX= " << event->globalX() << LF;
+  cout << "globalY= " << event->globalY() << LF;
+  cout << "hiResGlobalX= " << event->hiResGlobalX() << LF;
+  cout << "hiResGlobalY= " << event->hiResGlobalY() << LF;
+  cout << "globalX= " << event->globalX() << LF;
+  cout << "globalY= " << event->globalY() << LF;
+  cout << "x= " << event->x() << LF;
+  cout << "y= " << event->y() << LF;
+  cout << "z= " << event->z() << LF;
+  cout << "xTilt= " << event->xTilt() << LF;
+  cout << "yTilt= " << event->yTilt() << LF;
+  cout << "pressure= " << event->pressure() << LF;
+  cout << "rotation= " << event->rotation() << LF;
+  cout << "tangentialPressure= " << event->tangentialPressure() << LF;
+  cout << "pointerType= " << event->pointerType() << LF;
+  cout << "uniqueId= " << event->uniqueId() << LF;
+  */
+  event->accept();
+}
+#endif
 
 bool
 QTMWidget::event (QEvent* event) {
@@ -784,6 +782,9 @@ QTMWidget::dropEvent (QDropEvent *event)
 #endif
       string extension = suffix (name);
       if ((extension == "eps") || (extension == "ps")   ||
+#if (QT_VERSION >= 0x050000)
+          (extension == "svg") ||
+#endif
           (extension == "pdf") || (extension == "png")  ||
           (extension == "jpg") || (extension == "jpeg")) {
         string w, h;

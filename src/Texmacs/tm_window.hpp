@@ -97,10 +97,13 @@ typedef tm_window_rep* tm_window;
 widget texmacs_output_widget (tree doc, tree style);
 widget texmacs_input_widget (tree doc, tree style, url wname);
 bool is_embedded_buffer (url name);
+array<SI> get_texmacs_widget_size (widget wid);
 
 int window_handle ();
-void window_create (int win, widget wid, string name, bool plain);
 void window_create (int win, widget wid, string name, command quit);
+void window_create_plain (int win, widget wid, string name);
+void window_create_popup (int win, widget wid, string name);
+void window_create_tooltip  (int win, widget wid, string name);
 void window_delete (int win);
 void window_show (int win);
 void window_hide (int win);

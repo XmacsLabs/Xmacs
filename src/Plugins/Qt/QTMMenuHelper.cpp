@@ -366,8 +366,7 @@ END_SLOT
  * QTMInputTextWidgetHelper
  ******************************************************************************/
 
-QTMInputTextWidgetHelper::QTMInputTextWidgetHelper (qt_widget _wid)
-: QObject (), p_wid (_wid) {
+QTMInputTextWidgetHelper::QTMInputTextWidgetHelper (qt_widget _wid, bool _cac): QObject (), p_wid (_wid), can_autocommit (_cac) {
   QTMLineEdit* le = qobject_cast<QTMLineEdit*>(wid()->qwid);
   setParent(le);
   ASSERT (le != NULL, "QTMInputTextWidgetHelper: expecting valid QTMLineEdit");
@@ -390,8 +389,8 @@ void
 QTMInputTextWidgetHelper::leave (Qt::FocusReason reason) {
 BEGIN_SLOT
   if (sender() != wid()->qwid) return;
-  wid()->commit((reason != Qt::OtherFocusReason &&
-                 get_preference ("gui:line-input:autocommit") == "#t"));
+  wid()->commit((reason != Qt::OtherFocusReason && can_autocommit &&
+                 get_preference ("gui:line-input:autocommit") == "on"));
 END_SLOT
 }
 
@@ -695,6 +694,15 @@ QTMLineEdit::keyPressEvent (QKeyEvent* ev)
     }
   } else {
     QLineEdit::keyPressEvent (ev);
+  }
+}
+
+void
+QTMLineEdit::inputMethodEvent (QInputMethodEvent* ev) {
+  QLineEdit::inputMethodEvent (ev);
+  if (!ev->commitString().isEmpty() && ev->preeditString().isEmpty()) {
+    string str = from_qstring(ev->commitString());
+    cmd (list_object (list_object (object (str), object (str))));
   }
 }
 

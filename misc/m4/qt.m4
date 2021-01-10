@@ -13,13 +13,66 @@
 
 m4_include([misc/autotroll/autotroll.m4])
 
+AC_DEFUN([LM_QT_JPG],[AC_LANG_PROGRAM([
+@%:@include <QtCore>
+@%:@include <QtPlugin>
+@%:@define qt_static_plugin_qjpeg qt_static_plugin_QJpegPlugin
+
+Q_IMPORT_PLUGIN(qjpeg)
+])])
+
+AC_DEFUN([LM_QT_GIF],[AC_LANG_PROGRAM([
+@%:@include <QtCore>
+@%:@include <QtPlugin>
+@%:@define qt_static_plugin_qgif qt_static_plugin_QGifPlugin
+
+Q_IMPORT_PLUGIN(qgif)
+])])
+
+AC_DEFUN([LM_QT_ICO],[AC_LANG_PROGRAM([
+@%:@include <QtCore>
+@%:@include <QtPlugin>
+@%:@define qt_static_plugin_qico qt_static_plugin_QICOPlugin
+
+Q_IMPORT_PLUGIN(qico)
+])])
+
+AC_DEFUN([LM_QT_SVG],[AC_LANG_PROGRAM([
+@%:@include <QtCore>
+@%:@include <QtPlugin>
+@%:@define qt_static_plugin_qsvg qt_static_plugin_QSvgPlugin
+
+Q_IMPORT_PLUGIN(qsvg)
+])])
+
+AC_DEFUN([LM_QT_COCOA],[AC_LANG_PROGRAM([
+@%:@include <QtCore>
+@%:@include <QtPlugin>
+
+Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
+])])
+
 AC_DEFUN([LC_WITH_QT],[
   typeset xtralibs
   case $CONFIG_OS in
     MINGW) xtralibs="+xml";;
   esac
-  AT_WITH_QT([$xtralibs +printsupport],[+exceptions],[LIBS += $LDFLAGS],AC_MSG_ERROR([Cannot find a working Qt library]))
 
+  AC_PATH_PROGS([QMAKE], [qmake qmake-qt4 qmake-qt5], [echo]) 
+  case $($QMAKE -query QT_VERSION 2>/dev/null) in
+  5.*) 
+    AC_MSG_NOTICE([Qt5 found])
+    AT_WITH_QT([$xtralibs +printsupport +svg],[+exceptions],[
+      LIBS += $LDFLAGS
+      QTPLUGIN = qjpeg qgif qico qsvg
+    ],AC_MSG_ERROR([Cannot find a working Qt library]))
+    ;;
+  4.*)  
+    AC_MSG_NOTICE([Qt4 found])
+    AT_WITH_QT([$xtralibs +printsupport +svg],[+exceptions],[LIBS += $LDFLAGS],AC_MSG_ERROR([Cannot find a working Qt library]))
+    ;;
+  *) AC_MSG_ERROR([Qt not found or Qt version not supported ]);;
+  esac
   # clean and dispatch the collected flags
   LC_COPY_FLAGS([QT],[TMP])
   LC_CLEAR_FLAGS([QT])
@@ -52,4 +105,17 @@ AC_DEFUN([LC_WITH_QT],[
     ])
   ])
   LC_COMBINE_FLAGS([QT])
+  AX_SAVE_FLAGS 
+  LC_SET_FLAGS([QT])
+  AC_RUN_IFELSE([LM_QT_JPG], [AC_DEFINE([qt_static_plugin_qjpeg],[qt_static_plugin_QJpegPlugin],[If there is a static plugin qjpeg])],
+    [AC_MSG_WARN([No static qjpeg plugin])])
+  AC_RUN_IFELSE([LM_QT_GIF], [AC_DEFINE([qt_static_plugin_qgif],[qt_static_plugin_QGifPlugin],[If there is a static plugin qgif])],
+    [AC_MSG_WARN([No static qgif plugin])])
+  AC_RUN_IFELSE([LM_QT_ICO], [AC_DEFINE([qt_static_plugin_qico],[qt_static_plugin_QICOPlugin],[If there is a static plugin qico])],
+    [AC_MSG_WARN([No static qico plugin])])
+  AC_RUN_IFELSE([LM_QT_SVG], [AC_DEFINE([qt_static_plugin_qsvg],[qt_static_plugin_QSvgPlugin],[If there is a static plugin qsvg])],
+    [AC_MSG_WARN([No static qsvg plugin])])
+  AC_RUN_IFELSE([LM_QT_COCOA], [AC_DEFINE([CocoaPlugin],[1],[If there is a static plugin Cocoa])],
+    [AC_MSG_WARN([No static Cocoa plugin])])
+  AX_RESTORE_FLAGS
 ])

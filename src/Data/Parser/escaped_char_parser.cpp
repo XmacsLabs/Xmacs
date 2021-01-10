@@ -12,7 +12,12 @@
 #include "escaped_char_parser.hpp"
 #include "analyze.hpp"
 
-escaped_char_parser_rep::escaped_char_parser_rep () {
+escaped_char_parser_rep::escaped_char_parser_rep ():
+  HEX_WITH_8_BITS ("hex_with_8_bits"),
+  HEX_WITH_16_BITS ("hex_with_16_bits"),
+  HEX_WITH_32_BITS ("hex_with_32_bits"),
+  OCTAL_UPTO_3_DIGITS ("octal_upto_3_digits")
+{
   m_chars= array<char>();
   m_strings= array<string>();
   m_escape= '\\';
@@ -101,6 +106,19 @@ escaped_char_parser_rep::can_parse (string s, int pos) {
     if (test (s, pos+1, m_string)) return true;
   }
   return contains (s[pos+1], m_chars);
+}
+
+string
+escaped_char_parser_rep::to_string () {
+  string ret= parser_rep::to_string ();
+  ret << "  escape_sequences:" << "\n";
+  for (int i=0; i<N(m_chars); i++) {
+    ret << "    - " << m_chars[i] << "\n";
+  }
+  for (int i=0; i<N(m_strings); i++) {
+    ret << "    - " << m_strings[i] << "\n";
+  }
+  return ret;
 }
 
 void

@@ -307,7 +307,18 @@
                 (get-boolean-preference "texmacs->html:mathml")))
       (meti (hlist // (text "Export mathematical formulas as images"))
         (toggle (export-formulas-as-images answer)
-                (get-boolean-preference "texmacs->html:images")))))
+                (get-boolean-preference "texmacs->html:images"))))
+    ===
+    (hlist
+      (text "CSS stylesheet:") //
+      (enum (set-preference "texmacs->html:css-stylesheet" answer)
+            '("---"
+              "https://www.texmacs.org/css/web-article.css"
+              "https://www.texmacs.org/css/web-article-dark.css"
+              "https://www.texmacs.org/css/web-article-colored.css"
+              "https://www.texmacs.org/css/web-article-dark-colored.css"
+              "")
+            (get-preference "texmacs->html:css-stylesheet") "30em")))
   ======
   (bold (text "Html -> TeXmacs"))
   ===
@@ -528,7 +539,7 @@
       (aligned (item (text "Pdf version number:")
         (enum (set-preference "texmacs->pdf:version" answer)
               '("default" "1.4" "1.5" "1.6" "1.7")
-              (get-preference "texmacs->pdf:version") "8em")))))
+              (get-preference "texmacs->pdf:version") "12em")))))
 
 ;; Images ----------
 

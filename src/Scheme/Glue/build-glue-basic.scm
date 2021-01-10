@@ -32,6 +32,7 @@
   (has-printing-cmd? has_printing_cmd (bool))
   (x-gui? gui_is_x (bool))
   (qt-gui? gui_is_qt (bool))
+  (gui-version gui_version (string))
   (default-look-and-feel default_look_and_feel (string))
   (default-chinese-font default_chinese_font_name (string))
   (default-japanese-font default_japanese_font_name (string))
@@ -707,6 +708,7 @@
   (object->promise-widget as_promise_widget (promise_widget object))
   (tree-bounding-rectangle get_bounding_rectangle (array_int tree))
   (widget-size get_widget_size (array_int widget))
+  (texmacs-widget-size get_texmacs_widget_size (array_int widget))
   (show-balloon show_help_balloon (void widget int int))
   (get-style-menu get_style_menu (object))
   (hidden-package? hidden_package (bool string))
@@ -714,6 +716,7 @@
   (get-remove-package-menu get_remove_package_menu (object))
   (get-toggle-package-menu get_toggle_package_menu (object))
   (refresh-now windows_refresh (void string))
+  (get-screen-size get_screen_size (array_int))
 
   ;; buffers
   (buffer-list get_all_buffers (array_url))
@@ -763,6 +766,7 @@
   (view-delete delete_view (void url))
   (window-set-view window_set_view (void url url bool))
   (switch-to-buffer switch_to_buffer (void url))
+  (set-drd set_current_drd (void url))
 
   (window-list windows_list (array_url))
   (windows-number get_nr_windows (int))
@@ -788,8 +792,10 @@
 
   ;; transitional alternative windows; to be replaced by better solution
   (alt-window-handle window_handle (int))
-  (alt-window-create window_create (void int widget string bool))
   (alt-window-create-quit window_create (void int widget string command))
+  (alt-window-create-plain window_create_plain (void int widget string))
+  (alt-window-create-popup window_create_popup (void int widget string))
+  (alt-window-create-tooltip window_create_tooltip (void int widget string))
   (alt-window-delete window_delete (void int))
   (alt-window-show window_show (void int))
   (alt-window-hide window_hide (void int))

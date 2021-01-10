@@ -296,6 +296,8 @@ enrich_embedded_document (tree body, tree style) {
   doc << style; //compound ("style", style);
   doc << compound ("body", body);
   doc << compound ("initial", make_collection (initial));
+  if (initial->contains ("project"))
+    doc << compound ("project", initial ["project"]);
   return doc;
 }
 
@@ -603,19 +605,30 @@ window_handle () {
 }
 
 void
-window_create (int win, widget wid, string name, bool plain) {
+window_create (int win, widget wid, string name, command quit) {
   widget pww;
-  if (plain)
-    pww= plain_window_widget (wid, name);
-  else
-    pww= popup_window_widget (wid, name);
+  pww= plain_window_widget (wid, name, quit);
   window_table (win)= pww;
 }
 
 void
-window_create (int win, widget wid, string name, command quit) {
+window_create_plain (int win, widget wid, string name) {
   widget pww;
-  pww= plain_window_widget (wid, name, quit);
+  pww= plain_window_widget (wid, name);
+  window_table (win)= pww;
+}
+
+void
+window_create_popup (int win, widget wid, string name) {
+  widget pww;
+  pww= popup_window_widget (wid, name);
+  window_table (win)= pww;
+}
+
+void
+window_create_tooltip (int win, widget wid, string name) {
+  widget pww;
+  pww= tooltip_window_widget (wid, name);
   window_table (win)= pww;
 }
 

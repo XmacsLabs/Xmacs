@@ -129,6 +129,31 @@ edit_env_rep::add_lengths (string s1, string s2) {
 }
 
 string
+edit_env_rep::sub_lengths (string s1, string s2) {
+  SI l1= as_length (s1);
+  SI l2= as_length (s2);
+  SI un; string un_str;
+  get_length_unit (s1, un, un_str);
+  if (un==0) return "0tmpt";
+  double x= ((double) (l1-l2)) / ((double) un);
+  return as_string (x) * un_str;
+}
+
+string
+edit_env_rep::max_lengths (string s1, string s2) {
+  SI l1= as_length (s1);
+  SI l2= as_length (s2);
+  return (l1 >= l2? s1 : s2);
+}
+
+string
+edit_env_rep::min_lengths (string s1, string s2) {
+  SI l1= as_length (s1);
+  SI l2= as_length (s2);
+  return (l1 <= l2? s1 : s2);
+}
+
+string
 edit_env_rep::multiply_length (double x, string s) {
   SI l= as_length (s);
   SI un; string un_str;
@@ -208,6 +233,15 @@ SI
 edit_env_rep::as_eff_length (tree t) {
   if (is_int (t)) return as_int (t);
   else return as_length (t);
+}
+
+SI
+edit_env_rep::as_real_length (tree t) {
+  double old= magn_len;
+  magn_len= 1.0;
+  SI r= as_length (t);
+  magn_len= old;
+  return r;
 }
 
 space
@@ -326,21 +360,21 @@ get_magnification (string s) {
 ******************************************************************************/
 
 tree edit_env_rep::exec_cm_length () {
-  return tree (TMLEN, as_string (inch/2.54)); }
+  return tree (TMLEN, as_string (magn_len*inch/2.54)); }
 tree edit_env_rep::exec_mm_length () {
-  return tree (TMLEN, as_string (inch/25.4)); }
+  return tree (TMLEN, as_string (magn_len*inch/25.4)); }
 tree edit_env_rep::exec_in_length () {
-  return tree (TMLEN, as_string (inch)); }
+  return tree (TMLEN, as_string (magn_len*inch)); }
 tree edit_env_rep::exec_pt_length () {
-  return tree (TMLEN, as_string (inch/72.27)); }
+  return tree (TMLEN, as_string (magn_len*inch/72.27)); }
 tree edit_env_rep::exec_bp_length () {
-  return tree (TMLEN, as_string (inch/72.0)); }
+  return tree (TMLEN, as_string (magn_len*inch/72.0)); }
 tree edit_env_rep::exec_dd_length () {
-  return tree (TMLEN, as_string (0.376*inch/25.4)); }
+  return tree (TMLEN, as_string (0.376*magn_len*inch/25.4)); }
 tree edit_env_rep::exec_pc_length () {
-  return tree (TMLEN, as_string (12.0*inch/72.27)); }
+  return tree (TMLEN, as_string (12.0*magn_len*inch/72.27)); }
 tree edit_env_rep::exec_cc_length () {
-  return tree (TMLEN, as_string (4.531*inch/25.4)); }
+  return tree (TMLEN, as_string (4.531*magn_len*inch/25.4)); }
 
 tree
 edit_env_rep::exec_fs_length () {
@@ -417,15 +451,25 @@ tree
 edit_env_rep::exec_par_length () {
   SI width, d1, d2, d3, d4, d5, d6, d7;
   if (read (PAR_WIDTH) != "auto") {
+    double magn_old= magn_len;
+    magn_len= 1.0;
     width= get_length (PAR_WIDTH);
     int nr_cols= get_int (PAR_COLUMNS);
     if (nr_cols > 1) {
       SI col_sep= get_length (PAR_COLUMNS_SEP);
       width= ((width+col_sep) / nr_cols) - col_sep;
     }
+    magn_len= magn_old;
   }
   else get_page_pars (width, d1, d2, d3, d4, d5, d6, d7);
   width -= (get_length (PAR_LEFT) + get_length (PAR_RIGHT));
+  return tree (TMLEN, as_string (width));
+}
+
+tree
+edit_env_rep::exec_paw_length () {
+  SI width, d1, d2, d3, d4, d5, d6, d7;
+  get_page_pars (width, d1, d2, d3, d4, d5, d6, d7);
   return tree (TMLEN, as_string (width));
 }
 
@@ -439,7 +483,12 @@ edit_env_rep::exec_pag_length () {
 tree edit_env_rep::exec_tmpt_length () {
   return tree (TMLEN, "1"); }
 tree edit_env_rep::exec_px_length () {
-  return tree (TMLEN, as_string (pixel)); }
+#ifdef OS_MINGW
+  return tree (TMLEN, as_string ((int) (retina_zoom * pixel)));
+#else
+  return tree (TMLEN, as_string (pixel));
+#endif
+}
 
 tree edit_env_rep::exec_lcorner_length () {
   ornament_parameters ps= get_ornament_parameters ();

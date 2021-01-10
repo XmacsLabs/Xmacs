@@ -19,6 +19,20 @@
 	(dynamic fold-edit)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Where to find plug-in binaries
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(tm-define (set-manual-path p)
+  (:argument p "Path to plug-in binaries")
+  (:proposals p (if (cpp-has-preference? "manual path")
+                    (list (get-preference "manual path"))
+                    (list)))
+  (if (== p "")
+      (reset-preference "manual path")
+      (set-preference "manual path" p))
+  (restart-message))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Style package rules for sessions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -42,8 +56,10 @@
 	 (ses (get-env "prog-session")))
     (cons lan ses)))
 
-(tm-define (session-math-input?)
-  (ahash-ref session-math-input (session-key)))
+(tm-define (session-math-input? . opts)
+  (with key (if (< (length opts) 2) (session-key)
+                (cons (car opts) (cadr opts)))
+    (ahash-ref session-math-input key)))
 
 (tm-define (toggle-session-math-input)
   (:synopsis "Toggle mathematical input in sessions.")
@@ -461,7 +477,7 @@
 
 (tm-define (make-session lan ses)
   (let* ((ban `(output (document "")))
-	 (l (if (session-math-input?) 'input-math 'input))
+	 (l (if (session-math-input? lan ses) 'input-math 'input))
 	 (p (plugin-prompt lan ses))
 	 (in `(,l (document ,p) (document "")))
 	 (s `(session ,lan ,ses (document ,ban ,in))))
@@ -786,12 +802,6 @@
   (with l (selection-trees)
     (and (nnull? l) (forall? session-selection-one? l))))
 
-(define (session-selection sel*)
-  (let* ((sel (selection-as-document sel*))
-         (doc (tree-up (tree-ref sel 0)))
-         (ses (tree-up doc)))
-    `(session ,(cDr (tm-children ses)) ,sel)))
-
 (tm-define (clipboard-cut which)
   (:require (session-selection?))
   (let* ((l (selection-trees))
@@ -804,7 +814,8 @@
     (clipboard-copy which)
     (if (= k n)
         (tree-cut ses)
-        (begin
+        (let* ((sel `(session ,@(cDr (tm-children ses)) (document ,@l))))
+          (clipboard-set which sel)
           (tree-remove doc i k)
           (with next (tree-ref doc (min i (- n (+ k 1))))
             (cond ((field-context? next)

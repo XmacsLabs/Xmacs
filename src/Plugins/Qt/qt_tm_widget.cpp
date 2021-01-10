@@ -167,10 +167,15 @@ qt_tm_widget_rep::qt_tm_widget_rep(int mask, command _quit)
   int min_h= (int) floor (28 * retina_scale);
   bar->setMinimumHeight (min_h);
 #else
+#if (QT_VERSION >= 0x050000)
+  int min_h= (int) floor (24 * retina_scale);
+  bar->setMinimumHeight (min_h);
+#else
   if (retina_scale > 1.0) {
     int min_h= (int) floor (20 * retina_scale);
     bar->setMinimumHeight (min_h);
   }
+#endif
 #endif
   mw->setStatusBar (bar);
  
@@ -221,9 +226,19 @@ qt_tm_widget_rep::qt_tm_widget_rep(int mask, command _quit)
   //
   // NOTICE: setFixedHeight must be after setIconSize
   // TODO: the size of the toolbar should be calculated dynamically
+#if (QT_VERSION >= 0x050000)
   int toolbarHeight= 30;
-  modeToolBar->setFixedHeight (toolbarHeight);
+  mainToolBar->setFixedHeight (toolbarHeight + 8);
+  modeToolBar->setFixedHeight (toolbarHeight + 4);
   focusToolBar->setFixedHeight (toolbarHeight);
+#else
+#ifndef Q_OS_MAC
+  int toolbarHeight= 30 * retina_icons;
+  mainToolBar->setFixedHeight (toolbarHeight + 8);
+  modeToolBar->setFixedHeight (toolbarHeight + 4);
+  focusToolBar->setFixedHeight (toolbarHeight);  
+#endif
+#endif
   
   QWidget *cw= new QWidget();
   cw->setObjectName("central widget");  // this is important for styling toolbars.
@@ -345,6 +360,10 @@ qt_tm_widget_rep::qt_tm_widget_rep(int mask, command _quit)
 #ifndef Q_OS_MAC
   mainwindow()->menuBar()->setVisible (false);
 #endif  
+  QPalette pal;
+  QColor bgcol (160, 160, 160); // same as tm_background
+  pal.setColor (QPalette::Mid, bgcol);
+  mainwindow()->setPalette(pal);
 }
 
 qt_tm_widget_rep::~qt_tm_widget_rep () {
@@ -390,7 +409,8 @@ qt_tm_widget_rep::tweak_iconbar_size (QSize& sz) {
  \param name A unique identifier for the window (e.g. "TeXmacs:3")
  */
 widget
-qt_tm_widget_rep::plain_window_widget (string name, command _quit) {
+qt_tm_widget_rep::plain_window_widget (string name, command _quit, int b) {
+  (void) b;
   (void) _quit; // The widget already has a command. Don't overwrite. 
   orig_name = name;
   return this;
@@ -863,11 +883,28 @@ qt_tm_widget_rep::write (slot s, blackbox index, widget w) {
     case SLOT_FOCUS_ICONS:
       check_type_void (index, s);
     {
-      focus_icons_widget = concrete (w);
-      QList<QAction*>* list = focus_icons_widget->get_qactionlist();
-      if (list) {
-        replaceButtons (focusToolBar, list);
-        update_visibility();
+      bool can_update = true;
+#if (QT_VERSION >= 0x050000)
+      // BUG:
+      // there is a problem with updateActions  which apparently
+      // reset a running input method in Qt5.
+      //
+      // This is (probably) also relate to
+      // bug #47338 [CJK] input disappears immediately
+      // see http://lists.gnu.org/archive/html/texmacs-dev/2017-09/msg00000.html
+      
+      // HACK: we just disable the focus bar updating while preediting.
+      // This seems enough since the other toolbars are not usually updated
+      // while performing an input method keyboard sequence
+      if (canvas()) can_update = !canvas()->isPreediting();
+#endif
+      if (can_update) {
+        focus_icons_widget = concrete (w);
+        QList<QAction*>* list = focus_icons_widget->get_qactionlist();
+        if (list) {
+          replaceButtons (focusToolBar, list);
+          update_visibility();
+        }
       }
     }
       break;
@@ -949,6 +986,8 @@ qt_tm_widget_rep::set_full_screen(bool flag) {
     }
     else {
       QPalette pal;
+      QColor bgcol (160, 160, 160); // same as tm_background
+      pal.setColor (QPalette::Mid, bgcol);
       mainwindow()->setPalette(pal);
       bool cache = visibility[0];
       visibility[0] = false;

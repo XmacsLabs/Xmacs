@@ -1,4 +1,4 @@
-<TeXmacs|1.99.8>
+<TeXmacs|1.99.16>
 
 <style|source>
 
@@ -24,7 +24,7 @@
     </src-title>
   </active*>
 
-  <use-package|std|env-base|env-flush-math|env-theorem|env-float|header-article|section-article|title-generic|std-latex|cite-author-year|env-program>
+  <use-package|std|env-base|env-flush-math|env-theorem|env-float|header-article|section-article|title-generic|std-latex|cite-author-year|env-program|html-font-size>
 
   <active*|<\src-comment>
     TeX-like style parameters.
@@ -154,9 +154,7 @@
 
   <assign|section-clean|<macro|<reset-subsection>>>
 
-  <style-with|src-compact|all|<assign|display-std-env|<\macro|nr>
-    <arg|nr>
-  </macro>>>
+  <assign|display-std-env|<macro|nr|<arg|nr>>>
 
   <assign|paragraph-display-numbers|<macro|true>>
 
@@ -212,11 +210,11 @@
 
   \;
 
-  <new-list|itemize-1|<value|aligned-space-item>|<macro|x|<active*|<with|mode|math|<rigid|\<bullet\>>>>>>
+  <assign|item-1|<macro|<active*|<with|mode|math|\<bullet\>>>>>
 
-  <new-list|itemize-2|<value|aligned-space-item>|<macro|x|<active*|<with|mode|math|<rigid|\<cdot\>>>>>>
+  <assign|item-2|<macro|<active*|<with|mode|math|<rigid|\<cdot\>>>>>>
 
-  <new-list|itemize-3|<value|aligned-space-item>|<macro|x|>>
+  <assign|item-3|<macro|>>
 
   <active*|<\src-comment>
     Rendering of floating objects.
@@ -239,9 +237,11 @@
   </macro>>
 
   <assign|bib-list|<\macro|largest|body>
-    <\with|par-left|2em|par-first|0em|font-size|1|bibitem-nr|0|xbibitem*|<value|elsart-bibitem*>>
-      <arg|body>
-    </with>
+    <\description>
+      <\with|par-left|2em|par-first|0em|font-size|1|bibitem-nr|0|xbibitem*|<value|elsart-bibitem*>>
+        <arg|body>
+      </with>
+    </description>
   </macro>>
 
   <active*|<\src-comment>

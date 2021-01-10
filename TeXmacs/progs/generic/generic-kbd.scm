@@ -51,6 +51,7 @@
   ("-" "-")
   ("space" (kbd-space))
   ("tab" (kbd-tab))
+  ("enter" (kbd-return))
   ("return" (kbd-return))
   ("S-space" (kbd-shift-space))
   ("S-tab" (kbd-shift-tab))
@@ -151,6 +152,19 @@
   ("structured:geometry [" (geometry-slower))
   ("structured:geometry ]" (geometry-faster))
 
+  ("special left" (special-left))
+  ("special right" (special-right))
+  ("special up" (special-up))
+  ("special down" (special-down))
+  ("special home" (special-first))
+  ("special end" (special-last))
+  ("special pageup" (special-previous))
+  ("special pagedown" (special-next))
+  ("special return" (special-return))
+  ("special S-return" (special-shift-return))
+  ("special [" (special-back))
+  ("special ]" (special-forward))
+  
   ("altcmd \\" (make-hybrid))
   ("altcmd a" (make-tree))
   ("altcmd R" (make-rigid))
@@ -226,11 +240,28 @@
 
   ("table N t" (make 'tabular))
   ("table N T" (make 'tabular*))
-  ("table N w" (make-wrapped 'wide-tabular))
+  ("table N w" (make 'wide-tabular))
   ("table N b" (make 'block))
   ("table N B" (make 'block*))
-  ("table N W" (make-wrapped 'wide-block)))
+  ("table N W" (make 'wide-block)))
 
+(kbd-map
+  (:mode in-hybrid?)
+  ("space" (hybrid-kbd-space))
+  ("{" (hybrid-kbd-curly-left))
+  ("}" (hybrid-kbd-curly-right))
+  ("\\" (hybrid-kbd-backslash))
+  ("_" (hybrid-kbd-sub))
+  ("_ var" "_")
+  ("^" (hybrid-kbd-sup))
+  ("^ var" "^"))
+
+(kbd-map
+  (:mode in-smart-ref?)
+  ("altcmd ?" (make 'smart-ref))
+  ("altcmd ? var" (make 'reference))
+  ("altcmd ? var var" (make 'pageref)))
+  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Emacs keymap
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -373,16 +404,18 @@
   ("emacs:meta g" (kbd-cancel))
   ("emacs:meta [" (undo 0))
   ("emacs:meta ]" (redo 0))
-  ("emacs:meta C-tab" (geometry-circulate #t))
-  ("emacs:meta C-S-tab" (geometry-circulate #f))
-  ("emacs:meta C-[" (geometry-slower))
-  ("emacs:meta C-]" (geometry-faster))
+
+  ("A-C-tab" (geometry-circulate #t))
+  ("A-C-S-tab" (geometry-circulate #f))
+  ("A-C-[" (geometry-slower))
+  ("A-C-]" (geometry-faster))
 
   ("C-<" (cursor-history-backward))
   ("C->" (cursor-history-forward))
   ("C-!" (cursor-history-add (cursor-path)))
   ("C-#" (numbered-toggle (focus-tree)))
   ("C-*" (alternate-toggle (focus-tree)))
+  ("C-%" (inactive-toggle (focus-tree)))
   ("C-+" (zoom-in (sqrt (sqrt 2.0))))
   ("C--" (zoom-out (sqrt (sqrt 2.0))))
   ("C-0" (change-zoom-factor 1.0))
@@ -593,6 +626,7 @@
   ("macos ," (interactive open-preferences))
   ("macos [" (cursor-history-backward))
   ("macos ]" (cursor-history-forward))
+  ("macos _" (make 'nbhyph))
   ("macos left" (kbd-start-line))
   ("macos right" (kbd-end-line))
   ("macos up" (go-start))
@@ -643,6 +677,8 @@
   ("altcmd x" (interactive footer-eval))
   ("altcmd X" (interactive exec-interactive-command))
 
+  ("A-space var" (make 'nbsp))
+
   ;("C-a" (kbd-start-line)) ; conflict with ("text a" (make 'abbr))
   ;("C-e" (kbd-end-line))   ; conflict with ("text e" (make-tmlist 'enumerate))
   ("C-g" (selection-cancel))
@@ -661,6 +697,13 @@
   ("C-space" (make-space "0.2spc"))
   ("C-S-space" (make-space "-0.2spc")))
 
+(kbd-map
+  (:profile macos)
+  (:mode in-smart-ref?)
+  ("C-?" (make 'smart-ref))
+  ("C-? var" (make 'reference))
+  ("C-? var var" (make 'pageref)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Windows keymap
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -670,6 +713,7 @@
 
   ;; standard Windows shortcuts
   ("windows F4" (close-document))
+  ("windows S-F4" (close-document*))
   ("windows left" (traverse-left))
   ("windows right" (traverse-right))
   ("windows home" (go-start))
@@ -680,12 +724,10 @@
   ("windows S-end" (kbd-select go-end))
   ("windows S-space" (make 'nbsp))
   ("windows _" (make 'nbhyph))
-  ("windows -" "--")
-  ("windows A--" (make 'emdash))
   ("windows A-." "<ldots>")
   ("windows A-c" (make 'copyright))
-  ("windows e" (make-wrapped 'footnote))
-  ("windows F" (make-wrapped 'footnote))
+  ("windows e" (make 'footnote))
+  ("windows F" (make 'footnote))
   ("windows h" (interactive-replace))
   ("windows k" (make 'hlink))
   ("windows K" (toggle-small-caps))
@@ -698,6 +740,7 @@
   ("S-insert" (kbd-paste))
   ("C-insert" (kbd-copy))
   ("A-F4" (close-document))
+  ("A-S-F4" (close-document*))
   ("A-left" (cursor-history-backward))
   ("A-right" (cursor-history-forward))
 
@@ -773,6 +816,7 @@
   ;; further shortcuts for Windows look and feel
   ("windows g" (selection-cancel))
   ("windows l" (refresh-window))
+  ("windows =" (change-zoom-factor 1.0))
 
   ("altcmd g" (kbd-cancel))
   ("altcmd q" (make 'symbol))

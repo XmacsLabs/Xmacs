@@ -1,4 +1,4 @@
-<TeXmacs|1.99.11>
+<TeXmacs|1.99.16>
 
 <style|<tuple|source|std>>
 
@@ -597,15 +597,21 @@
 
   <assign|on-event|<xmacro|args|<style-with|src-compact|none|<locus|<id|<hard-id|<arg|args|1>>>|<link|<arg|args|0>|<id|<hard-id|<arg|args|1>>>|<map-args|identity|script|args|2>>|<arg|args|1>>>>>
 
-  <assign|mouse-over-balloon|<macro|x|y|halign|valign|<on-event|mouse-over|<arg|x>|display-balloon|<quote-arg|x>|<arg|y>|<arg|halign>|<arg|valign>|<box-info|<arg|y>|wh>>>>
+  <assign|mouse-over-balloon|<macro|x|y|halign|valign|<on-event|mouse-over|<arg|x>|display-balloon|<quote-arg|x>|<arg|y>|<arg|halign>|<arg|valign>|default>>>
 
-  <assign|mouse-over-balloon*|<macro|x|y|halign|valign|<on-event|mouse-over|<arg|x>|display-balloon*|<quote-arg|x>|<arg|y>|<arg|halign>|<arg|valign>|<box-info|<arg|y>|wh>>>>
+  <assign|mouse-over-balloon*|<macro|x|y|halign|valign|<on-event|mouse-over|<arg|x>|display-balloon|<quote-arg|x>|<arg|y>|<arg|halign>|<arg|valign>|mouse>>>
 
-  <assign|focus-balloon|<macro|x|y|halign|valign|<on-event|focus|<arg|x>|display-balloon|<quote-arg|x>|<arg|y>|<arg|halign>|<arg|valign>|<box-info|<arg|y>|wh>>>>
+  <assign|focus-balloon|<macro|x|y|halign|valign|<on-event|focus|<arg|x>|display-balloon|<quote-arg|x>|<arg|y>|<arg|halign>|<arg|valign>|keyboard>>>
 
   <assign|help-balloon-color|pastel yellow>
 
   <assign|help-balloon|<macro|x|y|halign|valign|<mouse-over-balloon*|<arg|x>|<colored-frame|<value|help-balloon-color>|<arg|y>>|<arg|halign>|<arg|valign>>>>
+
+  <assign|preview-bg-color|#edc>
+
+  <assign|preview-balloon|<macro|body|<tabular|<tformat|<cwith|1|1|1|1|cell-hyphen|t>|<cwith|1|1|1|1|cell-background|<value|preview-bg-color>>|<twith|table-width|40em>|<twith|table-hmode|min>|<cwith|1|1|1|1|cell-lsep|1spc>|<cwith|1|1|1|1|cell-rsep|1spc>|<cwith|1|1|1|1|cell-bsep|1spc>|<cwith|1|1|1|1|cell-tsep|1spc>|<table|<row|<\cell>
+    <arg|body>
+  </cell>>>>>>>
 
   <\active*>
     <\src-comment>

@@ -1,4 +1,4 @@
-<TeXmacs|1.99.6>
+<TeXmacs|1.99.16>
 
 <style|source>
 
@@ -24,7 +24,7 @@
     </src-title>
   </active*>
 
-  <use-package|std|env-base|env-math|env-theorem|env-float|header-generic|section-book|title-generic|std-latex|cite-author-year|std-automatic|two-columns>
+  <use-package|std|env-base|env-math|env-theorem|env-float|header-generic|section-book|title-generic|std-latex|cite-author-year|std-automatic|two-columns|html-font-size>
 
   <active*|<\src-comment>
     Page layout.
@@ -172,13 +172,21 @@
 
   \;
 
-  <new-list|itemize-1|<value|aligned-item>|<macro|x|<active*|<with|mode|math|<rigid|\<bullet\>>>>>>
+  <assign|item-1|<macro|<active*|<with|mode|math|\<bullet\>>>>>
 
-  <new-list|itemize-2|<value|aligned-item>|<macro|x|<active*|<math|->>>>
+  <assign|item-2|<macro|<active*|<with|mode|math|<rigid|->>>>>
 
-  <new-list|itemize-3|<value|aligned-item>|<macro|x|<active*|<math|\<ast\>>>>>
+  <assign|item-3|<macro|<active*|<math|\<ast\>>>>>
 
-  <new-list|itemize-4|<value|aligned-item>|<macro|x|<active*|<math|\<cdot\>>>>>
+  <assign|item-4|<macro|<active*|<math|\<cdot\>>>>>
+
+  <new-list|itemize-1|<value|aligned-item>|<macro|name|<item-tag>>>
+
+  <new-list|itemize-2|<value|aligned-item>|<macro|name|<item-tag>>>
+
+  <new-list|itemize-3|<value|aligned-item>|<macro|name|<item-tag>>>
+
+  <new-list|itemize-4|<value|aligned-item>|<macro|name|<item-tag>>>
 
   \;
 
@@ -218,13 +226,21 @@
 
   <assign|enumerate-level|0>
 
-  <new-list|enumerate-1|<value|aligned-dot-item>|<macro|name|<number|<arg|name>|arabic>>>
+  <assign|enum-1|<macro|name|<number|<arg|name>|arabic>>>
 
-  <new-list|enumerate-2|<value|aligned-item>|<macro|name|(<number|<arg|name>|alpha>)>>
+  <assign|enum-2|<macro|name|<number|<arg|name>|alpha>>>
 
-  <new-list|enumerate-3|<value|aligned-dot-item>|<macro|name|<number|<arg|name>|roman>>>
+  <assign|enum-3|<macro|name|<number|<arg|name>|roman>>>
 
-  <new-list|enumerate-4|<value|aligned-dot-item>|<macro|name|<number|<arg|name>|Alpha>>>
+  <assign|enum-4|<macro|name|<number|<arg|name>|Alpha>>>
+
+  <new-list|enumerate-1|<value|aligned-dot-item>|<macro|name|<enum-tag|<arg|name>>>>
+
+  <new-list|enumerate-2|<value|aligned-item>|<macro|name|<enum-tag|<arg|name>>>>
+
+  <new-list|enumerate-3|<value|aligned-dot-item>|<macro|name|<enum-tag|<arg|name>>>>
+
+  <new-list|enumerate-4|<value|aligned-dot-item>|<macro|name|<enum-tag|<arg|name>>>>
 
   <assign|enumerate-reduce|<macro|nr|<plus|<mod|<minus|<arg|nr>|1>|4>|1>>>
 
@@ -307,9 +323,11 @@
   </active*>
 
   <assign|bib-list|<\macro|largest|body>
-    <\with|par-left|1em|par-first|-1em|font-size|1|bibitem-nr|0>
-      <arg|body>
-    </with>
+    <\description>
+      <\with|par-left|1em|par-first|-1em|font-size|1|bibitem-nr|0>
+        <arg|body>
+      </with>
+    </description>
   </macro>>
 
   <assign|bibliography-text|<macro|<rule|9cm|1pt>>>

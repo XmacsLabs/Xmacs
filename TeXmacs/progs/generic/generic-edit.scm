@@ -15,6 +15,7 @@
   (:use (utils library tree)
 	(utils library cursor)
 	(utils edit variants)
+        (utils misc tooltip)
         (bibtex bib-complete)
 	(source macro-search)))
 
@@ -149,7 +150,7 @@
                      "tab"))))
 
 (tm-define (kbd-variant t forwards?)
-  (:require (and (tree-in? t '(label reference pageref eqref))
+  (:require (and (tree-in? t '(label reference pageref eqref smart-ref))
                  (cursor-inside? t)))
   (if (complete-try?) (noop)))
 
@@ -278,14 +279,15 @@
   (and (tree-compound? t) (tree-label-extension? (tree-label t))))
 
 (tm-define (focus-has-preferences? t)
-  (:require (tree-in? t '(reference pageref eqref hlink locus ornament)))
+  (:require (tree-in? t '(reference pageref eqref smart-ref
+                          hlink locus ornament)))
   #t)
 
 (tm-define (focus-has-parameters? t)
   (focus-has-preferences? t))
 
-(tm-define (focus-can-search? t)
-  #f)
+(tm-define (focus-can-search? t) #f)
+(tm-define (focus-has-search-menu? t) #f)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tree traversal
@@ -531,6 +533,55 @@
   (geometry-incremental (focus-tree) #t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Special structured editing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(tm-define (special-navigate t direction)
+  (and-with p (tree-outer t)
+    (special-navigate p direction)))
+
+(tm-define (special-horizontal t forwards?)
+  (and-with p (tree-outer t)
+    (special-horizontal p forwards?)))
+
+(tm-define (special-vertical t down?)
+  (and-with p (tree-outer t)
+    (special-vertical p down?)))
+
+(tm-define (special-extremal t forwards?)
+  (and-with p (tree-outer t)
+    (special-extremal p forwards?)))
+
+(tm-define (special-incremental t down?)
+  (and-with p (tree-outer t)
+    (special-incremental p down?)))
+
+(tm-define (special-back)
+  (special-navigate (focus-tree) :previous))
+(tm-define (special-forward)
+  (special-navigate (focus-tree) :next))
+(tm-define (special-return)
+  (special-navigate (focus-tree) :first))
+(tm-define (special-shift-return)
+  (special-navigate (focus-tree) :last))
+(tm-define (special-left)
+  (special-horizontal (focus-tree) #f))
+(tm-define (special-right)
+  (special-horizontal (focus-tree) #t))
+(tm-define (special-up)
+  (special-vertical (focus-tree) #f))
+(tm-define (special-down)
+  (special-vertical (focus-tree) #t))
+(tm-define (special-first)
+  (special-extremal (focus-tree) #f))
+(tm-define (special-last)
+  (special-extremal (focus-tree) #t))
+(tm-define (special-previous)
+  (special-incremental (focus-tree) #f))
+(tm-define (special-next)
+  (special-incremental (focus-tree) #t))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tree editing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -680,12 +731,12 @@
 	"ornament-sunny-color" "ornament-shadow-color"))
 
 (tm-define (standard-parameters l)
-  (:require (in? l '("reference" "pageref" "eqref" "label" "tag")))
+  (:require (in? l '("reference" "pageref" "eqref" "smart-ref" "label" "tag")))
   (list))
 
 (tm-define (search-parameters l)
   (:require (in? (if (string? l) l (symbol->string l))
-                 '("reference" "pageref" "eqref" "hlink")))
+                 '("reference" "pageref" "eqref" "smart-ref" "hlink")))
   (standard-parameters "locus"))
 
 (tm-define (parameter-choice-list l)
@@ -810,34 +861,39 @@
       (cons (list-head l nr) (make-rows (list-tail l nr) nr))
       (list (fill-row l nr))))
 
-(define (make-thumbnails-sub l)
-  (define (mapper x)
-    `(image ,(url->delta-unix x) "0.22par" "" "" ""))
-  (let* ((l1 (map mapper l))
-         (l2 (make-rows l1 4))
+(define (make-thumbnails-sub l nr)
+  (let* ((w (string-append (number->string (- (/ 1.0 nr) 0.02)) "par"))
+         (mapper (lambda (x) `(image ,(url->delta-unix x) ,w "" "" "")))       
+         (l1 (map mapper l))
+         (l2 (make-rows l1 nr))
          (l3 (map (lambda (r) `(row ,@(map (lambda (c) `(cell ,c)) r))) l2)))
     (insert `(tabular* (tformat (twith "table-width" "1par")
                                 (twith "table-hyphen" "yes")
                                 (table ,@l3))))))
 
-(tm-define (make-thumbnails)
-  (:interactive #t)
+(tm-define (make-thumbnails nr)
+  (:argument nr "Number of pictures per row")
+  (if (string? nr) (set! nr (min (string->number nr) 32)))
   (user-url "Picture directory" "directory" 
    (lambda (dir) 
      (let* ((find (url-append dir (thumbnail-suffixes)))
                   (files (url->list (url-expand (url-complete find "r"))))
                   (base (buffer-master))
                   (rel-files (map (lambda (x) (url-delta base x)) files)))
-           (if (nnull? rel-files) (make-thumbnails-sub rel-files))))))
+           (if (nnull? rel-files) (make-thumbnails-sub rel-files nr))))))
    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routines for floats
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(tm-define (mini-flow-context? t)
+  (tree-in? t (mini-flow-tag-list)))
+
 (tm-define (in-main-flow?)
   (:synopsis "Are we inside the main document flow?")
   ;; FIXME: this routine can be improved quite a lot
-  (not (or (inside? 'table) (inside? 'graphics))))
+  ;; we might make this property part of the DRD
+  (not (tree-innermost mini-flow-context?)))
 
 (tm-define (make-marginal-note)
   (:synopsis "Insert a marginal note.")
@@ -905,52 +961,13 @@
 (define (integer-floor x)
   (inexact->exact (floor x)))
 
-(tm-define (display-balloon body balloon halign valign extents)
+(tm-define (display-balloon body balloon halign valign type)
   (:secure #t)
-  (with (x1 y1 x2 y2) (tree-bounding-rectangle body)
-    (let* ((zf (get-window-zoom-factor))
-           (sf (/ 4.0 zf))
-           (balloon* `(with "magnification" ,(number->string zf) ,balloon))
-           (w (widget-texmacs-output balloon* '(style "generic")))
-           (ww (integer-floor (/ (tree->number (tree-ref extents 0)) sf)))
-           (wh (integer-floor (/ (tree->number (tree-ref extents 1)) sf)))
-           (ha (tree->stree halign))
-           (va (tree->stree valign))
-           (x (cond ((== ha "Left") (- x1 ww))
-                    ((== ha "left") x1)
-                    ((== ha "center") (quotient (+ x1 x2 (- ww)) 2))
-                    ((== ha "right") (- x2 ww))
-                    ((== ha "Right") x2)
-                    (else x1)))
-           (y (cond ((== va "Bottom") (- y1 (* 5 256)))
-                    ((== va "bottom") (+ y1 wh))
-                    ((== va "center") (quotient (+ y1 y2 wh) 2))
-                    ((== va "top") y2)
-                    ((== va "Top") (+ y2 wh (* 5 256)))
-                    (else (- y1 (* 5 256))))))
-      ;;(display* "size= " (widget-size w) "\n")
-      (show-balloon w x y))))
-
-(tm-define (display-balloon* body balloon halign valign extents)
-  (:secure #t)
-  (with (mx my) (get-mouse-position)
-    (let* ((zf (get-window-zoom-factor))
-           (sf (/ 4.0 zf))
-           (balloon* `(with "magnification" ,(number->string zf) ,balloon))
-           (w (widget-texmacs-output balloon* '(style "generic")))
-           (ww (integer-floor (/ (tree->number (tree-ref extents 0)) sf)))
-           (wh (integer-floor (/ (tree->number (tree-ref extents 1)) sf)))
-           (ha (tree->stree halign))
-           (va (tree->stree valign))
-           (x (cond ((in? ha (list "Left" "left")) (- (- mx ww) (* 3 256)))
-                    ((== ha "center") (+ (- mx (quotient ww 2)) (* 5 256)))
-                    ((in? ha (list "right" "Right")) (+ mx (* 10 256)))
-                    (else (+ mx (* 3 256)))))
-           (y (cond ((in? va (list "Bottom" "bottom")) (- my (* 16 256)))
-                    ((== va "center") (- (+ my (quotient wh 2)) (* 8 256)))
-                    ((in? va (list "top" "Top")) (+ my wh (* 5 256)))
-                    (else (- my (* 5 256))))))
-      (show-balloon w x y))))
+  (let* ((kind (or (tm->string type) "default"))
+         (ha (or (tm->string halign) (if (== kind "mouse") "right" "left")))
+         (va (or (tm->string valign) "Bottom")))
+    (show-tooltip (or (tree->path body) (tree->stree body))
+                  body balloon ha va kind 0.833333)))
 
 (tm-define (make-balloon)
   (:synopsis "Insert a balloon.")
@@ -990,6 +1007,83 @@
         (if (== rep "no") (set! rep "false"))
         (insert `(video ,(url->delta-unix u) ,w ,h ,len ,rep)))
     "Width" "Height" "Length" "Repeat?"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Labels attached to markup
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(tm-define (focus-label t) #f)
+
+(tm-define (focus-get-label t)
+  (and-with l (focus-label t)
+    (tm->string (tm-ref l 0))))
+
+(tm-define (focus-set-label t val)
+  (and-with l (focus-label t)
+    (tree-set l 0 val)))
+
+(tm-define (focus-list-search-label l)
+  (and (nnull? l)
+       (or (focus-search-label (car l))
+           (focus-list-search-label (cdr l)))))
+
+(tm-define (focus-search-label t)
+  (cond ((tm-func? t 'label 1) t)
+        ((tm-in? t '(document concat table row cell))
+         (focus-list-search-label (tm-children t)))
+        ((tm-in? t '(tformat with surround))
+         (focus-search-label (cAr (tm-children t))))
+        (else #f)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Special keyboard behaviour when entering hybrid commands
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(tm-define (hybrid-kbd-space)
+  (activate-hybrid #f)
+  (insert " "))
+
+(tm-define (hybrid-kbd-curly-left)
+  (with-innermost t 'hybrid
+    (with cmd (tm->string (tm-ref t 0))
+      (cond ((or (not cmd) (== cmd "begin"))
+             (insert "{"))
+            ((in? cmd '("left\\" "right\\"))
+             (insert "{")
+             (activate-hybrid #f))
+            (else
+             (activate-hybrid #f))))))
+
+(tm-define (hybrid-kbd-curly-right)
+  (with-innermost t 'hybrid
+    (with cmd (tm->string (tm-ref t 0))
+      (cond ((not cmd)
+             (activate-hybrid #f))
+            ((string-starts? (tm->string cmd) "begin{")
+             (tree-remove (tm-ref t 0) 0 6)
+             (activate-hybrid #f))
+            ((in? cmd '("left\\" "right\\"))
+             (insert "}")
+             (activate-hybrid #f))
+            (else
+             (activate-hybrid #f))))))
+
+(tm-define (hybrid-kbd-backslash)
+  (with-innermost t 'hybrid
+    (with cmd (tm->string (tm-ref t 0))
+      (cond ((in? cmd '("left" "right"))
+             (insert "\\"))
+            (else
+             (activate-hybrid #f)
+             (make-hybrid))))))
+
+(tm-define (hybrid-kbd-sub)
+  (activate-hybrid #f)
+  (make-script #f #t))
+
+(tm-define (hybrid-kbd-sup)
+  (activate-hybrid #f)
+  (make-script #t #t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Search, replace, spell and tab-completion

@@ -29,21 +29,7 @@
 (menu-bind bookmarks-menu)
 (menu-bind test-menu)
 (menu-bind help-icons (if (in-session?) (link session-help-icons)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; The Remote menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(menu-bind remote-menu
-  (if (and (null? remote-client-list) (not (server-started?)))
-      (link start-client-menu)
-      ;;---
-      ;;(link start-server-menu)
-      )
-  (if (and (null? remote-client-list) (server-started?))
-      (link server-menu))
-  (if (nnull? remote-client-list)
-      (link client-menu)))
+(menu-bind comment-menu)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The TeXmacs main menu
@@ -64,6 +50,8 @@
           (=> "Source" (link source-menu)))
       (if (with-linking-tool?)
           (=> "Link" (link link-menu)))
+      (if (in-comment?)
+          (=> "Comment" (link comment-menu)))
       (if (in-presentation?)
           (=> "Dynamic" (link dynamic-menu)))
       (if (style-has? "icourse-dtd")
@@ -210,7 +198,11 @@
    (cursor-history-forward))
   (if (in-presentation?)
     /
-    (link dynamic-icons)))
+    (link dynamic-icons))
+  (if (with-remote-tool?)
+    /
+    (link remote-icons))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The TeXmacs side tools

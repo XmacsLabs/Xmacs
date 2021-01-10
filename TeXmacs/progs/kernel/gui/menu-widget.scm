@@ -43,6 +43,7 @@
     | ;; |
     (group :%1)
     (text :%1)
+    (invisible :%1)
     (glue :boolean? :boolean? :integer? :integer?)
     (color :%1 :boolean? :boolean? :integer? :integer?)
     (:menu-wide-label :%1)
@@ -380,10 +381,10 @@
 	      (logior style (+ widget-style-inert widget-style-grey)))))))
 
 (define (make-menu-entry-attrs label action opt-key opt-check)
-  (cond ((match? label '(shortcut :%1 :string?))
-         (make-menu-entry-attrs (cadr label) action (caddr label) opt-check))
-        ((match? label '(check :%1 :string? :%1))
+  (cond ((match? label '(check :%1 :string? :%1))
          (make-menu-entry-attrs (cadr label) action opt-key (cddr label)))
+        ((match? label '(shortcut :%1 :string?))
+         (make-menu-entry-attrs (cadr label) action (caddr label) opt-check))
         (else (values label action opt-key opt-check))))
 
 (define (make-menu-entry-sub p style bar?)
@@ -692,6 +693,8 @@
          ,(lambda (p style bar?) (list (make-menu-group (cadr p) style))))
   (text (:%1)
          ,(lambda (p style bar?) (list (make-menu-text (cadr p) style))))
+  (invisible (:%1)
+             ,(lambda (p style bar?) (list)))
   (symbol (:string? :*)
           ,(lambda (p style bar?) (list (make-menu-symbol p style))))
   (texmacs-output (:%2)
@@ -887,6 +890,12 @@
                        (cadr a)
                        ((caddr a)))
                  (replace-procedures (cadr p)))))
+        ((match? (car p) '(shortcut :menu-wide-label :string?))
+         (with a (cdar p)
+           (list (list 'shortcut
+                       (menu-expand (car a))
+                       (cadr a))
+                 (replace-procedures (cadr p)))))
         ((match? (car p) ':menu-wide-label)
          (replace-procedures p))
         (else (menu-expand-list p))))
@@ -905,6 +914,7 @@
   (| ,(lambda (p) `(| ,@(menu-expand-list (cdr p)))))
   (group ,replace-procedures)
   (text ,replace-procedures)
+  (invisible ,replace-procedures)
   (glue ,replace-procedures)
   (color ,replace-procedures)
   (symbol ,replace-procedures)
@@ -1023,7 +1033,7 @@
          (lbd (lambda x (apply cmd x) (alt-window-delete win)))
          (com (object->command (menu-protect lbd)))
          (wid (wid-promise com)))
-    (alt-window-create win wid (translate name) #t)
+    (alt-window-create-plain win wid (translate name))
     (alt-window-show win)))
 
 (tm-define (interactive-print done u)
@@ -1098,3 +1108,8 @@
 (tm-define (show-message msg title)
   (:interactive #t)
   (dialogue-window (message-widget msg) noop title))
+
+(tm-define (restart-message)
+  (:interactive #t)
+  (show-message "Restart TeXmacs in order to let changes take effect"
+                "Notification"))

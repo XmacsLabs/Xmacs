@@ -46,6 +46,14 @@
   (require-format x '(:%1 :%2 :*))
   `(,(car x) ,(cadr x) ,(caddr x) (menu-dynamic ,@(cdddr x))))
 
+(define (gui-make-push-focus x)
+  (require-format x '(push-focus :%1 :*))
+  `(with pushed-tree ,(cadr x)
+     (with pushed-focus (tree->fingerprint pushed-tree)
+       (menu-dynamic
+         (invisible (tree->path pushed-tree))
+         ,@(cddr x)))))
+
 (define (gui-make-cond x)
   (require-format x '(cond :*))
   (with fun (lambda (x)
@@ -78,6 +86,10 @@
 (define (gui-make-text x)
   (require-format x '(text :%1))
   `($menu-text ,(cadr x)))
+
+(define (gui-make-invisible x)
+  (require-format x '(invisible :%1))
+  `($menu-invisible ,(cadr x)))
 
 (define (gui-make-glue x)
   (require-format x '(glue :%4))
@@ -142,6 +154,10 @@
 (define (gui-make-check x)
   (require-format x '(check :%3))
   `($check ,(gui-make (cadr x)) ,(caddr x) ,(cadddr x)))
+
+(define (gui-make-shortcut x)
+  (require-format x '(shortcut :%2))
+  `($shortcut* ,(gui-make (cadr x)) ,(caddr x)))
 
 (define (gui-make-balloon x)
   (require-format x '(balloon :%2))
@@ -347,6 +363,7 @@
   (let ,gui-make-let)
   (let* ,gui-make-let)
   (with ,gui-make-with)
+  (push-focus ,gui-make-push-focus)
   (receive ,gui-make-with)
   (cond ,gui-make-cond)
   (loop ,gui-make-loop)
@@ -354,6 +371,7 @@
   (refreshable ,gui-make-refreshable)
   (group ,gui-make-group)
   (text ,gui-make-text)
+  (invisible ,gui-make-invisible)
   (glue ,gui-make-glue)
   (color ,gui-make-color)
   (texmacs-output ,gui-make-texmacs-output)
@@ -370,6 +388,7 @@
   (concat ,gui-make-concat)
   (verbatim ,gui-make-verbatim)
   (check ,gui-make-check)
+  (shortcut ,gui-make-shortcut)
   (balloon ,gui-make-balloon)
   (-> ,gui-make-submenu)
   (=> ,gui-make-top-submenu)
@@ -535,7 +554,7 @@
 
 (tm-menu (my-pattern-menu cmd)
   (tile 8
-    (for (col (get-preferred-list "my patterns" 16))
+    (for (col (get-preferred-list "my patterns" 32))
       (with args (cons* (cadr col) "100%" "100@" (cddddr col))
         (with col2 (apply tm-pattern args)
           (explicit-buttons
@@ -590,7 +609,7 @@
      (dynamic (standard-pattern-menu (lambda (answer) ,@(cddr x))
                                      "$TEXMACS_PATH/misc/patterns/vintage"
                                      ,(cadr x)))
-     (when (nnull? (get-preferred-list "my patterns" 16))
+     (when (nnull? (get-preferred-list "my patterns" 32))
        ---
        (dynamic (my-pattern-menu (lambda (answer) ,@(cddr x)))))
      ;;(assuming (nnull? (clipart-list))

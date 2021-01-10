@@ -35,12 +35,12 @@
       (link calc-table-menu)
       ---)
   (if (not (in-math?))
-      ("Wide tabular" (make-wrapped 'wide-tabular)))
+      ("Wide tabular" (make 'wide-tabular)))
   (when (not (selection-active-non-small?))
     ("Plain tabular" (make 'tabular))
     ("Centered tabular" (make 'tabular*)))
   (if (not (in-math?))
-      ("Wide block" (make-wrapped 'wide-block)))
+      ("Wide block" (make 'wide-block)))
   (when (not (selection-active-non-small?))
     ("Plain block" (make 'block))
     ("Centered block" (make 'block*)))
@@ -268,6 +268,7 @@
   ("Palette" (interactive-background
               (lambda (col) (cell-set-background col)) '()))
   ("Pattern" (open-pattern-selector cell-set-background "1cm"))
+  ("Gradient" (open-gradient-selector cell-set-background))
   ("Picture" (open-background-picture-selector cell-set-background))
   ("Other" (interactive cell-set-background)))
 
@@ -367,8 +368,9 @@
   (if (== (get-cell-mode) "column") (group "Column"))
   (if (== (get-cell-mode) "table") (group "Cells"))
   (link cell-menu)
+  (dynamic (focus-hidden-menu t))
   (dynamic (focus-extra-menu t))
-  (dynamic (focus-hidden-menu t)))
+  (dynamic (focus-label-menu t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icons for manipulation of tables

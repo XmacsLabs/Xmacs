@@ -19,48 +19,91 @@
 prog_language_rep::prog_language_rep (string name):
   abstract_language_rep (name)
 {
-  debug_packrat << "Building the " * name * " language parser" << LF;
+  if (DEBUG_PARSER)
+    debug_packrat << "Building the " * name * " language parser" << LF;
 
   string use_modules= "(use-modules (prog " * name * "-lang))";
   eval (use_modules);
 
-  // Load (<name>-keywords)
-  string get_the_keywords_tree= "(tm->tree (" * name * "-keywords))";
-  tree keyword_tree= as_tree (eval (get_the_keywords_tree));
-  customize_keyword (keyword_parser, keyword_tree);
+  tree keyword_config= get_parser_config (name, "keyword");
+  customize_keyword (keyword_parser, keyword_config);
 
-  // Load (<name>-operators)
-  string get_the_operators_tree= "(tm->tree (" * name * "-operators))";
-  tree operator_tree= as_tree (eval (get_the_operators_tree));
-  customize_operator (operator_parser, operator_tree);
+  tree operator_config= get_parser_config (name, "operator");
+  customize_operator (operator_config);
 
-  // Load (<name>-numbers)
-  string get_the_numbers_tree= "(tm->tree (" * name * "-numbers))";
-  tree number_tree= as_tree (eval (get_the_numbers_tree));
-  customize_number (number_parser, number_tree);
+  tree number_config= get_parser_config (name, "number");
+  customize_number (number_config);
 
-  // Load (<name>-inline-comment-starts)
-  list<string> inline_comment_starts_list=
-    as_list_string (eval ("(" * name * "-inline-comment-starts)"));
-  array<string> inline_comment_starts;
-  for (int i=0; i<N(inline_comment_starts_list); i++) {
-    inline_comment_starts << inline_comment_starts_list[i];
+  tree string_config= get_parser_config (name, "string");
+  customize_string (string_config);
+
+  tree comment_config= get_parser_config (name, "comment");
+  customize_comment (comment_config);
+
+  tree preprocessor_config= get_parser_config (name, "preprocessor");
+  customize_preprocessor (preprocessor_config);
+}
+
+tree
+prog_language_rep::get_parser_config(string lan, string key) {
+  string cmd = "(tm->tree (parser-feature " * raw_quote (lan) * " " * raw_quote (key) * "))";
+  return as_tree (eval (cmd));
+}
+
+void
+prog_language_rep::customize_keyword (keyword_parser_rep p_keyword_parser, tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree group_of_keywords= config[i];
+    string group= get_label (group_of_keywords);
+    for (int j=0; j<N(group_of_keywords); j++) {
+      string word= get_label (group_of_keywords[j]);
+      p_keyword_parser.put (word, group);
+    }
   }
-  inline_comment_parser.set_starts (inline_comment_starts);
+}
 
-  // Load (<name>-escape-sequences)
-  list<string> get_list_of_escapes=
-    as_list_string (eval ("(" * name * "-escape-sequences)"));
-  list<tree> l_escape= as_list_tree (eval (get_list_of_escapes));
-  for (int i=0; i<N(l_escape); i++) {
-    tree feature= l_escape[i];
+void
+prog_language_rep::customize_operator (tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree group_of_opers= config[i];
+    string group= get_label (group_of_opers);
+    for (int j=0; j<N(group_of_opers); j++) {
+      string word= get_label (group_of_opers[j]);
+      operator_parser.put (tm_encode (word), group);
+    }
+  }
+}
+
+void
+prog_language_rep::customize_number (tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree feature= config[i];
+    string name= get_label (feature);
+    if (name == "bool_features") {
+      for (int j=0; j<N(feature); j++) {
+        string key= get_label (feature[j]);
+        number_parser.insert_bool_feature (key);
+      }
+    } else if (name == "separator" && N(feature) == 1) {
+      string key= get_label (feature[0]);
+      number_parser.support_separator (key);
+    } else if (name == "suffix") {
+      customize_keyword (number_parser.get_suffix_parser(), feature);
+    }
+  }
+}
+
+void
+prog_language_rep::customize_string (tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree feature= config[i];
     string name= get_label (feature);
     if (name == "bool_features") {
       for (int j=0; j<N(feature); j++) {
         string key= get_label (feature[j]);
         escaped_char_parser.insert_bool_feature (key);
       }
-    } else if (name == "sequences") {
+    } else if (name == "escape_sequences") {
       array<string> escape_seq;
       for (int j=0; j<N(feature); j++) {
         string key= get_label (feature[j]);
@@ -74,7 +117,43 @@ prog_language_rep::prog_language_rep (string name):
   hashmap<string, string> pairs;
   pairs("\"") = "\"";
   pairs("\'")= "\'";
-  string_parser.set_pairs(pairs);
+  string_parser.set_pairs (pairs);
+  if (DEBUG_PARSER)
+    debug_packrat << string_parser.to_string();
+}
+
+void
+prog_language_rep::customize_comment (tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree feature= config[i];
+    string label= get_label (feature);
+    if (label == "inline") {
+      array<string> inline_comment_starts;
+      for (int i=0; i<N(feature); i++) {
+        inline_comment_starts << get_label (feature[i]);
+      }
+      inline_comment_parser.set_starts (inline_comment_starts);
+    }
+  }
+}
+
+
+void
+prog_language_rep::customize_preprocessor (tree config) {
+  for (int i=0; i<N(config); i++) {
+    tree feature= config[i];
+    string name= get_label (feature);
+    if (name == "directives") {
+      array<string> directives;
+      for (int j=0; j<N(feature); j++) {
+        string key= get_label (feature[j]);
+        directives << key;
+      }
+      preprocessor_parser.set_directives (directives);
+    }
+  }
+  if (DEBUG_PARSER)
+    debug_packrat << preprocessor_parser.to_string();
 }
 
 text_property
@@ -96,6 +175,10 @@ prog_language_rep::advance (tree t, int& pos) {
   if (blanks_parser.parse (s, pos)) {
     current_parser= blanks_parser.get_parser_name ();
     return &tp_space_rep;
+  }
+  if (preprocessor_parser.parse (s, pos)) {
+    current_parser= preprocessor_parser.get_parser_name ();
+    return &tp_normal_rep;
   }
   if (string_parser.parse (s, pos)) {
     current_parser= string_parser.get_parser_name ();
@@ -179,6 +262,8 @@ prog_language_rep::get_color (tree t, int start, int end) {
   } else if (current_parser == "keyword_parser") {
     string keyword= s(start, end);
     type= keyword_parser.get (keyword);
+  } else if (current_parser == "preprocessor_parser") {
+    type= "preprocessor_directive";
   } else {
     type= none;
   }
@@ -187,3 +272,32 @@ prog_language_rep::get_color (tree t, int start, int end) {
   return decode_color (lan_name, encode_color (type));
 }
 
+/******************************************************************************
+* Interface
+******************************************************************************/
+
+language
+prog_language (string s) {
+  if (language::instances -> contains (s)) return language (s);
+
+  hashset<string> prog_v1_langs= hashset<string>();
+  prog_v1_langs
+    << string("cpp")        << string("dot")    << string("java")
+    << string("javascript") << string("json")   << string("octave")
+    << string("python")     << string("scala");
+
+  if (prog_v1_langs->contains (s))
+    return make (language, s, tm_new<prog_language_rep> (s));
+
+  if (s == "scheme")
+    return make (language, s, tm_new<scheme_language_rep> (s));
+  if (s == "mathemagix" || s == "mmi" || s == "caas" || s == "mmshell")
+    return make (language, s, tm_new<mathemagix_language_rep> (s));
+  if (s == "scilab")
+    return make (language, s, tm_new<scilab_language_rep> (s));
+  if (s == "r")
+    return make (language, s, tm_new<r_language_rep> (s));
+  if (s == "fortran")
+    return make (language, s, tm_new<fortran_language_rep> (s));
+  return make (language, s, tm_new<verb_language_rep> (s));
+}

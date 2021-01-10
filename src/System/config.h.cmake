@@ -101,6 +101,8 @@
 
 #cmakedefine MACOS_QT_MENU 1
 
+#cmakedefine OS_MINGW 1
+
 #cmakedefine PDFHUMMUS_NO_TIFF 1
 
 /* Disable fast memory allocator */
@@ -163,8 +165,6 @@
 #cmakedefine USE_SQLITE3 1
 
 #cmakedefine USE_STACK_TRACE 1
-
-#cmakedefine USE_JEAIII 1
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #cmakedefine X_DISPLAY_MISSING 1

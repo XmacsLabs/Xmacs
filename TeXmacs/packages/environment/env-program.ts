@@ -10,7 +10,8 @@
       Some environments for typesetting algorithms.
     </src-purpose>
 
-    <src-copyright|1998--2012|Joris van der Hoeven, François Poulain>
+    <src-copyright|1998--2020|Joris van der Hoeven, Franï¿½ois Poulain, Darcy
+    Shen>
 
     <\src-license>
       This software falls under the <hlink|GNU general public license,
@@ -112,7 +113,7 @@
 
   \;
 
-  <assign|algorithm-name|<macro|name|<with|font-series|bold|<arg|name>>>>
+  <assign|algorithm-name|<macro|name|<strong|<arg|name>>>>
 
   <\active*>
     <\src-comment>
@@ -198,6 +199,10 @@
 
   <assign|dot-lang|<macro|body|<with|mode|prog|prog-language|dot|font-family|rm|<arg|body>>>>
 
+  <assign|javascript-lang|<macro|body|<with|mode|prog|prog-language|javascript|font-family|rm|<arg|body>>>>
+
+  <assign|json-lang|<macro|body|<with|mode|prog|prog-language|json|font-family|rm|<arg|body>>>>
+
   <assign|octave-lang|<macro|body|<with|mode|prog|prog-language|octave|font-family|rm|<arg|body>>>>
 
   <\active*>
@@ -245,6 +250,18 @@
   <assign|java-code|<\macro|body>
     <\pseudo-code>
       <java|<arg|body>>
+    </pseudo-code>
+  </macro>>
+
+  <assign|javascript-code|<\macro|body>
+    <\pseudo-code>
+      <javascript-lang|<arg|body>>
+    </pseudo-code>
+  </macro>>
+
+  <assign|json-code|<\macro|body>
+    <\pseudo-code>
+      <json-lang|<arg|body>>
     </pseudo-code>
   </macro>>
 
@@ -296,11 +313,11 @@
     </src-comment>
   </active*>
 
-  <assign|named-algorithm-old|<macro|name|body|<surround|<vspace*|1fn>|<vspace|1fn><right-flush><yes-indent*>|<with|par-first|0cm|<surround|<with|font-series|bold|<translate|Algorithm|english|<language>>>
-  <tt|<arg|name>>||<with|item*|<macro|what|<with|font-series|bold|math-font-series|bold|<arg|what>
+  <assign|named-algorithm-old|<macro|name|body|<surround|<vspace*|1fn>|<vspace|1fn><right-flush><yes-indent*>|<with|par-first|0cm|<surround|<strong|<translate|Algorithm|english|<language>>>
+  <tt|<arg|name>>||<with|item*|<macro|what|<strong|<arg|what>
   >>|<arg|body>>>>>>>
 
-  <assign|algorithm-body|<macro|body|<surround|<vspace*|0.5fn>|<yes-indent*>|<with|item*|<macro|name|<vspace*|0.5fn><with|font-series|bold|math-font-series|bold|<arg|name>
+  <assign|algorithm-body|<macro|body|<surround|<vspace*|0.5fn>|<yes-indent*>|<with|item*|<macro|name|<vspace*|0.5fn><strong|<arg|name>
   >>|<arg|body>>>>>
 
   <assign|minimal|<macro|body|<with|mode|prog|prog-language|minimal|<arg|body>>>>

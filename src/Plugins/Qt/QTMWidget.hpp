@@ -31,9 +31,11 @@ class QTMWidget: public QTMScrollView {
   qt_widget    tmwid;
   QLabel*      imwidget;
   QPoint       cursor_pos;
-  
+  bool         preediting;
+
 public:
 
+  
   QTMWidget (QWidget* _parent=0, qt_widget _tmwid=0);
   virtual ~QTMWidget ();
   
@@ -43,6 +45,8 @@ public:
   void setCursorPos (QPoint pos) { cursor_pos = pos; }
   qt_simple_widget_rep* tm_widget () const;
   
+  bool isPreediting () { return preediting; }
+  
 protected:
 
   virtual bool event (QEvent *event);
@@ -51,18 +55,23 @@ protected:
   virtual void focusInEvent (QFocusEvent* event);
   virtual void focusOutEvent (QFocusEvent* event);
   virtual void keyPressEvent (QKeyEvent* event);
+  virtual void kbdEvent (int key, Qt::KeyboardModifiers mods, const QString& s);
   virtual void inputMethodEvent (QInputMethodEvent* event);
   virtual void mousePressEvent (QMouseEvent* event);
   virtual void mouseReleaseEvent (QMouseEvent* event);
   virtual void mouseMoveEvent (QMouseEvent* event);
+#if (QT_VERSION >= 0x050000)
+  virtual void tabletEvent (QTabletEvent* event);
+#endif
   virtual void resizeEvent (QResizeEvent *event);
   virtual void resizeEventBis (QResizeEvent *e);
   virtual void dragEnterEvent(QDragEnterEvent *event);
   //virtual void dragMoveEvent (QDragMoveEvent *event);
   virtual void dropEvent(QDropEvent *event);
 
-  void wheelEvent(QWheelEvent *event) override;
+  virtual void wheelEvent(QWheelEvent *event) override;
   virtual QVariant inputMethodQuery (Qt::InputMethodQuery query) const;
+
 };
 
 #endif // QTMWIDGET_HPP

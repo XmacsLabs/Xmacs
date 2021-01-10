@@ -418,7 +418,14 @@ attach_buffer_notifier (url name) {
 
 tree
 attach_subformat (tree t, url u, string fm) {
-  if (fm != "verbatim" && fm != "scheme" && fm != "cpp") return t;
+  if (fm != "scheme" &&
+      fm != "java" &&
+      fm != "scala" &&
+      fm != "python" &&
+      fm != "cpp" &&
+      fm != "mathemagix" &&
+      fm != "scilab" &&
+      fm != "verbatim") return t;
   string s= suffix (u);
   if (s == "scm") fm= "scheme";
   if (s == "java") fm= "java";

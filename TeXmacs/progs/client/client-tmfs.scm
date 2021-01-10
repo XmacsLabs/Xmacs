@@ -32,7 +32,8 @@
 (define (buffer-set-stm u doc)
   (let* ((s (object->tmstring doc))
          (t (tree-import-loaded s u "stm")))
-    (buffer-set u t)))
+    (buffer-set u t)
+    (buffer-pretend-saved u)))
 
 (define (remote-file-set name doc)
   (with fname (string-append "tmfs://remote-file/" name)
@@ -119,17 +120,17 @@
 (define remote-commit-message #f)
 
 (tm-define (remote-home-directory server)
-  (let* ((sname (client-find-server-name server))
-         (spseudo (client-find-server-pseudo server)))
+  (and-let* ((sname (client-find-server-name server))
+             (spseudo (client-find-server-pseudo server)))
     (string-append "tmfs://remote-dir/" sname "/~" spseudo)))
 
 (define (prepend-dir server name type)
   (with dir (url->string (current-buffer))
     (when (not (string-starts? dir "tmfs://remote-dir/"))
       (set! dir (remote-home-directory server)))
-    (string-append "tmfs://" type "/"
-                   (substring dir 18 (string-length dir))
-                   "/" name)))
+    (and dir (string-append "tmfs://" type "/"
+                            (substring dir 18 (string-length dir))
+                            "/" name))))
 
 (tm-define (remote-create-file server fname doc)
   ;;(display* "remote-create-file " server ", " fname ", " doc "\n")
@@ -147,7 +148,7 @@
   (:interactive #t)
   (interactive
       (lambda (name)
-        (with fname (prepend-dir server name "remote-file")
+        (and-with fname (prepend-dir server name "remote-file")
           (remote-create-file server fname (empty-document))))
     (list "Name" "string" '())))
 
@@ -238,7 +239,7 @@
   (:interactive #t)
   (interactive
       (lambda (name)
-        (with fname (prepend-dir server name "remote-dir")
+        (and-with fname (prepend-dir server name "remote-dir")
           (remote-create-dir server fname)))
     (list "Name" "string" '())))
 
@@ -250,7 +251,7 @@
       hlink)))
 
 (define (dir-page sname entries)
-  (generic-document `(document (subsection* "File list")
+  (generic-document `(document (section* "File list")
                                ,@(map (cut dir-line sname <>) entries))))
 
 (tmfs-load-handler (remote-dir name)
@@ -373,7 +374,8 @@
              (let* ((s (url->tmfs-string rname))
                     (h (string-append "tmfs://history/" s))
                     (doc (build-version-page s prefix l)))
-               (buffer-set h doc)))
+               (buffer-set h doc)
+               (buffer-pretend-saved h)))
            (lambda (err)
              (set-message err "get list with remote versions"))))))
 

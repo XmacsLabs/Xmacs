@@ -50,6 +50,12 @@ editor_rep::editor_rep (server_rep* sv2, tm_buffer buf2):
   simple_widget_rep (), sv (sv2), cvw (NULL), mvw (NULL), buf (buf2),
   drd (buf->buf->title, std_drd), et (the_et), rp (buf2->rp) {}
 
+bool
+editor_rep::is_current_editor () {
+  editor ed= get_current_editor ();
+  return ed.rep == (editor_rep*) this;
+}
+
 edit_main_rep::edit_main_rep (server_rep* sv, tm_buffer buf):
   editor_rep (sv, buf), props (UNKNOWN), ed_obs (edit_observer (this))
 {
@@ -260,7 +266,7 @@ edit_main_rep::print_doc (url name, bool conform, int first, int last) {
   string page_type = env->page_real_type;
   double w         = env->page_real_width;
   double h         = env->page_real_height;
-  double cm        = env->as_length (string ("1cm"));
+  double cm        = env->as_real_length (string ("1cm"));
   bool   landsc    = env->page_landscape;
   int    dpi       = as_int (printing_dpi);
   int    start     = max (0, first-1);
@@ -275,7 +281,7 @@ edit_main_rep::print_doc (url name, bool conform, int first, int last) {
     w= env->as_length (bws);
     h= env->as_length (bhs);
   }
-
+  
   // Print pages
   renderer ren= printer (name, dpi, pages, page_type, landsc, w/cm, h/cm);
   
@@ -453,6 +459,11 @@ edit_main_rep::the_root () {
 tree
 edit_main_rep::the_buffer () {
   return subtree (et, rp);
+}
+
+bool
+edit_main_rep::test_subtree (path p) {
+  return has_subtree (et, p);
 }
 
 tree

@@ -65,7 +65,8 @@
     tmfs-load-handler tmfs-save-handler
     tmfs-autosave-handler tmfs-remove-handler tmfs-wrap-handler
     tmfs-date-handler tmfs-title-handler tmfs-permission-handler
-    tmfs-master-handler tmfs-format-handler))
+    tmfs-master-handler tmfs-format-handler
+    push-focus pull-focus))
 
 (setq unary-definitions
   '(define define-public define-macro define-public-macro
@@ -87,7 +88,7 @@
 
 (setq binary-keywords
   '(with with-define with-global and-with with-innermost receive
-    with-environment with-environment* converter
+    with-environment with-environment* converter with-cache
     user-confirm user-url
     resize
     $with))

@@ -67,7 +67,7 @@ enum tree_label {
   FIND_FILE, FIND_FILE_UPWARDS,
   IS_TUPLE, LOOK_UP, OCCURS_INSIDE,
   EQUAL, UNEQUAL, LESS, LESSEQ, GREATER, GREATEREQ,
-  BLEND,
+  BLEND, RGB_COLOR, RGB_ACCESS,
 
   // built-in length units
   CM_LENGTH, MM_LENGTH, IN_LENGTH, PT_LENGTH,
@@ -77,7 +77,7 @@ enum tree_label {
   FN_LENGTH, FNS_LENGTH, BLS_LENGTH,
   FNBOT_LENGTH, FNTOP_LENGTH,
   SPC_LENGTH, XSPC_LENGTH,                        // font specific & stretchy
-  PAR_LENGTH, PAG_LENGTH,                         // other
+  PAR_LENGTH, PAW_LENGTH, PAG_LENGTH,             // page dimensions
   GW_LENGTH, GH_LENGTH, GU_LENGTH,                // extents & unit of graphics
   TMPT_LENGTH, PX_LENGTH,                         // miscellaneous
   LCORNER_LENGTH, BCORNER_LENGTH,
@@ -133,7 +133,7 @@ enum tree_label {
   EFF_BLUR, EFF_OUTLINE, EFF_THICKEN, EFF_ERODE,
   EFF_DEGRADE, EFF_DISTORT, EFF_GNAW,
   EFF_SUPERPOSE, EFF_ADD, EFF_SUB, EFF_MUL, EFF_MIN, EFF_MAX, EFF_MIX,
-  EFF_NORMALIZE, EFF_MONOCHROME, EFF_COLOR_MATRIX,
+  EFF_NORMALIZE, EFF_MONOCHROME, EFF_COLOR_MATRIX, EFF_GRADIENT,
   EFF_MAKE_TRANSPARENT, EFF_MAKE_OPAQUE, EFF_RECOLOR, EFF_SKIN,
 
   // graphical interface markup

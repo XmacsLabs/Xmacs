@@ -1,4 +1,4 @@
-<TeXmacs|1.99.12>
+<TeXmacs|1.99.15>
 
 <style|<tuple|source|std>>
 
@@ -90,6 +90,8 @@
 
   <assign|tmhtml-render-bibitem|<macro|text|<arg|text> >>
 
+  <assign|tmhtml-render-bibitem|<macro|text|<item*|<arg|text>>>>
+
   <assign|bibitem|<macro|text|<style-with|src-compact|none|<bibitem*|<arg|text>><label|<merge|<value|bib-prefix>|-|<arg|text>>>>>>
 
   <assign|bibitem-with-key|<macro|text|key|<style-with|src-compact|none|<bibitem*|<arg|text>><label|<merge|<value|bib-prefix>|-|<arg|key>>>>>>
@@ -175,19 +177,19 @@
 
   <assign|index-write|<macro|entry|<style-with|src-compact|none|<if|<value|index-enabled>|<auto-label><write|<value|index-prefix>|<tuple|<arg|entry>|<pageref|<the-auto>>>>>>>>
 
-  <assign|index|<macro|key|<style-with|src-compact|none|<flag|<localize|index>|dark
+  <assign|index|<macro|key|<style-with|src-compact|none|<assign|the-label|<arg|key>><flag|<localize|index>|dark
   green|key><index-write|<tuple|<arg|key>>>>>>
 
-  <assign|subindex|<macro|key|secondary|<style-with|src-compact|none|<flag|<localize|index>|dark
+  <assign|subindex|<macro|key|secondary|<style-with|src-compact|none|<assign|the-label|<arg|key>><flag|<localize|index>|dark
   green|key><index-write|<tuple|<arg|key>|<arg|secondary>>>>>>
 
-  <assign|subsubindex|<macro|key|secondary|tertiary|<style-with|src-compact|none|<flag|<localize|index>|dark
+  <assign|subsubindex|<macro|key|secondary|tertiary|<style-with|src-compact|none|<assign|the-label|<arg|key>><flag|<localize|index>|dark
   green|key><index-write|<tuple|<arg|key>|<arg|secondary>|<arg|tertiary>>>>>>
 
-  <assign|subsubsubindex|<macro|key|secondary|tertiary|quaternary|<style-with|src-compact|none|<flag|<localize|index>|dark
+  <assign|subsubsubindex|<macro|key|secondary|tertiary|quaternary|<style-with|src-compact|none|<assign|the-label|<arg|key>><flag|<localize|index>|dark
   green|key><index-write|<tuple|<arg|key>|<arg|secondary>|<arg|tertiary>|<arg|quaternary>>>>>>
 
-  <assign|index-complex|<macro|key|how|range|entry|<style-with|src-compact|none|<flag|<localize|index>|dark
+  <assign|index-complex|<macro|key|how|range|entry|<style-with|src-compact|none|<assign|the-label|<arg|key>><flag|<localize|index>|dark
   green|key><auto-label><write|<value|index-prefix>|<tuple|<arg|key>|<arg|how>|<arg|range>|<arg|entry>|<pageref|<the-auto>>>>>>>
 
   \;
@@ -289,16 +291,16 @@
 
   <assign|with-glossary|<macro|gly|body|<with|glossary-prefix|<arg|gly>|<arg|body>>>>
 
-  <assign|glossary-line|<macro|entry|<style-with|src-compact|none|<flag|<localize|glossary>|dark
+  <assign|glossary-line|<macro|entry|<style-with|src-compact|none|<assign|the-label|<arg|entry>><flag|<localize|glossary>|dark
   green|entry><write|<value|glossary-prefix>|<tuple|<arg|entry>>>>>>
 
-  <assign|glossary|<macro|entry|<style-with|src-compact|none|<flag|<localize|glossary>|dark
+  <assign|glossary|<macro|entry|<style-with|src-compact|none|<assign|the-label|<arg|entry>><flag|<localize|glossary>|dark
   green|entry><auto-label><write|<value|glossary-prefix>|<tuple|normal|<arg|entry>|<pageref|<the-auto>>>>>>>
 
-  <assign|glossary-explain|<macro|entry|explain|<style-with|src-compact|none|<flag|<localize|glossary>|dark
+  <assign|glossary-explain|<macro|entry|explain|<style-with|src-compact|none|<assign|the-label|<arg|entry>><flag|<localize|glossary>|dark
   green|entry><auto-label><write|<value|glossary-prefix>|<tuple|normal|<arg|entry>|<arg|explain>|<pageref|<the-auto>>>>>>>
 
-  <assign|glossary-dup|<macro|entry|<style-with|src-compact|none|<flag|<localize|glossary>|dark
+  <assign|glossary-dup|<macro|entry|<style-with|src-compact|none|<assign|the-label|<arg|entry>><flag|<localize|glossary>|dark
   green|entry><auto-label><write|<value|glossary-prefix>|<tuple|dup|<arg|entry>|<pageref|<the-auto>>>>>>>
 
   \;
@@ -317,7 +319,7 @@
     </src-comment>
   </active*>
 
-  <assign|part-info|<macro|name|<style-with|src-compact|none|<label|<merge|part:|<arg|name>>><write|parts|<tuple|<arg|name>|chapter-nr|<value|chapter-nr>|section-nr|<value|section-nr><value|>|subsection-nr|<value|subsection-nr>>>>>>
+  <assign|part-info|<macro|name|<style-with|src-compact|none|<label|<merge|part:|<arg|name>>><write|parts|<tuple|<arg|name>|chapter-nr|<value|chapter-nr>|section-nr|<value|section-nr>|subsection-nr|<value|subsection-nr>>>>>>
 
   <assign|shared|<macro|unique-id|mirror-id|body|<with|old-color|<value|locus-color>|locus-color|preserve|<locus|<id|<arg|mirror-id>>|<observer|<arg|unique-id>|mirror-notify>|<surround|<hidden|<part-info|<arg|unique-id>><extern|mirror-initialize|<quote-arg|xbody>>>|<right-flush>|<with|locus-color|<value|old-color>|<arg|body>>>>>>>
 

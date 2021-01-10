@@ -20,7 +20,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (tm-define (live-context? t)
-  (and (tree-func? t 'live-io 3)
+  (and (or (tree-func? t 'live-io 3)
+           (tree-func? t 'live-io* 3))
        (tree-atomic? (tree-ref t 0))
        (tree-atomic? (tree-ref t 1))))
 
@@ -98,10 +99,12 @@
           (for (vt vts)
             (if (and p (patch-applicable? p vt))
 		(begin
-		  (display* "]] Apply " (patch->scheme p) "\n")
+                  (when (debug-get "live")
+                    (display* "]] Apply " (patch->scheme p) "\n"))
 		  (patch-apply! vt p))
                 (begin
-		  (display* "]] Reset view " (tm->stree cur) "\n")
+                  (when (debug-get "live")
+                    (display* "]] Reset view " (tm->stree cur) "\n"))
 		  (tree-set! vt cur))))
           (live-view-set-state lid vid new-state))
         (when (null? vts)
@@ -124,7 +127,8 @@
       (let* ((cur (live-current-document lid))
              (vts (id->trees vid)))
         (for (vt vts)
-	  (display* "]] Restore view " (tm->stree cur) "\n")
+          (when (debug-get "live")
+            (display* "]] Restore view " (tm->stree cur) "\n"))
           (tree-set! vt cur))
         (live-view-set-state lid vid (live-current-state lid))
         (when (null? vts)
@@ -149,10 +153,12 @@
           (for (vt vts)
             (if (and p (patch-applicable? p vt))
 		(begin
-		  (display* "]] Apply " (patch->scheme p) "\n")
+                  (when (debug-get "live")
+                    (display* "]] Apply " (patch->scheme p) "\n"))
 		  (patch-apply! vt p))
 		(begin
-		  (display* "]] Reset view " (tm->stree t) "\n")
+                  (when (debug-get "live")
+                    (display* "]] Reset view " (tm->stree t) "\n"))
 		  (tree-set! vt t))))
           (live-view-set-state lid vid new-state))
         (when (null? vts)

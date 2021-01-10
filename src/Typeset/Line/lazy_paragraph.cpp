@@ -912,3 +912,8 @@ lazy_paragraph_rep::produce (lazy_type request, format fm) {
   }
   return lazy_rep::produce (request, fm);
 }
+
+void
+lazy_paragraph_rep::propagate () {
+  style (PAR_NO_FIRST)= env->read (PAR_NO_FIRST);
+}

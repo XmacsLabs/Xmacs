@@ -139,6 +139,14 @@ source code.
   </explain>
 
   <\explain>
+    <scm|(gui-version)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|gui_version> which returns
+    <scm|string>.
+  </explain>
+
+  <\explain>
     <scm|(default-look-and-feel)>
 <explain-synopsis|no synopsis>
   <|explain>
@@ -5027,6 +5035,14 @@ source code.
   </explain>
 
   <\explain>
+    <scm|(texmacs-widget-size <scm-arg|widget>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_texmacs_widget_size> which returns
+    <scm|array_int>.
+  </explain>
+
+  <\explain>
     <scm|(show-balloon <scm-arg|widget> <scm-arg|int> <scm-arg|int>)>
 <explain-synopsis|no synopsis>
   <|explain>
@@ -5080,6 +5096,14 @@ source code.
   <|explain>
     Calls the <c++> function <cpp|windows_refresh> which returns
     <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(get-screen-size)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_screen_size> which returns
+    <scm|array_int>.
   </explain>
 
   <\explain>
@@ -5451,6 +5475,14 @@ source code.
   </explain>
 
   <\explain>
+    <scm|(set-drd <scm-arg|url>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|set_current_drd> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
     <scm|(window-list)>
 <explain-synopsis|no synopsis>
   <|explain>
@@ -5611,7 +5643,7 @@ source code.
   </explain>
 
   <\explain>
-    <scm|(alt-window-create <scm-arg|int> <scm-arg|widget> <scm-arg|string> <scm-arg|bool>)>
+    <scm|(alt-window-create-quit <scm-arg|int> <scm-arg|widget> <scm-arg|string> <scm-arg|command>)>
 <explain-synopsis|no synopsis>
   <|explain>
     Calls the <c++> function <cpp|window_create> which returns
@@ -5619,10 +5651,26 @@ source code.
   </explain>
 
   <\explain>
-    <scm|(alt-window-create-quit <scm-arg|int> <scm-arg|widget> <scm-arg|string> <scm-arg|command>)>
+    <scm|(alt-window-create-plain <scm-arg|int> <scm-arg|widget> <scm-arg|string>)>
 <explain-synopsis|no synopsis>
   <|explain>
-    Calls the <c++> function <cpp|window_create> which returns
+    Calls the <c++> function <cpp|window_create_plain> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(alt-window-create-popup <scm-arg|int> <scm-arg|widget> <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|window_create_popup> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(alt-window-create-tooltip <scm-arg|int> <scm-arg|widget> <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|window_create_tooltip> which returns
     <scm|void>.
   </explain>
 
@@ -6219,7 +6267,15 @@ source code.
   </explain>
 
   <\explain>
-    <scm|(path-\<gtr\>tree <scm-arg|path>)>
+    <scm|(path-exists? <scm-arg|path>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|test_subtree> which returns
+    <scm|bool>.
+  </explain>
+
+  <\explain>
+    <scm|(cpp-path-\<gtr\>tree <scm-arg|path>)>
 <explain-synopsis|no synopsis>
   <|explain>
     Calls the <c++> function <cpp|the_subtree> which returns
@@ -6659,6 +6715,94 @@ source code.
   </explain>
 
   <\explain>
+    <scm|(get-reference <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_ref> which returns
+    <scm|tree>.
+  </explain>
+
+  <\explain>
+    <scm|(set-reference <scm-arg|string> <scm-arg|content>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|set_ref> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(reset-reference <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|reset_ref> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(find-references <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|find_refs> which returns
+    <scm|array_string>.
+  </explain>
+
+  <\explain>
+    <scm|(list-references)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|list_refs> which returns
+    <scm|array_string>.
+  </explain>
+
+  <\explain>
+    <scm|(list-references* <scm-arg|bool>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|list_refs> which returns
+    <scm|array_string>.
+  </explain>
+
+  <\explain>
+    <scm|(get-auxiliary <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_aux> which returns
+    <scm|tree>.
+  </explain>
+
+  <\explain>
+    <scm|(set-auxiliary <scm-arg|string> <scm-arg|content>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|set_aux> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(reset-auxiliary <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|reset_aux> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(list-auxiliaries)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|list_auxs> which returns
+    <scm|array_string>.
+  </explain>
+
+  <\explain>
+    <scm|(list-auxiliaries* <scm-arg|bool>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|list_auxs> which returns
+    <scm|array_string>.
+  </explain>
+
+  <\explain>
     <scm|(get-attachment <scm-arg|string>)>
 <explain-synopsis|no synopsis>
   <|explain>
@@ -6684,6 +6828,14 @@ source code.
 
   <\explain>
     <scm|(list-attachments)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|list_atts> which returns
+    <scm|array_string>.
+  </explain>
+
+  <\explain>
+    <scm|(list-attachments* <scm-arg|bool>)>
 <explain-synopsis|no synopsis>
   <|explain>
     Calls the <c++> function <cpp|list_atts> which returns
@@ -6783,6 +6935,30 @@ source code.
 <explain-synopsis|no synopsis>
   <|explain>
     Calls the <c++> function <cpp|add_lengths> which returns
+    <scm|string>.
+  </explain>
+
+  <\explain>
+    <scm|(length-sub <scm-arg|string> <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|sub_lengths> which returns
+    <scm|string>.
+  </explain>
+
+  <\explain>
+    <scm|(length-max <scm-arg|string> <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|max_lengths> which returns
+    <scm|string>.
+  </explain>
+
+  <\explain>
+    <scm|(length-min <scm-arg|string> <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|min_lengths> which returns
     <scm|string>.
   </explain>
 
@@ -7384,6 +7560,14 @@ source code.
   <|explain>
     Calls the <c++> function <cpp|go_end_paragraph> which returns
     <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(label-\<gtr\>path <scm-arg|string>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|search_label> which returns
+    <scm|path>.
   </explain>
 
   <\explain>
@@ -8091,6 +8275,54 @@ source code.
   </explain>
 
   <\explain>
+    <scm|(get-window-x)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_window_x> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
+    <scm|(get-window-y)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_window_y> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
+    <scm|(get-canvas-x)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_canvas_x> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
+    <scm|(get-canvas-y)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_canvas_y> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
+    <scm|(get-scroll-x)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_scroll_x> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
+    <scm|(get-scroll-y)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_scroll_y> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
     <scm|(clear-buffer)>
 <explain-synopsis|no synopsis>
   <|explain>
@@ -8184,6 +8416,14 @@ source code.
   <|explain>
     Calls the <c++> function <cpp|notify_change> which returns
     <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(notified-change? <scm-arg|int>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|has_changed> which returns
+    <scm|bool>.
   </explain>
 
   <\explain>

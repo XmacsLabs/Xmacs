@@ -36,7 +36,7 @@
     (if (detailed-menus?)
         ("Action" (make 'action))))
   (if (simple-menus?)
-      ("Footnote" (make-wrapped 'footnote)))
+      ("Footnote" (make 'footnote)))
   (if (and (style-has? "std-dtd") (in-text?))
       ---
       (when (not (selection-active-non-small?))
@@ -118,7 +118,7 @@
   ("Link image" (choose-file make-link-image "Load image" "image"))
   ("Insert image" (choose-file make-inline-image "Load image" "image"))
   (if (detailed-menus?)
-      ("Thumbnails" (make-thumbnails)))
+      ("Thumbnails" (interactive make-thumbnails)))
   (if (or (lazy-plugin-force)
 	  (and (style-has? "scripts-dtd") (scripts-defined? "gnuplot")))
       (-> "Plot" (link scripts-plot-menu)))
@@ -135,6 +135,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (menu-bind texmacs-insert-menu
+  (-> "Macro" (link insert-macro-menu))
   (if (not (in-text?))
       ("Text" (make 'text)))
   (if (not (in-math?))
@@ -160,6 +161,8 @@
 
 (menu-bind texmacs-insert-icons
   /
+  (=> (balloon (icon "tm_macro.xpm") "Insert a personal macro")
+      (link insert-macro-menu))
   (if (not (in-text?))
       ((balloon (icon "tm_textual.xpm") "Insert plain text")
        (make 'text)))

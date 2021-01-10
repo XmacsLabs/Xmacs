@@ -162,7 +162,7 @@
 
 (tm-define (initial-get u var)
   (or (with-buffer u
-        (get-init var))
+        (get-init-env var))
       ""))
 
 (tm-define (initial-defined? u var)
@@ -528,7 +528,8 @@
                     (tree-remove (tree-up note) (tree-index note) 1)
                     (update-biblio)))
                  ((> (tree-arity (tree-up t)) 1)
-                  (tree-remove (tree-up t) (tree-index t) 1)))))
+                  (tree-remove (tree-up t) (tree-index t) 1)
+                  (update-biblio)))))
         ((tree-in? (cursor-tree) '(cite nocite cite-TeXmacs))
          (tree-insert (cursor-tree) (tree-arity (cursor-tree)) (list ref))
          (update-biblio))

@@ -14,6 +14,10 @@
 #include "tm_buffer.hpp"
 #include "archiver.hpp"
 
+#ifdef Q_OS_MAC
+extern hashmap<int,string> qtcomposemap;
+#endif
+
 /******************************************************************************
 * Showing the keystrokes while typing
 ******************************************************************************/
@@ -144,6 +148,22 @@ edit_interface_rep::try_shortcut (string comb) {
   return false;
 }
 
+static string
+std_accent (string s) {
+  string c= "x";
+  c[0]= '\0';
+  s= replace (s, c, "`");
+  c[0]= '\1';
+  s= replace (s, c, "'");
+  c[0]= '\2';
+  s= replace (s, c, "^");
+  c[0]= '\3';
+  s= replace (s, c, "~");
+  c[0]= '\4';
+  s= replace (s, c, "\"");
+  return s;
+}
+
 void
 edit_interface_rep::key_press (string gkey) {
   string zero= "a"; zero[0]= '\0';
@@ -166,12 +186,11 @@ edit_interface_rep::key_press (string gkey) {
           tm_char_forwards (s, pos);
         break;
       }
-    if (as_bool (call ("disable-pre-edit?", cork_to_utf8 (s)))) {
+    if (as_bool (call ("disable-pre-edit?", std_accent (s)))) {
       pre_edit_skip= false;
       if (s == "") return;
       pre_edit_skip= true;
-      key= s;
-      if (key == zero) key= "`";
+      key= std_accent (s);
     }
     else if (pre_edit_skip) {
       if (s == "") pre_edit_skip= false;
@@ -205,7 +224,7 @@ edit_interface_rep::key_press (string gkey) {
   string rew= sv->kbd_post_rewrite (key);
   if (N(rew) == 1) {
     int i ((unsigned char) rew[0]);
-    if ((i >= 32 && i <= 127) || (i >= 128 && i <= 255) || (i == 25))
+    if ((i >= 1 && i <= 127) || (i >= 128 && i <= 255) || (i == 25))
       if (!inside_active_graphics ()) {
         archive_state ();
         call ("kbd-insert", rew);
@@ -215,6 +234,20 @@ edit_interface_rep::key_press (string gkey) {
   else if (contains_unicode_char (rew)) {
     archive_state ();
     call ("kbd-insert", key);
+    interrupt_shortcut ();    
+  }
+#ifdef Q_OS_MAC
+  else if (N(key) == 3 && starts (key, "A-") &&
+           qtcomposemap->contains ((int) (unsigned char) key[2])) {
+    string compose_key= qtcomposemap[(int) (unsigned char) key[2]];
+    key_press (compose_key);
+  }
+#endif
+  else if (!occurs (" ", key) && N(key) > 1 && key[1] != '-' &&
+           cork_to_utf8 ("<" * key * ">") != ("<" * key * ">") &&
+           !inside_active_graphics ()) {
+    archive_state ();
+    call ("kbd-insert", "<" * key * ">");
     interrupt_shortcut ();    
   }
   else if (DEBUG_KEYBOARD)
@@ -260,6 +293,7 @@ edit_interface_rep::kbd_shortcut (string cmd) {
 
 void
 edit_interface_rep::handle_keypress (string key, time_t t) {
+  if (is_nil (buf)) return;
   bool started= false;
 #ifdef USE_EXCEPTIONS
   try {
@@ -317,6 +351,7 @@ void drag_right_reset ();
 
 void
 edit_interface_rep::handle_keyboard_focus (bool has_focus, time_t t) {
+  if (is_nil (buf)) return;
   if (DEBUG_KEYBOARD) {
     if (has_focus) debug_keyboard << "Got focus at " << t << "\n";
     else debug_keyboard << "Lost focus at " << t << "\n";
@@ -326,6 +361,7 @@ edit_interface_rep::handle_keyboard_focus (bool has_focus, time_t t) {
     drag_right_reset ();
   }
   got_focus= has_focus; (void) t;
+  notify_change (THE_FREEZE);
   notify_change (THE_FOCUS);
   if (got_focus) {
     focus_on_this_editor ();

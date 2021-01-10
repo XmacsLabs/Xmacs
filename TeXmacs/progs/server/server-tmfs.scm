@@ -33,7 +33,7 @@
         (with sub (number->string (random 10 repo-seed))
           (repository-add-into (string-append dir "/" sub) name)))))
 
-(define (repository-add rid suffix)
+(tm-define (repository-add rid suffix)
   (let* ((name (if (== suffix "") rid (string-append rid "." suffix)))
          (full (repository-add-into repo name))
          (tail (substring full (+ (string-length repo) 1)
@@ -41,7 +41,7 @@
     (db-set-field rid "location" (list tail))
     name))
 
-(define (repository-get rid)
+(tm-define (repository-get rid)
   (and rid
        (with l (db-get-field rid "location")
          (and (pair? l) (string-append repo "/" (car l))))))
@@ -86,6 +86,9 @@
          (name (db-get-field-first rid "name" "?")))
     (if dir (string-append (resource->file-name dir) "/" name) name)))
 
+(tm-define (search-remote-identifier rname)
+  (file-name->resource (tmfs-cdr rname)))
+
 (define (inheritance-reserved-attributes)
   (append (db-reserved-attributes)
           (db-meta-attributes)
@@ -94,9 +97,9 @@
 (define (inherit-property? x)
   (nin? (car x) (inheritance-reserved-attributes)))
 
-(define (inherit-properties derived-rid base-rid)
+(define (copy-properties base-rid derived-rid pred?)
   (let* ((props1 (db-get-entry base-rid))
-         (props2 (list-filter props1 inherit-property?)))
+         (props2 (list-filter props1 pred?)))
     (for (prop props2)
       (db-set-field derived-rid (car prop) (cdr prop)))))
 
@@ -104,7 +107,7 @@
   ;;(display* "remote-identifier " rname "\n")
   (with-remote-context rname
     (let* ((uid (server-get-user envelope))
-           (rid (file-name->resource (tmfs-cdr rname))))
+           (rid (search-remote-identifier rname)))
       (cond ((not uid)
              (server-error envelope "Error: not logged in"))
             ((not rid)
@@ -209,7 +212,7 @@
                                    ,@opt-msg))))
          (name (repository-add rid (url-suffix rname)))
          (fname (repository-get rid)))
-    (inherit-properties rid did)
+    (copy-properties did rid inherit-property?)
     (db-set-field rid "dir" (list did))
     (string-save doc fname)
     rid))
@@ -280,10 +283,11 @@
             ((!= (version-get-number fid) (version-get-current vid))
              (list :error "Error: version number mismatch"))
             ((== (string-load fname) doc) ;; no changes need to be saved
-             (server-return envelope doc))
+             (list :unchanged fid))
             (else
               (let* ((nr (version-next vid))
                      (rid (remote-create uid rname vid nr doc msg)))
+                (copy-properties fid rid inherit-property?)
                 (db-remove-entry fid)
                 ;;(display* "Versions " rname ": " (version-get-versions vid) "\n")
                 (list :created rid))))))
@@ -345,7 +349,7 @@
             (with rid (db-create-entry (list (list "type" "dir")
                                              (list "name" (cAr l))
                                              (list "owner" uid)))
-              (inherit-properties rid did)
+              (copy-properties did rid inherit-property?)
               (db-set-field rid "dir" (list did))
               (list :created rid))))))
 

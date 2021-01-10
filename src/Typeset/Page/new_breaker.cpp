@@ -129,11 +129,11 @@ new_breaker_rep::new_breaker_rep (
     }
     ins_list  << ins_here;
     foot_ht   << foot_spc;
-    foot_tot  << (i==0? space(0): foot_tot[i-1] + foot_ht[i]);
+    foot_tot  << (i==0? space(0): foot_tot[i-1]) + foot_ht[i];
     float_ht  << float_spc;
-    float_tot << (i==0? space(0): float_tot[i-1] + float_ht[i]);
+    float_tot << (i==0? space(0): float_tot[i-1]) + float_ht[i];
     wide_ht   << wide_spc;
-    wide_tot  << (i==0? space(0): wide_tot[i-1] + wide_ht[i]);
+    wide_tot  << (i==0? space(0): wide_tot[i-1]) + wide_ht[i];
     break_ht  << break_spc;
 
     if (i>0 && l[i]->nr_cols != l[i-1]->nr_cols) same= i;
@@ -210,8 +210,8 @@ new_breaker_rep::make_insertion (lazy_vstream lvs, path p) {
 ******************************************************************************/
 
 space
-new_breaker_rep::compute_space (path b1, path b2) {
-  //cout << "    Compute space " << b1 << ", " << b2 << LF;
+new_breaker_rep::compute_space (path b1, path b2, bool wide_part) {
+  //cout << "    Compute space " << b1 << ", " << b2 << ", " << wide_part << LF;
   int i1= b1->item, i2= b2->item;
   if (!is_nil (b1->next)) {
     if (b2 == b1) return space (0);
@@ -221,13 +221,13 @@ new_breaker_rep::compute_space (path b1, path b2) {
     int  j0= nx->next->item;
     insertion fl= ins_list[i0][j0];
     space sep= float_sep;
-    if (fl->ht->def <= 0) return compute_space (q1, b2);
+    if (fl->ht->def <= 0) return compute_space (q1, b2, wide_part);
     if (float_here (fl->type)) sep= 2*sep;
-    return fl->ht + sep + compute_space (q1, b2);
+    return fl->ht + sep + compute_space (q1, b2, wide_part);
   }
   if (!is_nil (b2->next))
-    return compute_space (b1, path (b2->item)) -
-           compute_space (b2, path (b2->item));
+    return compute_space (b1, path (b2->item), wide_part) -
+           compute_space (b2, path (b2->item), wide_part);
   if (i1 == i2) return space (0);
   
   space spc;
@@ -238,7 +238,7 @@ new_breaker_rep::compute_space (path b1, path b2) {
   spc += break_ht[i1];
   spc += space (top_cor + body_cor[i2-1]->def + bot_cor);
 
-  if (foot_tot[i2-1]->def > (i1==0? 0: foot_tot[i1-1]->def)) {
+  if (!wide_part && foot_tot[i2-1]->def > (i1==0? 0: foot_tot[i1-1]->def)) {
     space foot_spc= foot_tot[i2-1] - (i1==0? space(0): foot_tot[i1-1]);
     foot_spc += fnote_sep - fn_sep;
     spc += foot_spc;
@@ -567,8 +567,8 @@ new_breaker_rep::lengthen_previous (pagelet& pg, int pos, space done) {
 }
 
 pagelet
-new_breaker_rep::assemble (path start, path end) {
-  //cout << "Assemble " << start << ", " << end << LF;
+new_breaker_rep::assemble (path start, path end, bool wide_part) {
+  //cout << "Assemble " << start << ", " << end << INDENT << LF;
   // Position the floats
   path floats, avoid= end->next;
   for (int i=start->item; i<end->item; i++)
@@ -673,7 +673,7 @@ new_breaker_rep::assemble (path start, path end) {
   for (int i=start->item; i<end->item; i++)
     for (int j=0; j<N(ins_list[i]); j++)
       if (is_tuple (ins_list[i][j]->type, "footnote"))
-        if (ins_list[i][j]->nr_cols != 1 || l[i]->nr_cols == 1) {
+        if (ins_list[i][j]->nr_cols != 1 || (!wide_part && l[i]->nr_cols == 1)) {
           if (ins_list[i][j]->ht->def > 0) {
             pg << ins_list[i][j];
             if (has_footnotes) pg << fn_sep;
@@ -681,6 +681,7 @@ new_breaker_rep::assemble (path start, path end) {
             has_footnotes= true;
           }
         }
+  //cout << UNINDENT << "Assembled " << start << ", " << end << LF;
   return pg;
 }
 
@@ -697,7 +698,8 @@ new_breaker_rep::assemble_skeleton (skeleton& sk, path end, int& offset) {
         sk << pagelet (space (0));
     begin= path (begin->item + 1, begin->next);
   }
-  //cout << "Assemble page " << begin << ", " << end << "; " << offset << LF;
+  //cout << "Assemble page " << begin << ", " << end << "; " << offset
+  //     << INDENT << LF;
   if (has_columns (begin, end, 1)) {
     pagelet pg= assemble (begin, end);
     bool last_page= last_break (end);
@@ -713,6 +715,7 @@ new_breaker_rep::assemble_skeleton (skeleton& sk, path end, int& offset) {
   for (int i=begin->item; i<end->item; i++)
     if (is_tuple (l[i]->t, "env_page") && l[i]->t[1] == PAGE_NR)
       offset= as_int (l[i]->t[2]->label) - N(sk);
+  //cout << UNINDENT << "Assembled page " << begin << ", " << end << LF;
 }
 
 /******************************************************************************

@@ -11,11 +11,13 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(texmacs-module (prog scala-lang))
+(texmacs-module (prog scala-lang)
+  (:use (prog default-lang)))
 
 ;; https://www.scala-lang.org/files/archive/spec/2.13/13-syntax-summary.html
-(tm-define (scala-keywords)
-  `(keywords
+(tm-define (parser-feature lan key)
+  (:require (and (== lan "scala") (== key "keyword")))
+  `(,(string->symbol key)
     (constant
       "false" "true" "null"
       "Byte" "Short" "Int" "Long" "Char" "String" "Float" "Double" "Boolean"
@@ -40,19 +42,19 @@
     (keyword_control
       "throw" "catch" "finally" "return" "try" "yield")))
 
-(tm-define (scala-operators)
-  `(operators
+(tm-define (parser-feature lan key)
+  (:require (and (== lan "scala") (== key "operator")))
+  `(,(string->symbol key)
     (operator
       "+" "-" "/" "*" "%" ;; Arith
       "|" "&" "^" ;; Bit
-      "&&" "||" "!" "==" "!=";; Boolean
-      "<less>" "<gtr>" "<less>=" "<gtr>="
-      "<gtr><gtr><gtr>" "<less><less>" "<gtr><gtr>"
+      "&&" "||" "!" "==" "!=" "<" ">" "<=" ">=" ;; Boolean
+      ">>>" "<<" ">>"
       "+=" "-=" "/=" "*=" "%=" "|=" "&=" "^=" ;; Assignment
-      "=")
+      "=" ";")
     (operator_special
-      ":" "=<gtr>" "::" ":::" "++"
-      "+:" ":+" "++:" "/:" ":\\" "<less>-")
+      ":" "=>" "::" ":::" "++"
+      "+:" ":+" "++:" "/:" ":\\" "<-")
     (operator_decoration "@")
     (operator_field ".")
     (operator_openclose "{" "[" "(" ")" "]" "}")))
@@ -63,22 +65,21 @@
     (double "d" "D")
     (float "f" "F")))
 
-(tm-define (scala-numbers)
-  `(numbers
+(tm-define (parser-feature lan key)
+  (:require (and (== lan "scala") (== key "number")))
+  `(,(string->symbol key)
     (bool_features
      "prefix_0x" "prefix_0b"
      "sci_notation")
     ,(scala-number-suffix)))
 
-(tm-define (scala-inline-comment-starts)
-  (list "//"))
-
-(tm-define (scala-escape-sequences)
-  (list
-   `(bool_features
+(tm-define (parser-feature lan key)
+  (:require (and (== lan "scala") (== key "string")))
+  `(,(string->symbol key)
+    (bool_features
      "hex_with_8_bits" "hex_with_16_bits"
      "hex_with_32_bits" "octal_upto_3_digits")
-   `(sequences "\\" "\"" "'" "b" "f" "n" "r" "t")))
+    (escape_sequences "\\" "\"" "'" "b" "f" "n" "r" "t")))
 
 ;; array<char> start_chars, extra_chars;
 ;; // The ‘$’ character is reserved for compiler-synthesized identifiers.

@@ -78,14 +78,15 @@ edit_env_rep::rewrite (tree t) {
       tree v= macro_arg->item [t[2]->label];
       if (is_atomic (v))
 	return tree (ERROR, "map arguments " * t[2]->label);
+      int start= 0, end= N(v);
+      if (N(t)>=4) start= as_int (exec (t[3]));
+      if (N(t)>=5) end  = as_int (exec (t[4]));
+
       list<hashmap<string,tree> > old_var= macro_arg;
       list<hashmap<string,path> > old_src= macro_src;
       if (!is_nil (macro_arg)) macro_arg= macro_arg->next;
       if (!is_nil (macro_src)) macro_src= macro_src->next;
 
-      int start= 0, end= N(v);
-      if (N(t)>=4) start= as_int (exec (t[3]));
-      if (N(t)>=5) end  = as_int (exec (t[4]));
       int i, n= max (0, end-start);
       tree r (make_tree_label (t[1]->label), n);
       if (t[0]->label == "identity")
@@ -96,6 +97,7 @@ edit_env_rep::rewrite (tree t) {
 	  r[i]= tree (make_tree_label (t[0]->label),
 		      tree (ARG, copy (t[2]), as_string (start+i)),
 		      as_string (start+i));
+
       macro_arg= old_var;
       macro_src= old_src;
       return r;
@@ -104,8 +106,11 @@ edit_env_rep::rewrite (tree t) {
     {
       if (N(t) == 0) return tree (ERROR, "invalid include");
       url file_name= url_unix (exec_string (t[0]));
+      url file_rel = relative (base_file_name, file_name);
+      if (file_rel == base_file_name)
+        return tree (ERROR, "invalid self include");
       //cout << "file_name= " << as_tree (file_name) << LF;
-      return load_inclusion (relative (base_file_name, file_name));
+      return load_inclusion (file_rel);
     }
   case WITH_PACKAGE:
     {
@@ -374,6 +379,10 @@ edit_env_rep::exec (tree t) {
     return exec_greatereq (t);
   case BLEND:
     return exec_blend (t);
+  case RGB_COLOR:
+    return exec_rgb_color (t);
+  case RGB_ACCESS:
+    return exec_rgb_access (t);
 
   case CM_LENGTH:
     return exec_cm_length ();
@@ -421,6 +430,8 @@ edit_env_rep::exec (tree t) {
     return exec_xspc_length ();
   case PAR_LENGTH:
     return exec_par_length ();
+  case PAW_LENGTH:
+    return exec_paw_length ();
   case PAG_LENGTH:
     return exec_pag_length ();
   case GW_LENGTH:
@@ -560,8 +571,8 @@ edit_env_rep::exec (tree t) {
 tree
 edit_env_rep::exec_formatting (tree t, string v) {
   int i, n= N(t);
-  if (n < 1)
-    return tree (ERROR, "bad formatting");
+  if (is_func (t, TFORMAT, 0)) return t;
+  if (n < 1) return tree (ERROR, "bad formatting");
   tree r (t, n);
   for (i=0; i<n-1; i++) r[i]= exec (t[i]);
   tree oldv= read (v);
@@ -1877,6 +1888,37 @@ edit_env_rep::exec_blend (tree t) {
 }
 
 tree
+edit_env_rep::exec_rgb_color (tree t) {
+  if (N(t)!=3 && N(t)!=4) return tree (ERROR, "bad rgb-color");
+  tree t1= exec (t[0]);
+  tree t2= exec (t[1]);
+  tree t3= exec (t[2]);
+  tree t4= (N(t)==4? tree ("255"): exec (t[3]));
+  if (!(is_int (t1) && is_int (t2) && is_int (t3) && is_int (t4)))
+    return tree (ERROR, "bad rgb-color");
+  color c= rgb_color (as_int (t1), as_int (t2), as_int (t3), as_int (t4));
+  return get_hex_color (c);
+}
+
+tree
+edit_env_rep::exec_rgb_access (tree t) {
+  if (N(t)!=2) return tree (ERROR, "bad rgb-access");
+  tree t1= exec (t[0]);
+  tree t2= exec (t[1]);
+  if (is_compound (t1) || is_compound (t2)) return tree (ERROR, "bad rgb-access");
+  string s1= t1->label;
+  if (!(is_color_name (s1))) return tree (ERROR, "bad rgb-access");
+  color c= named_color (s1);
+  int r, g, b, a;
+  get_rgb_color (c, r, g, b, a);
+  if (starts (t2->label, "r") || t2->label == "0") return as_string (r);
+  if (starts (t2->label, "g") || t2->label == "1") return as_string (g);
+  if (starts (t2->label, "b") || t2->label == "2") return as_string (b);
+  if (starts (t2->label, "a") || t2->label == "3") return as_string (a);
+  return tree (ERROR, "bad rgb-access");
+}
+
+tree
 edit_env_rep::exec_hard_id (tree t) {
   pointer ptr= (pointer) this;
   if (N(t) == 0)
@@ -2548,6 +2590,8 @@ edit_env_rep::exec_until (tree t, path p, string var, int level) {
   case GREATER:
   case GREATEREQ:
   case BLEND:
+  case RGB_COLOR:
+  case RGB_ACCESS:
     (void) exec (t);
     return false;
   case STYLE_WITH:

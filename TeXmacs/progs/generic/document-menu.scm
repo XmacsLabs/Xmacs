@@ -72,6 +72,10 @@
 
 (menu-bind document-style-extra-menu)
 
+(menu-bind document-style-extra-menu
+  (:require (not (or (in-beamer?) (in-poster?))))
+  (-> "Theme" (link basic-theme-menu)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Document -> Source submenus
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -754,6 +758,7 @@
   ---
   ("Palette" (interactive-background set-background '()))
   ("Pattern" (open-pattern-selector set-background "1cm"))
+  ("Gradient" (open-gradient-selector set-background))
   ("Picture" (open-background-picture-selector set-background))
   ("Other" (init-interactive-env "bg-color")))
 
@@ -906,7 +911,14 @@
 (tm-menu (focus-document-extra-menu t))
 (tm-menu (focus-style-extra-menu t))
 
+(tm-menu (focus-style-extra-menu t)
+  (:require (not (or (in-beamer?) (in-poster?))))
+  (-> "Theme" (link basic-theme-menu))
+  (assuming (!= (current-basic-theme) "plain")
+    (-> "Background color" (link document-background-color-menu))))
+
 (menu-bind cite-texmacs-only-menu
+  ("The Jolly Writer" (cite-texmacs "TeXmacs:vdH:book"))
   ("TeXmacs website" (cite-texmacs "TeXmacs:website"))
   ("TeXmacs manual" (cite-texmacs "TeXmacs:manual")))
 
@@ -1031,6 +1043,13 @@
 
 (tm-menu (focus-document-extra-icons t))
 (tm-menu (focus-style-extra-icons t))
+
+(tm-menu (focus-style-extra-icons t)
+  (:require (not (or (in-beamer?) (in-poster?))))
+  (=> (balloon (eval (basic-theme-name (current-basic-theme))) "Web theme")
+      (link basic-theme-menu))
+  (assuming (!= (current-basic-theme) "plain")
+    (link focus-background-color-icons)))
 
 (tm-menu (focus-style-icons t)
   (minibar

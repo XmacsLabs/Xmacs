@@ -263,10 +263,16 @@
   `(list ,text (lambda () ,@cmds)))
 
 (tm-define-macro ($check text check pred?)
-  (:synopsis "Make button")
+  (:synopsis "Make check")
   (if developer-mode?
     (ahash-set! all-translations text #t))
   `(list 'check ,text ,check (lambda () ,pred?)))
+
+(tm-define-macro ($shortcut* text sh)
+  (:synopsis "Make shortcut")
+  (if developer-mode?
+    (ahash-set! all-translations text #t))
+  `(list 'shortcut ,text ,sh))
 
 (tm-define-macro ($balloon text balloon)
   (:synopsis "Make balloon")
@@ -307,6 +313,10 @@
   (if developer-mode?
     (ahash-set! all-translations text #t))
   `(list 'text ,(process-translate text)))
+
+(tm-define-macro ($menu-invisible text)
+  (:synopsis "Make invisible")
+  `(list 'invisible ,text))
 
 (tm-define-macro ($input cmd type proposals width)
   (:synopsis "Make input field")

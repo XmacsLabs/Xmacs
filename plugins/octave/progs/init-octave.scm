@@ -16,13 +16,23 @@
       (string-append (getenv "TEXMACS_HOME_PATH") "/plugins/octave/octave")
       (string-append (getenv "TEXMACS_PATH") "/plugins/octave/octave")))
 
-(define octave-launcher
-  (string-append "octave-cli -qi \"" (octave-source-path) "/tmstart.m\""))
+(define (octave-launcher)
+  (with boot (string-append "\"" (octave-source-path) "/tmstart.m\"")
+    (if (url-exists-in-path? "octave-cli")
+        (string-append "octave-cli -qi " boot)
+        (string-append "octave-octave-app -qi " boot))))
 
 (plugin-configure octave
+  (:winpath "Octave*" ".")
   (:winpath "Octave*" "bin")
-  (:require (url-exists-in-path? "octave-cli"))
-  (:launch ,octave-launcher)
+  (:winpath "Octave*" "mingw64/bin")
+  (:winpath "Octave/Octave*" ".")
+  (:winpath "Octave/Octave*" "bin")
+  (:winpath "Octave/Octave*" "mingw64/bin")
+  (:macpath "Octave*" "Contents/Resources/usr/bin")
+  (:require (or (url-exists-in-path? "octave-cli")
+                (url-exists-in-path? "octave-octave-app")))
+  (:launch ,(octave-launcher))
   (:session "Octave"))
 
 (when (supports-octave?)

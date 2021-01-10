@@ -48,80 +48,92 @@ ispeller_rep::ispeller_rep (string lan2): rep<ispeller> (lan2), lan (lan2) {}
 // connect to spell checker with the desired dictionnary
 string
 ispeller_rep::start () {
-    if (!is_nil (ln)) { 
-       if (ln->alive) return "ok";
-       if (unavailable) return "Error: not available";
+  if (!is_nil (ln)) { 
+    if (ln->alive) return "ok";
+    if (unavailable) return "Error: not available";
+  }
+  string cmd, err;
+  string name = "";
+  string locale = language_to_locale (lan);
+  bool testdic = false;
+  if (exists_in_path ("hunspell")) {
+    cmd= "hunspell";
+    name = cmd;
+    cmd = cmd * " -a -i utf-8";
+    if (locale != "") cmd = cmd * " -d " * locale;
+    testdic = connect_spellchecker(cmd);
+  }
+  if ((name == "") || (!testdic))
+    if (exists_in_path ("aspell")) {
+      cmd= "aspell";
+      name = cmd;
+      cmd = cmd * " -a --encoding=utf-8";
+      if (locale != "") cmd = cmd * " --language-tag=" * locale;
+      testdic = connect_spellchecker(cmd);
     }
-    string cmd, err;
-    string name = "";
-    string locale = language_to_locale (lan);
-    bool testdic = false;
-    if (exists_in_path ("hunspell")) {
-        cmd= "hunspell";
-        name = cmd;
-        cmd = cmd * " -a -i utf-8";
-        if (locale != "") cmd = cmd * " -d " * locale;
-        testdic = connect_spellchecker(cmd);
-    }
-    if ((name == "") || (!testdic))
-      if (exists_in_path ("aspell")) {
-        cmd= "aspell";
-        name = cmd;
-        cmd = cmd * " -a --encoding=utf-8";
-        if (locale != "") cmd = cmd * " -l " * locale;
-        testdic = connect_spellchecker(cmd);
-      }
 #ifdef OS_MINGW
-    //look in "program files" for system-wide install (but not found in PATH)
-    url u;
-    bool testcmd;
-    if ((name == "") || (!testdic)){
-      u= url_system ("$PROGRAMFILES\\Hunspell\\bin\\hunspell.exe");
+  //look in "program files" for system-wide install (but not found in PATH)
+  url u;
+  bool testcmd;
+  if ((name == "") || (!testdic)){
+    u= url_system ("$PROGRAMFILES\\Hunspell\\bin\\hunspell.exe");
+    testcmd = exists (u);
+    if (!testcmd) {
+      u= url_system ("$PROGRAMFILES(x86)\\Hunspell\\bin\\hunspell.exe");
       testcmd = exists (u);
-      if (!testcmd) {
-          u= url_system ("$PROGRAMFILES(x86)\\Hunspell\\bin\\hunspell.exe");
-          testcmd = exists (u);
-          }
-      if (testcmd) {
-          cmd = as_string(u);
-          name = "Hunspell";
-          cmd = "\"" * cmd * "\" -a -i utf-8";
-          if (locale != "") cmd = cmd * " -d " * locale;
-          testdic = connect_spellchecker(cmd);
-      }
     }
-    if ((name == "") || (!testdic)) {
-      u = url_system ("$PROGRAMFILES\\Aspell\\bin\\aspell.exe");
+    if (testcmd) {
+      cmd = as_string(u);
+      name = "Hunspell";
+      cmd = "\"" * cmd * "\" -a -i utf-8";
+      if (locale != "") cmd = cmd * " -d " * locale;
+      testdic = connect_spellchecker(cmd);
+    }
+  }
+  if ((name == "") || (!testdic)) {
+    u = url_system ("$PROGRAMFILES\\Aspell\\bin\\aspell.exe");
+    testcmd = exists (u);
+    if (!testcmd) {
+      u= url_system ("$PROGRAMFILES(x86)\\Aspell\\bin\\aspell.exe");
       testcmd = exists (u);
-      if (!testcmd) {
-        u= url_system ("$PROGRAMFILES(x86)\\Aspell\\bin\\aspell.exe");
-        testcmd = exists (u);
-        }
-      if (testcmd)  {
-        cmd = as_string(u);
-        name = "Aspell";
-        cmd = "\"" * cmd * "\" -a --encoding=utf-8";
-        if (locale != "") cmd =  cmd * " -l " * locale;
-        testdic = connect_spellchecker(cmd);
-      }
     }
+    if (testcmd)  {
+      cmd = as_string(u);
+      name = "Aspell";
+      cmd = "\"" * cmd * "\" -a --encoding=utf-8";
+      if (locale != "") cmd =  cmd * " --language-tag=" * locale;
+      testdic = connect_spellchecker(cmd);
+    }
+  }
+#ifdef ASPELL
+  if ((name == "") || (!testdic)) {
+    u = url_system ("$TEXMACS_PATH\\" ASPELL "\\bin\\aspell.exe");
+    testcmd = exists (u);
+    if (testcmd)  {
+      cmd = as_string(u);
+      name = "Aspell";
+      cmd = "\"" * cmd * "\" -a --encoding=utf-8";
+      if (locale != "") cmd =  cmd * " --language-tag=" * locale;
+      testdic = connect_spellchecker(cmd);
+    }
+  }
 #endif
-    if (name == "") {
-        err = "Error: spellchecker not found in PATH (neither Aspell nor Hunspell) ";
-        std_error << err << "\nCannot spellcheck\n";
-        unavailable = true;
-        return err;
-        }
-    if (!testdic) {
-        err = "Error: no dictionary installed for " * lan * " (" * locale * ")";
-        std_error << err << "\nThe corresponding text is not checked\n";
-        unavailable = true;
-        return err;
-        }
-    debug_spell << "running " << name << " with " << locale << " dictionary for " << lan << "\n";
-    unavailable = false;
-    return "ok";
-
+#endif
+  if (name == "") {
+    err = "Error: spellchecker not found in PATH (neither Aspell nor Hunspell) ";
+    std_error << err << "\nCannot spellcheck\n";
+    unavailable = true;
+    return err;
+  }
+  if (!testdic) {
+    err = "Error: no dictionary installed for " * lan * " (" * locale * ")";
+    std_error << err << "\nThe corresponding text is not checked\n";
+    unavailable = true;
+    return err;
+  }
+  debug_spell << "running " << name << " with " << locale << " dictionary for " << lan << "\n";
+  unavailable = false;
+  return "ok";
 }
 
 bool
@@ -149,10 +161,10 @@ ispeller_rep::retrieve () {
   string ret;
 #ifdef OS_MINGW
   while ((ret != "\r\n") && (!ends (ret, "\r\n\r\n")) &&
-	 ((!ends (ret, "\r\n")) || (!starts (ret, "@(#)"))))
+        ((!ends (ret, "\r\n")) || (!starts (ret, "@(#)"))))
 #else
   while ((ret != "\n") && (!ends (ret, "\n\n")) &&
-	 ((!ends (ret, "\n")) || (!starts (ret, "@(#)"))))
+        ((!ends (ret, "\n")) || (!starts (ret, "@(#)"))))
 #endif
     {
       ln->listen (10000);
@@ -160,8 +172,8 @@ ispeller_rep::retrieve () {
       string extra= ln->read (LINK_OUT);
       if (mess  != "") io_error << "Spellchecker error: " << mess << "\n";
       if (extra == "") {
-	ln->stop ();
-	return "Error: spellchecker does not respond";
+       ln->stop ();
+       return "Error: spellchecker does not respond";
       }
       ret << extra;
     }
@@ -207,8 +219,8 @@ parse_ispell (string s) {
     if (s[j]==':') flag= false;
     else if (((s[j]==' ') && (flag || (j==i) || (s[j-1]==':'))) || (s[j]==','))
       {
-	if (j>i) t << s (i, j);
-	i= j+1;
+       if (j>i) t << s (i, j);
+       i= j+1;
       }
   t << s (i, j);
 

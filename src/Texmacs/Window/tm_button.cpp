@@ -13,6 +13,7 @@
 #include "Boxes/construct.hpp"
 #include "font.hpp"
 #include "tm_frame.hpp"
+#include "tm_buffer.hpp"
 #include "message.hpp"
 #ifdef AQUATEXMACS
 #include "Cocoa/aqua_simple_widget.h"
@@ -68,7 +69,7 @@ initialize_environment (edit_env& env, tree doc, drd_info& drd) {
   // env->write (ZOOM_FACTOR, "1.2");
   // env->write (PAGE_TYPE, "a5");
   if (retina_zoom == 2) {
-    double mag= 1.5 * env->get_int (MAGNIFICATION);
+    double mag= 2.0 * env->get_double (MAGNIFICATION);
     env->write (MAGNIFICATION, as_string (mag));
   }
   env->update ();
@@ -201,6 +202,15 @@ texmacs_output_widget (tree doc, tree style) {
   hashmap<string,tree> h1 (UNINIT), h2 (UNINIT);
   hashmap<string,tree> h3 (UNINIT), h4 (UNINIT);
   hashmap<string,tree> h5 (UNINIT), h6 (UNINIT);
+  tree prj= extract (doc, "project");
+  if (is_atomic (prj) && exists (url_system (prj->label))) {
+    tm_buffer buf= concrete_buffer_insist (url_system (prj->label));
+    if (!is_nil (buf)) {
+      h1= copy (buf->data->ref);
+      h3= copy (buf->data->aux);
+      h5= copy (buf->data->att);
+    }
+  }
   edit_env env (drd, "none", h1, h2, h3, h4, h5, h6);
   initialize_environment (env, doc, drd);
   tree t= extract (doc, "body");
@@ -223,4 +233,13 @@ texmacs_output_widget (tree doc, tree style) {
     col= light_grey;
 #endif
   return widget (tm_new<box_widget_rep> (b, col, false, 1.2, 0, 0));
+}
+
+array<SI>
+get_texmacs_widget_size (widget wid) {
+  array<SI> ret;
+  SI w, h;
+  ((simple_widget_rep*) wid.rep)->handle_get_size_hint (w, h);
+  ret << w << h;
+  return ret;
 }

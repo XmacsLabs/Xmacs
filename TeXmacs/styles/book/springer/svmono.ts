@@ -1,4 +1,4 @@
-<TeXmacs|1.99.6>
+<TeXmacs|1.99.16>
 
 <style|source>
 
@@ -24,7 +24,7 @@
     </src-title>
   </active*>
 
-  <use-package|std|env-base|env-math|env-enunciation|env-float|env-program|header-book|title-base|section-book|std-latex>
+  <use-package|std|env-base|env-math|env-enunciation|env-float|env-program|header-book|title-base|section-book|std-latex|html-font-size>
 
   <assign|env-theorem-dtd|1.0>
 
@@ -153,6 +153,8 @@
 
   <assign|chapter-number-title|<macro|num|title|<style-with|src-compact|none|<new-dpage*><no-indent><new-line><no-indent><wide-std-underlined|<chap-style|<chap-size|<arg|num>>>><vspace|10pt><new-line><no-indent><chap-style|<chap-size|<arg|title>>><vspace|106pt><no-page-break><no-indent*><right-flush>>>>
 
+  <assign|tmhtml-chapter-number-title|<macro|num|title|<chapter-title|<arg|num><space|0.5em><arg|title>>>>
+
   <assign|chapter-title|<macro|title|<chapter-number-title||<arg|title>>>>
 
   <assign|chapter-numbered-title|<macro|title|<chapter-number-title|<the-chapter>|<arg|title>>>>
@@ -179,6 +181,8 @@
   <assign|between-number-space|<macro|5pt>>
 
   <assign|sectional-sep|<macro|<space|<between-number-space>>>>
+
+  <assign|tmhtml-sectional-sep|<macro|<space|0.5em>>>
 
   <assign|*part-sep|<macro|<macro|7pt>>>
 
@@ -317,11 +321,17 @@
 
   \;
 
-  <new-list|itemize-1|<value|simple-item>|<macro|x|<active*|<with|mode|math|<rigid|\<bullet\>>>>>>
+  <assign|item-1|<macro|<active*|<with|mode|math|<rigid|\<bullet\>>>>>>
 
-  <new-list|itemize-2|<value|simple-item>|<macro|x|<active*|<with|mode|math|<rigid|->>>>>
+  <assign|item-2|<macro|<active*|<with|mode|math|<rigid|->>>>>
 
-  <new-list|itemize-3|<value|simple-item>|<macro|x|.>>
+  <assign|item-3|<macro|.>>
+
+  <new-list|itemize-1|<value|simple-item>|<macro|x|<item-tag>>>
+
+  <new-list|itemize-2|<value|simple-item>|<macro|x|<item-tag>>>
+
+  <new-list|itemize-3|<value|simple-item>|<macro|x|<item-tag>>>
 
   <new-list|itemize-minus|<value|simple-item>|<macro|x|<active*|<with|mode|math|<rigid|->>>>>
 
@@ -331,11 +341,17 @@
 
   \;
 
-  <new-list|enumerate-1|<value|aligned-dot-item>|<value|identity>>
+  <assign|enum-1|<macro|name|<arg|name>>>
 
-  <new-list|enumerate-2|<value|aligned-bracket-item>|<macro|x|<number|<arg|x>|alpha>>>
+  <assign|enum-2|<macro|name|<number|<arg|name>|alpha>>>
 
-  <new-list|enumerate-3|<value|aligned-dot-item>|<macro|x|<number|<arg|x>|roman>>>
+  <assign|enum-3|<macro|name|<number|<arg|name>|roman>>>
+
+  <new-list|enumerate-1|<value|aligned-dot-item>|<macro|x|<enum-tag|<arg|x>>>>
+
+  <new-list|enumerate-2|<value|aligned-bracket-item>|<macro|x|<enum-tag|<arg|x>>>>
+
+  <new-list|enumerate-3|<value|aligned-dot-item>|<macro|x|<enum-tag|<arg|x>>>>
 
   \;
 

@@ -1,4 +1,4 @@
-<TeXmacs|1.99.12>
+<TeXmacs|1.99.13>
 
 <style|<tuple|source|std-pattern>>
 
@@ -47,13 +47,13 @@
   <assign|arXiv-class-text|<macro|<localize|ArXiv subject classification>>>
 
   <assign|with-TeXmacs-text|<macro|This document has been written using the
-  GNU <TeXmacs> text editor (see <hlink|<with|font-family|tt|www.texmacs.org>|http://www.texmacs.org>).>>
+  GNU <TeXmacs> text editor (see <hlink|<with|font-family|tt|www.texmacs.org>|https://www.texmacs.org>).>>
 
   <assign|noteref-sep|<macro|>>
 
   <assign|cite-website|<macro|<localize|This document has been written using>
   GNU <TeXmacs><if|<equal|<value|language>|french>| ; |; ><localize|see>
-  <hlink|<with|font-family|tt|www.texmacs.org>|http://www.texmacs.org>.>>
+  <hlink|<with|font-family|tt|www.texmacs.org>|https://www.texmacs.org>.>>
 
   <assign|cite-TeXmacs|<xmacro|keys|<localize|This document has been written
   using> GNU <TeXmacs><nbsp><map-args|identity|cite|keys>.>>
@@ -140,12 +140,14 @@
     </surround>
   </macro>>
 
+  <assign|doc-title-name|<macro|x|<strong|<arg|x>>>>
+
   <assign|doc-title|<macro|x|<\surround|<vspace*|0.5fn>|<vspace|0.5fn>>
-    <doc-title-block|<font-magnify|1.682|<with|math-font-series|bold|font-series|bold|<arg|x>>>>
+    <doc-title-block|<font-magnify|1.682|<doc-title-name|<arg|x>>>>
   </surround>>>
 
   <assign|doc-subtitle|<macro|x|<\surround|<vspace*|0.25fn>|<vspace|0.5fn>>
-    <doc-title-block|<font-magnify|1.297|<with|math-font-series|bold|font-series|bold|<arg|x>>>>
+    <doc-title-block|<font-magnify|1.297|<doc-title-name|<arg|x>>>>
   </surround>>>
 
   <assign|doc-date|<macro|body|<style-with|src-compact|none|<vspace*|0.5fn><doc-title-block|<with|font-shape|italic|<arg|body>>><vspace|0.5fn>>>>

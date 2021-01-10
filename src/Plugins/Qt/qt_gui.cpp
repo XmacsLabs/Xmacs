@@ -58,8 +58,24 @@
 
 #if (QT_VERSION >= 0x050000)
 #include <QtPlugin>
+#ifdef qt_static_plugin_qjpeg
+Q_IMPORT_PLUGIN(qjpeg)
+#endif
+#ifdef qt_static_plugin_qgif
+Q_IMPORT_PLUGIN(qgif)
+#endif
+#ifdef qt_static_plugin_qico
+Q_IMPORT_PLUGIN(qico)
+#endif
+#ifdef qt_static_plugin_qsvg
+Q_IMPORT_PLUGIN(qsvg)
+#endif
+
 #ifdef WIN32 
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+#endif
+#ifdef QT_MAC_USE_COCOA
+Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
 #endif
 #endif
 
@@ -133,6 +149,7 @@ needing_update (false)
   if (!retina_manual) {
     retina_manual= true;
 #ifdef MACOSX_EXTENSIONS
+#if (QT_VERSION < 0x050000)
     double mac_hidpi = mac_screen_scale_factor();
     if (DEBUG_STD)
       debug_boot << "Mac Screen scaleFfactor: " << mac_hidpi <<  "\n";
@@ -148,6 +165,7 @@ needing_update (false)
         // retina_icons = 2;  // FIXME: why is this not better?
       }
     }
+#endif
 #else
     SI w, h;
     get_extents (w, h);
@@ -548,6 +566,18 @@ gui_refresh () {
   the_gui->refresh_language();
 }
 
+string
+gui_version () {
+#if (QT_VERSION >= 0x060000)
+  return "qt6";
+#else
+#if (QT_VERSION >= 0x050000)
+  return "qt5";
+#else
+  return "qt4";
+#endif
+#endif
+}
 
 /******************************************************************************
  * Queued processing
@@ -574,8 +604,8 @@ qt_gui_rep::process_queued_events (int max) {
     if (ev.x1 == qp_type::QP_NULL) break;
 #ifdef QT_CPU_FIX
     if (ev.x1 != qp_type::QP_NULL &&
-	ev.x1 != qp_type::QP_SOCKET_NOTIFICATION &&
-	ev.x1 != qp_type::QP_DELAYED_COMMANDS)
+        ev.x1 != qp_type::QP_SOCKET_NOTIFICATION &&
+        ev.x1 != qp_type::QP_DELAYED_COMMANDS)
       tm_wake_up ();
 #endif
     switch (ev.x1) {
@@ -759,7 +789,7 @@ qt_gui_rep::update () {
   int std_delay= 1;
   tm_sleep ();
 #else
-  int std_delay= 1000 / 6;
+  int std_delay= 90 / 6;
 #endif
 
   if (updating) {
@@ -774,11 +804,11 @@ qt_gui_rep::update () {
   updating = true;
   
   static int count_events    = 0;
-  static int max_proc_events = 100;
+  static int max_proc_events = 40;
   
   time_t     now = texmacs_time();
   needing_update = false;
-  time_credit    = 100 / (waiting_events.size() + 1);
+  time_credit    = 9 / (waiting_events.size() + 1);
   
     // 1.
     // Check if a wait dialog is active and in that case remove it.
@@ -839,7 +869,8 @@ qt_gui_rep::update () {
   time_t delay = delayed_commands.lapse - texmacs_time();
   if (needing_update) delay = 0;
   else                delay = max (0, min (std_delay, delay));
-  
+  if (postpone_treatment) delay= 9; // NOTE: force occasional display
+ 
   updatetimer->start (delay);
   updating = false;
   
@@ -914,7 +945,7 @@ qt_gui_rep::show_help_balloon (widget wid, SI x, SI y) {
   // the texmacs-input widget whenever there is one)
   get_position (get_window (concrete_window()->win), winx, winy);
   set_position (_popup_wid, x+winx, y+winy);
-  popup_wid_time = texmacs_time() + 666;
+  popup_wid_time = texmacs_time() + 66;
     // update() will eventually show the widget
 }
 

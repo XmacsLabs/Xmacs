@@ -13,7 +13,12 @@
 
 (texmacs-module (client client-widgets)
   (:use (client client-tmfs)
-        (client client-sync)))
+        (client client-sync)
+        (client client-chat)
+        (client client-live)))
+
+(tm-define (tm-servers)
+  (list "server.texmacs.org" "texmacs.math.unc.edu" "localhost"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Account creation
@@ -54,8 +59,8 @@
       (form "account-info"
 	(aligned
 	  (item (text "Server:")
-	    (form-input "server" "string"
-			(list "") "300px"))
+	    (form-enum "server" (rcons (tm-servers) "")
+                       (car (tm-servers)) "280px"))
 	  (item (text "Pseudo:")
 	    (form-input "pseudo" "string"
 			(list (get-user-info "pseudo")) "300px"))
@@ -172,8 +177,9 @@
      (when (== ret "ready")
        (with-wallet
          (wallet-set (list "remote" server-name pseudo) passwd))
-       (with server (client-find-server server-name)
-         (load-document (remote-home-directory server))))
+       (and-let* ((server (client-find-server server-name))
+                  (dir (remote-home-directory server)))
+         (load-document dir)))
      (when (== ret "invalid password")
        (with server (client-find-server server-name)
          (client-logout server))
@@ -189,8 +195,14 @@
       ======
       (aligned
 	(item (text "Server:")
-	  (form-input "server" "string"
-		      (list server-name) "300px"))
+	  (form-enum "server"
+                     (if (== server-name "")
+                         (rcons (tm-servers) "")
+                         (cons server-name (rcons (tm-servers) "")))
+                     (if (== server-name "")
+                         (car (tm-servers))
+                         server-name)
+                     "280px"))
 	(item (text "Pseudo:")
 	  (form-input "pseudo" "string"
 		      (list pseudo) "300px"))
@@ -402,7 +414,7 @@
                                                        users enc dec perms)
                              noop "Change permissions")))))))
 
-(tm-define (open-file-permissions-editor server u)
+(tm-define (open-permissions-editor server u)
   (:interactive #t)
   (with-remote-identifier rid server u
     (when rid
@@ -639,18 +651,20 @@
       (form-input field-name "string" (list (form-ref field-name)) width))
     // //
     (explicit-buttons
-      ("Browse"
-       (open-remote-file-browser
-        server
-        (with name (form-ref field-name)
-          (if (remote-file-name name)
-              (system->url name)
-              (system->url (remote-home-directory server))))
-        (if (== prompt "") :file (list :save-file prompt))
-        title
-        (lambda (name)
-          (form-set field-name (normalize (url->system name)))
-          (refresh-now "remote-name")))))))
+      (when (or (remote-file-name (form-ref field-name))
+                (remote-home-directory server))
+        ("Browse"
+         (open-remote-file-browser
+          server
+          (with name (form-ref field-name)
+            (if (remote-file-name name)
+                (system->url name)
+                (system->url (remote-home-directory server))))
+          (if (== prompt "") :file (list :save-file prompt))
+          title
+          (lambda (name)
+            (form-set field-name (normalize (url->system name)))
+            (refresh-now "remote-name"))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Widget for selecting files to be synchronized
@@ -752,10 +766,10 @@
   (form "auto-sync"
     (padded
       (tabs
-	(tab (text "Data")
-	  (dynamic (client-auto-sync-data-widget server)))
 	(tab (text "Files")
-	  (dynamic (client-auto-sync-files-widget server))))
+	  (dynamic (client-auto-sync-files-widget server)))
+	(tab (text "Data")
+	  (dynamic (client-auto-sync-data-widget server))))
       ======
       (hlist
 	>>
@@ -771,22 +785,18 @@
 ;; Upload and download widgets
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(tm-widget ((upload-widget server) quit)
+(tm-widget ((upload-widget server src dest) quit)
   (padded
     (form "upload-form"
       ======
       (aligned
         (item (text "Local source:")
-	  (with dummy (form-set "local-name"
-                                (if (remote-file-name (current-buffer)) ""
-                                    (url->system (current-buffer))))
+	  (with dummy (form-set "local-name" src)
 	    (dynamic (form-local-widget "upload-form" "local-name"
 					"Local file or directory"
 					"" "300px"))))
         (item (text "Remote destination:")
-	  (with dummy (form-set "remote-name"
-                                (if (remote-file-name (current-buffer))
-                                    (url->system (current-buffer)) ""))
+	  (with dummy (form-set "remote-name" dest)
 	    (dynamic (form-remote-widget server "upload-form" "remote-name"
 					 "Remote file or directory"
 					 "Upload as:" "300px"))))
@@ -813,13 +823,18 @@
 		   ;;(display* "Local  : " local-name "\n")
 		   ;;(display* "Remote : " remote-name "\n")
 		   ;;(display* "Message: " message "\n")
-		   (remote-upload local-name remote-name message)))
+		   (remote-upload local-name remote-name message
+                                  (lambda x (revert-buffer)))))
 	     (quit))))))))
 
 (tm-define (remote-interactive-upload server)
   (:interactive #t)
-  (dialogue-window (upload-widget server) noop
-		   "Upload file or directory"))
+  (let* ((src  (if (remote-file-name (current-buffer)) ""
+                   (url->system (current-buffer))))
+         (dest (if (remote-file-name (current-buffer))
+                   (url->system (current-buffer)) "")))
+    (dialogue-window (upload-widget server src dest) noop
+                     "Upload file or directory")))
 
 (tm-widget ((download-widget server) quit)
   (padded
@@ -867,3 +882,157 @@
   (:interactive #t)
   (dialogue-window (download-widget server) noop
 		   "Download file or directory"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Direct upload and download dialogs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (simple-upload server local-name remote-dir)
+  (when (and (url-exists? local-name)
+             (remote-file-name remote-dir)
+             (url-regular? local-name)
+             (remote-directory? remote-dir))
+    (with remote-name (url-append remote-dir (url-tail local-name))
+      (remote-upload local-name remote-name "uploaded"
+                     (lambda x
+                       (revert-buffer)
+                       (set-message "upload completed" "upload"))))))
+
+(tm-define (simple-interactive-upload server)
+  (:interactive #t)
+  (choose-file (lambda (local-name)
+                 (simple-upload server local-name (current-buffer)))
+               "Upload file or directory" "generic" ""
+               (system->url "$PWD")))
+
+(define (simple-download server remote-name local-name)
+  (when (and (remote-file-name remote-name)
+             (or (url-exists? local-name)
+                 (url-exists? (url-head local-name))))
+    (when (and (remote-file? remote-name)
+               (url-directory? local-name))
+      (set! local-name (url-append local-name (url-tail remote-name))))
+    (remote-download local-name remote-name
+                     (lambda x
+                       (set-message "download completed" "download")))))
+
+(tm-define (simple-interactive-download server)
+  (:interactive #t)
+  (let* ((name (current-buffer))
+         (type (if (remote-directory? name) "directory" "generic"))
+         (tail (if (remote-home-directory? name) "Home" (url-tail name)))
+         (prop (url-append (system->url "$PWD") tail)))
+    (choose-file (lambda (local-name)
+                   (simple-download server name local-name))
+                 "Download file or directory" type "Download" prop)))
+
+(define (simple-synchronize server remote-name local-name)
+  (when (and (remote-file-name remote-name)
+             (or (url-exists? local-name)
+                 (url-exists? (url-head local-name))))
+    (when (and (remote-file? remote-name)
+               (url-directory? local-name))
+      (set! local-name (url-append local-name (url-tail remote-name))))
+    (client-auto-sync-add server (url->system local-name)
+                                 (url->system remote-name))
+    (remote-interactive-sync server)))
+
+(tm-define (simple-interactive-synchronize server)
+  (:interactive #t)
+  (let* ((name (current-buffer))
+         (type (if (remote-directory? name) "directory" "generic"))
+         (tail (if (remote-home-directory? name) "Home" (url-tail name)))
+         (prop (url-append (system->url "$PWD") tail)))
+    (choose-file (lambda (local-name)
+                   (simple-synchronize server name local-name))
+                 "Synchronize file or directory" type "Synchronize" prop)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Message widgets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (message-send server u to)
+  (and-let* ((doc (buffer-get-body u))
+             (msg (tm->stree doc))
+             (dest (map (cut string-append "mail-" <>) to))
+             (cmd `(remote-send-message ,dest "send-document" ,msg)))
+    (client-remote-eval server cmd
+      (lambda x
+        (set-message "message sent" "instant message")
+        (show-message "Your message has been sent."
+                      "Send instant message")))))
+
+(tm-widget ((message-editor server u users to) quit)
+  (padded
+    (horizontal
+      (vertical
+        (bold (text "To"))
+        === ===
+        (resize "250px" "350px"
+          (choices (set! to answer) (sort users string<=?) to)))
+      ///
+      (vertical
+        (bold (text "Message"))
+        === ===
+        (resize "500px" "350px"
+          (texmacs-input `(document "") `(style (tuple "generic")) u))))
+    ======
+    (hlist
+      >>
+      (explicit-buttons
+	("Send" (message-send server u to) (quit))))))
+
+(tm-define (open-message-editor server)
+  (:interactive #t)
+  (with-remote-search-user users server (list)
+    (let* ((b (current-buffer-url))
+           (u (string->url "tmfs://aux/message-editor")))
+      (dialogue-window (message-editor server u users (list))
+                       (lambda x (noop))
+                       "Message editor" u)
+      (buffer-set-master u b))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Sharing documents
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (share-document server u to)
+  (and-let* ((msg (url->string u))
+             (dest (map (cut string-append "mail-" <>) to))
+             (cmd `(remote-send-message ,dest "share" ,msg)))
+    (client-remote-eval server cmd
+      (lambda x
+        (set-message (if (chat-room-url? u)
+                         "invitation sent"
+                         "document shared")
+                     "instant message")
+        (show-message (if (chat-room-url? u)
+                          "Your invitation has been sent."
+                          "Your document has been shared.")
+                      "Send instant message")))))
+
+(tm-widget ((share-document-widget server u users to) quit)
+  (padded
+    (with s (if (chat-room-url? u) "Invite" "Share with")
+      (bold (text s)))
+    === ===
+    (resize "250px" "350px"
+      (choices (set! to answer) (sort users string<=?) to))
+    ======
+    (hlist
+      >>
+      (explicit-buttons
+	("Send" (share-document server u to) (quit))))))
+
+(tm-define (open-share-document-widget server u)
+  (:interactive #t)
+  (with-remote-search-user users server (list)
+    (with-remote-identifier rid server u
+      (when rid
+        (with-remote-get-entry entry server rid
+          (with to (list-union (or (assoc-ref entry "readable") (list))
+                               (or (assoc-ref entry "owner") (list)))
+            (if (in? "all" to) (set! to users) (set! users to))
+            (dialogue-window (share-document-widget server u users to)
+                             (lambda x (noop))
+                             "Instant message")))))))

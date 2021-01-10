@@ -466,15 +466,24 @@ tag_index (tree t, path p, hashset<int> labs) {
   return -1;
 }
 
+static bool
+tag_inside (tree t, path p, hashset<int> labs) {
+  return !labs->contains ((int) L (subtree (t, path_up (p))));
+}
+
 static path
 move_tag (tree t, path p, hashset<int> labs, bool forward, bool preserve) {
   path q= p;
   while (true) {
     path r= move_node (t, q, forward);
     if (r == q) return p;
+    if (!tag_inside (t, r, labs) && !tag_inside (t, p, labs) &&
+        last_item (r) == last_item (p))
+      return r;
     if (distinct_tag_or_argument (t, p, r, labs) &&
         acceptable_border (t, p, r, labs) &&
         acceptable_child (t, r, labs) &&
+        tag_inside (t, r, labs) == tag_inside (t, p, labs) &&
         (!preserve || tag_index (t, r, labs) == tag_index (t, p, labs)))
       return r;
     q= r;
@@ -610,9 +619,10 @@ init_sections () {
     section_traverse_tags= hashset<tree_label> ();
     section_traverse_tags->insert (DOCUMENT);
     section_traverse_tags->insert (CONCAT);
-    section_traverse_tags->insert (as_tree_label ("ignore"));
-    section_traverse_tags->insert (as_tree_label ("show-part"));
-    section_traverse_tags->insert (as_tree_label ("hide-part"));
+    section_traverse_tags->insert (make_tree_label ("ignore"));
+    section_traverse_tags->insert (make_tree_label ("show-part"));
+    section_traverse_tags->insert (make_tree_label ("hide-part"));
+    section_traverse_tags->insert (make_tree_label ("live-io*"));
   }
   if (N(section_tags) == 0) {
     eval ("(use-modules (text text-drd))");
@@ -629,6 +639,8 @@ previous_section_impl (tree t, path p) {
   if (is_atomic (t)) return path ();
   else if (N(t) == 1 && section_tags->contains (L(t)))
     return p * 0;
+  else if (is_compound (t, "live-io*") && !is_nil (p) && p->item == 2)
+    return path (2, previous_section_impl (t[2], p->next));
   else if (section_traverse_tags->contains (L(t))) {
     int i= is_nil (p)? N(t)-1: p->item;
     for (; i>=0; i--) {

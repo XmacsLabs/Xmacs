@@ -20,7 +20,7 @@
 ### Basic settings (project independent)
 ### --------------------------------------------------------------------
 
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.13)
 
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_AUTOMOC ON)
@@ -50,11 +50,17 @@ project (TEXMACS CXX C) # check for C/C++ compiler
 
 set (PACKAGE TeXmacs)
 set (CMAKE_MODULE_PATH ${TEXMACS_SOURCE_DIR}/cmake)
-set (DEVEL_VERSION "1.99.13")
+
+set (VERSION_MAJOR "1")
+set (VERSION_MINOR "99")
+set (VERSION_BUILD "18")
+set (TEXMACS_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
+
+set (DEVEL_VERSION ${TEXMACS_VERSION})
 set (DEVEL_RELEASE "1")
-set (STABLE_VERSION "1.99.13")
+set (STABLE_VERSION ${TEXMACS_VERSION})
 set (STABLE_RELEASE "1")
-set (TEXMACS_REVISION "1.99.13")
+set (TEXMACS_REVISION ${TEXMACS_VERSION})
 
 
 ### --------------------------------------------------------------------
@@ -100,8 +106,14 @@ option (PDFHUMMUS_NO_TIFF "Disable TIFF in PDF Hummus" ON)
 
 option (USE_GMP "use GMP" ON)
 if (USE_GMP)
-  find_package(GMP)
+  find_package (GMP)
 endif (USE_GMP)
+
+if (WIN32)
+  option (OS_MINGW "Using OS MINGW" ON)
+else (WIN32)
+  option (OS_MINGW "Using OS MINGW" OFF)
+endif (WIN32)
 
 if (APPLE)
   set (MACOSX_EXTENSIONS 1)
@@ -261,7 +273,6 @@ set (PACKAGE_VERSION 1)
 ###  Test for Libraries
 ### --------------------------------------------------------------------
 
-find_package (Guile REQUIRED)
 find_package (PNG)
 find_package (Iconv)
 find_package (ZLIB)
@@ -271,19 +282,25 @@ find_package (JPEG)
 ### --------------------------------------------------------------------
 ###  Some Guile related adjustements
 ### --------------------------------------------------------------------
+find_package (Guile REQUIRED)
+
 if (Guile_VERSION_STRING VERSION_LESS 1.6)
   set (CONFIG_GUILE_SERIAL "A")
-  set (GUILE_A 1)
+  option (GUILE_A "Using Guile < 1.6.x" ON)
+  message (STATUS "Using GUILE_A: " ${Guile_VERSION_STRING})
 elseif (Guile_VERSION_STRING VERSION_LESS 1.8)
   set (CONFIG_GUILE_SERIAL "B")
-  set (GUILE_B 1)
+  option (GUILE_B "Using Guile 1.6.x" ON)
+  message (STATUS "Using GUILE_B: " ${Guile_VERSION_STRING})
 elseif (Guile_VERSION_STRING VERSION_LESS 2.0)
   set (CONFIG_GUILE_SERIAL "C")
-  set (GUILE_C 1)
+  option (GUILE_C "Using Guile 1.8.x" ON)
+  message (STATUS "Using GUILE_C: " ${Guile_VERSION_STRING})
 elseif (Guile_VERSION_STRING VERSION_LESS 3.0)
   set (CONFIG_GUILE_SERIAL "D")
-  set (GUILE_D 1)
+  option (GUILE_D ON)
   set (SCM_SIZET size_t)
+  message (STATUS "Using GUILE_D > 1.8.x: " ${Guile_VERSION_STRING})
 else (Guile_VERSION_STRING VERSION_LESS 1.6)
   message (ERROR "Not Guile serial A,B,C or D???")
 endif (Guile_VERSION_STRING VERSION_LESS 1.6)
@@ -291,25 +308,7 @@ endif (Guile_VERSION_STRING VERSION_LESS 1.6)
 
 set (CMAKE_REQUIRED_FLAGS "-Werror ${Guile_CFLAGS}")
 set (CMAKE_REQUIRED_INCLUDES ${Guile_INCLUDE_DIRS})
-set (CMAKE_REQUIRED_LIBRARIES ${Guile_LIBRARIES})
-
-message (STATUS "Checking the size_t of guile strings")
-
-check_c_source_compiles ("
-#include <guile/gh.h>
-#include <libguile.h>
-void print_string (SCM s) {
-  int len_r;
-  char* r= gh_scm2newstr (s, &len_r);
-}
-int main() { return 0; }
-" _guile_str_size_test)
-
-if (_guile_str_size_test)
-  set (guile_str_size_t int)
-else (_guile_str_size_test)
-  set (guile_str_size_t size_t)
-endif (_guile_str_size_test)
+set (guile_str_size_t size_t)
 
 message (STATUS "Checking whether ... arguments behave correctly")
 
@@ -332,16 +331,26 @@ endif (_guile_dots_test)
 ### Generate configure headers
 ### --------------------------------------------------------------------
 set (DEBUG_ASSERT 1)
+
 set (USE_GS 1)
-set (GS_EXE /usr/bin/gs)
+if (WIN32)
+  set (GS_EXE bin/gs.exe)
+else (WIN32)
+  set (GS_EXE /usr/bin/gs)
+endif (WIN32)
 set (GS_FONTS ../share/ghostscript/fonts:/usr/share/fonts:)
 set (GS_LIB ../share/ghostscript/9.06/lib:)
+
 set (GUILE_NUM 1)
 set (PDF_RENDERER 1)
 set (SIZEOF_VOID_P 8)
 set (STDC_HEADERS 1)
-set (USE_STACK_TRACE 1)
-option (USE_JEAIII "Use JEAIII itoa" ON)
+
+if (WIN32)
+  option (USE_STACK_TRACE "Use stack trace" OFF)
+else (WIN32)
+  option (USE_STACK_TRACE "Use stack trace" ON)
+endif (WIN32)
 
 set (CONFIG_STD_SETENV "#define STD_SETENV")
 set (tm_orig ${TEXMACS_SOURCE_DIR})
@@ -423,6 +432,14 @@ set (TeXmacs_Include_Dirs
   ${TEXMACS_BINARY_DIR}/src/System/ 
 )
 
+if (WIN32)
+  set (TeXmacs_Include_Dirs ${TeXmacs_Include_Dirs}
+    ${TEXMACS_SOURCE_DIR}/src/Plugins/Windows
+    ${TEXMACS_SOURCE_DIR}/src/Plugins/Windows/nowide
+  )
+else (WIN32)
+endif (WIN32)
+
 set (TeXmacs_Include_Dirs ${TeXmacs_Include_Dirs}
   ${Guile_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${Cairo_INCLUDE_DIRS}
   ${IMLIB2_INCLUDE_DIR} ${GMP_INCLUDES}
@@ -451,7 +468,6 @@ file (GLOB_RECURSE TeXmacs_Std_Plugins_SRCS
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Cairo/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Database/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Freetype/*.cpp"
-  "${TEXMACS_SOURCE_DIR}/src/Plugins/Jeaiii/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Pdf/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Pdf/*.c"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Ghostscript/*.cpp"
@@ -461,7 +477,6 @@ file (GLOB_RECURSE TeXmacs_Std_Plugins_SRCS
   "${TEXMACS_SOURCE_DIR}/src/Plugins/LaTeX_Preview/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Mplayer/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Openssl/*.cpp"
-  "${TEXMACS_SOURCE_DIR}/src/Plugins/Unix/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Sqlite3/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Updater/*.cpp"
 )
@@ -643,6 +658,18 @@ if (APPLE AND USE_SPARKLE)
   )
 endif (APPLE AND USE_SPARKLE)
 
+### --------------------------------------------------------------------
+### OS System selection
+### --------------------------------------------------------------------
+
+if (WIN32)
+  file (GLOB_RECURSE TeXmacs_System_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/Windows/*.cpp")
+else (WIN32)
+  file (GLOB_RECURSE TeXmacs_System_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/Unix/*.cpp")
+endif (WIN32)
+
+set (TeXmacs_All_SRCS ${TeXmacs_All_SRCS} ${TeXmacs_System_SRCS})
+
 if (APPLE)
   set (TeXmacs_Libraries
     ${TeXmacs_Libraries}
@@ -688,8 +715,6 @@ include_directories (${TeXmacs_Include_Dirs})
 ### Optimization options
 ### --------------------------------------------------------------------
 
-
-
 ### --------------------------------------------------------------------
 ### Set the executable target name and other stuff
 ### --------------------------------------------------------------------
@@ -720,21 +745,43 @@ if (APPLE)
   install (DIRECTORY src/Plugins/Cocoa/zh_CN.lproj DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (APPLE)
 
-install (FILES ${TEXMACS_BINARY_DIR}/misc/script/texmacs
-              ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
-              misc/scripts/tm_gs 
-        DESTINATION bin
-        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-                    GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+if (APPLE)
+  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
+                 misc/scripts/tm_gs
+          DESTINATION share/TeXmacs/bin
+          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                      GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+elseif (WIN32)
+  message (STATUS "No need to install launch scripts for Windows")
+else (WIN32)
+  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs
+                 ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
+                 misc/scripts/tm_gs
+          DESTINATION bin
+          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                      GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+                    
+endif (WIN32)
+
 ### include/
 install (DIRECTORY TeXmacs/include DESTINATION ${CMAKE_INSTALL_PREFIX}
   FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ)
+
 ### share/
-install (DIRECTORY plugins DESTINATION share/TeXmacs
-  FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-  PATTERN "bin" EXCLUDE
-  PATTERN "CMakeLists.txt" EXCLUDE
-  PATTERN ".gitignore" EXCLUDE)
+if (WIN32)
+  install (DIRECTORY plugins DESTINATION ${CMAKE_INSTALL_PREFIX}
+    FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+    PATTERN "bin" EXCLUDE
+    PATTERN "CMakeLists.txt" EXCLUDE
+    PATTERN ".gitignore" EXCLUDE)
+else (WIN32)
+  install (DIRECTORY plugins DESTINATION share/TeXmacs
+    FILE_PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+    PATTERN "bin" EXCLUDE
+    PATTERN "CMakeLists.txt" EXCLUDE
+    PATTERN ".gitignore" EXCLUDE)
+endif (WIN32)
+
 install (FILES TeXmacs/misc/mime/texmacs.desktop DESTINATION share/applications)
 install (FILES TeXmacs/misc/images/texmacs.svg DESTINATION share/icons/gnome/scalable/apps)
 install (FILES TeXmacs/misc/images/text-x-texmacs.svg DESTINATION share/icons/gnome/scalable/mimetypes)
@@ -769,3 +816,5 @@ configure_file (${TEXMACS_SOURCE_DIR}/misc/vscode/c_cpp_properties.json.in
   ${TEXMACS_SOURCE_DIR}/.vscode/c_cpp_properties.json
   @ONLY
 )
+
+message (STATUS "TeXmacs_Libraries" ${TeXmacs_Libraries})

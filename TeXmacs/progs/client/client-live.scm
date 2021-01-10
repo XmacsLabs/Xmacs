@@ -17,24 +17,35 @@
         (client client-tmfs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tags for remote live documents
+;; Remote live documents
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (tm-define (live-remote-context? t)
-  (and (tree-func? t 'live-io 3)
-       (live-context? t)))
+  (and (live-context? t)
+       (url-rooted-tmfs? (live-id t))))
+
+(tm-define (live-url? fname)
+  (string-starts? (url->string fname) "tmfs://live/"))
+
+(tm-define (live-list-url? fname)
+  (string-starts? (url->string fname) "tmfs://live-list/"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Useful subroutines
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (tm-define (live-find-server lid)
-  (with sname (tmfs-car (url->string (url-unroot lid)))
+  (let* ((s1 (url->string (url-unroot lid)))
+         (s2 (if (== (tmfs-car s1) "live") (tmfs-cdr s1) s1))
+         (sname (tmfs-car s2)))
     (client-find-server sname)))
 
 (tm-define (live-get-name lid)
-  (with rname (tmfs-cdr (url->string (url-unroot lid)))
-    (if (== (tmfs-car rname) "live") (tmfs-cdr rname) rname)))
+  (let* ((s1 (url->string (url-unroot lid)))
+         (s2 (if (== (tmfs-car s1) "live") (tmfs-cdr s1) s1))
+         (s3 (tmfs-cdr s2))
+         (s4 (if (== (tmfs-car s3) "live") (tmfs-cdr s3) s3)))
+    s4))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Retrieving the initial document
@@ -75,11 +86,7 @@
 
 (tm-define (live-retrieve t)
   (:require (live-remote-context? t))
-  (let* ((lid (live-id t))
-         (vid (live-view-id t)))
-    (if (url-rooted-tmfs? lid)
-        (live-remote-retrieve lid vid)
-        (former t))))
+  (live-remote-retrieve (live-id t) (live-view-id t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Treating local modifications in live documents
@@ -107,8 +114,9 @@
     (if (or (not server) following-server-instruction?) new-state
         (and old-state new-state
              (begin
-	       (display* "Send " (patch->modlist p)
-			 ", " old-state ", " new-state "\n")
+               (when (debug-get "live")
+                 (display* "Send " (patch->modlist p)
+                           ", " old-state ", " new-state "\n"))
                (live-remote-modify lid p old-state new-state)
                new-state)))))
 
@@ -126,27 +134,32 @@
   (let* ((new-state (live-current-state lid))
          (p (live-get-inverse-patch lid old-state)))
     (when (!= new-state old-state)
-      (display* "Resend " (patch->modlist p)
-		", " old-state ", " new-state "\n")
+      (when (debug-get "live")
+        (display* "Resend " (patch->modlist p)
+                  ", " old-state ", " new-state "\n"))
       (live-remote-modify lid p old-state new-state))))
 
 (tm-call-back (live-modify lid mods old-state new-state)
-  (display* "Receive " mods ", " old-state ", " new-state "\n")
-  ;;(display* "live-modify " lid ", " mods ", " old-state ", " new-state "\n")
+  (when (debug-get "live")
+    (display* "Receive " mods ", " old-state ", " new-state "\n")
+    ;;(display* "live-modify " lid
+    ;;          ", " mods ", " old-state ", " new-state "\n")
+    )
   (live-treat-pending lid)
   (with (server msg-id) envelope
     (let* ((old-t (live-get-document lid old-state)) ;; TODO: check old-t != #f
            (p (modlist->patch mods old-t))
            (inv-p (patch-invert p old-t))
            (ok-state (live-latest-compatible lid old-state p)))
-      (when (!= ok-state (live-current-state lid))
-	(display* "-- full-history= " (live-get-history lid) "\n")
-	(display* "-- history= " (live-get-state-list lid old-state) "\n")
-	(display* "-- ok-state= " ok-state "\n")
-	(display* "-- mods= " mods "\n")
-	(display* "-- oldp= "
-		  (patch->modlist
-		   (live-get-inverse-patch lid old-state)) "\n"))
+      (when (debug-get "live")
+        (when (!= ok-state (live-current-state lid))
+          (display* "-- full-history= " (live-get-history lid) "\n")
+          (display* "-- history= " (live-get-state-list lid old-state) "\n")
+          (display* "-- ok-state= " ok-state "\n")
+          (display* "-- mods= " mods "\n")
+          (display* "-- oldp= "
+                    (patch->modlist
+                     (live-get-inverse-patch lid old-state)) "\n")))
       (live-retract lid ok-state)
       (live-update-views lid)
       (let* ((rev (live-get-patch-list lid old-state))
@@ -164,3 +177,89 @@
         (with result (client-return envelope #t)
           (live-resend-local-changes lid new-state)
           result)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; List of live documents
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(tmfs-permission-handler (live-list name type)
+  (in? type (list "read")))
+
+(tmfs-load-handler (live-list sname)
+  (let* ((u (string-append "tmfs://live-list/" sname))
+         (base (string-append "tmfs://live/" sname))
+         (server (client-find-server sname)))
+    (client-remote-eval server `(remote-list-live)
+      (lambda (l)
+        (with hyp (lambda (c) `(hlink ,c ,(string-append base "/" c)))
+          (with doc `(document (section* "Live documents") ,@(map hyp l))
+            (buffer-set-body u doc)
+            (buffer-pretend-saved u)
+            (set-message "retrieved contents" "list of live documents"))))
+      (lambda (err)
+        (set-message err "list of live documents")))
+    (set-message "loading..." "list of live documents")
+    `(document
+       (TeXmacs ,(texmacs-version))
+       (style (tuple "generic"))
+       (body (document "")))))
+
+(tm-define (list-live server)
+  (and-with sname (client-find-server-name server)
+    (string-append "tmfs://live-list/" sname)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Live discussions as documents
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(tmfs-permission-handler (live name type)
+  ;; FIXME: to be improved...
+  (in? type (list "read" "write")))
+
+(tmfs-title-handler (live fname doc)
+  (let* ((lid (string-append "tmfs://live/" fname))
+         (name (live-get-name lid))
+         (title (string-append "Live - " name)))
+    title))
+
+(define live-vid-table (make-ahash-table))
+
+(define (get-live-vid lid)
+  (or (ahash-ref live-vid-table lid)
+      (with vid (create-unique-id)
+        (ahash-set! live-vid-table lid vid)
+        vid)))
+
+(tmfs-load-handler (live fname)
+  (with lid (string-append "tmfs://live/" fname)
+    `(document
+       (TeXmacs ,(texmacs-version))
+       (style (tuple "generic" "live-document"))
+       (body (document
+               (live-io* ,(get-live-vid lid) ,lid (document "")))))))
+
+(tm-define (live-create-interactive server)
+  (:interactive #t)
+  (and-with sname (client-find-server-name server)
+    (interactive
+        (lambda (name)
+          (with lid (string-append "tmfs://live/" sname "/" name)
+            (client-remote-eval server `(live-exists? ,lid)
+              (lambda (e?)
+                (if (not e?) (load-document lid)
+                    (set-message "live document already exists"
+                                 "create live document"))))))
+      (list "Create live document" "string" '()))))
+
+(tm-define (live-open-interactive server)
+  (:interactive #t)
+  (and-with sname (client-find-server-name server)
+    (interactive
+        (lambda (name)
+          (with lid (string-append "tmfs://live/" sname "/" name)
+            (client-remote-eval server `(live-exists? ,lid)
+              (lambda (e?)
+                (if e? (load-document lid)
+                    (set-message "live document not found"
+                                 "open live document"))))))
+      (list "Open live document" "string" '()))))

@@ -185,8 +185,8 @@ qt_inputs_list_widget_rep::qt_inputs_list_widget_rep (command _cmd,
 }
 
 widget
-qt_inputs_list_widget_rep::plain_window_widget (string s, command q)
-{
+qt_inputs_list_widget_rep::plain_window_widget (string s, command q, int b) {
+  (void) b;
   (void) q; // The widget already has a command (dialogue_command)
   win_title = s;
   return this;
@@ -382,7 +382,11 @@ QWidget*
 qt_input_text_widget_rep::as_qwidget () {
   QTMLineEdit* le = new QTMLineEdit (NULL, type, width, style, cmd);
   qwid = le;
-  QTMInputTextWidgetHelper* helper = new QTMInputTextWidgetHelper (this);
+  bool can_autocommit= !(ends (type, "search") ||
+                         ends (type, "replace") ||
+                         ends (type, "replace"));
+  QTMInputTextWidgetHelper* helper =
+    new QTMInputTextWidgetHelper (this, can_autocommit);
   (void) helper;
   le->setText (to_qstring (input));
   le->setObjectName (to_qstring (type));

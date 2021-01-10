@@ -275,6 +275,15 @@
   (("par-mode" "right") (!begin "flushright")))
 
 (logic-table tex-with-cmd-math%
+  (("font" "cal") mathcal)
+  (("font" "cal*") mathscr)
+  (("font" "cal**") EuScript)
+  (("font" "Euler") mathfrak)
+  (("font" "Bbb") mathbb)
+  (("font" "Bbb*") mathbbm)
+  (("font" "Bbb**") mathbbmss)
+  (("font" "Bbb***") mathbb)
+  (("font" "Bbb****") mathds)
   (("font-family" "rm") mathrm)
   (("font-family" "ss") mathsf)
   (("font-family" "tt") mathtt)
@@ -627,7 +636,8 @@
          (t (tmtex-verb-list l))
          (r (tmtex-string-produce t)))
     (if (or tmtex-use-unicode? tmtex-use-ascii?)
-      (set! r (map (lambda (x) (string-convert* x "Cork" "UTF-8")) r)))
+        (set! r (map (lambda (x) (string-convert* x "Cork" "UTF-8")) r))
+        (set! r (map unescape-angles r)))
     (tex-concat r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1648,6 +1658,11 @@
 (define (tmtex-pageref l)
   (list 'pageref (force-string (car l))))
 
+(define (tmtex-smart-ref s l)
+  (let* ((ss (map force-string l))
+         (key (string-recompose ss ",")))
+    (list 'cref key)))
+
 (define (tmtex-specific l)
   (cond ((== (car l) "latex") (tmtex-tt (cadr l)))
 	((== (car l) "image") (tmtex-eps (cadr l)))
@@ -2148,11 +2163,18 @@
   (with lang (if (or (== s "verbatim") (== s "code")) '() `((!option ,s)))
     `((!begin* "tmcode" ,@lang) ,(tmtex-verbatim* "" l))))
 
+(define (tmtex-add-preview-packages x)
+  (cond ((list? x) (for-each tmtex-add-preview-packages x))
+        ((nstring? x) (noop))
+        ((string-occurs? "tikzpicture" x) (latex-add-extra "tikz"))))
+
 (define (tmtex-mixed s l)
   (if (func? (cadr l) 'text) (set! l `("" ,(cadadr l))))
-  (set! l (unescape-angles l))
+  ;; (set! l (unescape-angles l))
+  ;; NOTE: instead, we now unescape in tmtex-verb-string
   (tmtex-env-set "mode" "text")
   (with src (list '!verbatim* (tmtex-tt (cadr l)))
+    (tmtex-add-preview-packages src)
     (tmtex-env-reset "mode")
     (list '!unindent src)))
 
@@ -3049,6 +3071,7 @@
   (action (,tmtex-action -1))
   (href (,tmtex-href 1))
   (slink (,tmtex-href 1))
+  (smart-ref (,tmtex-smart-ref -1))
   (choose (,tmtex-choose 2))
   (tt (,tmtex-text-tt 1))
   ((:or strong em name samp abbr dfn kbd var acronym person)
@@ -3287,6 +3310,7 @@
               (in? lan '("chinese" "taiwanese" "japanese" "korean")))
         (latex-set-style main-style)
         (latex-set-packages '())
+        (latex-set-extra '())
         (set! tmtex-style (car style))
         (set! tmtex-packages (cdr style))
         (set! tmtex-languages (list lan))

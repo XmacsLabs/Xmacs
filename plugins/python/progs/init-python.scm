@@ -31,11 +31,6 @@
     (with s (texmacs->code (stree->tree u) "SourceCode")
       (string-append  s  "\n<EOF>\n"))))
 
-(define (python-command) "python3")
-
-(define (python-exists?)
-  (url-exists-in-path? "python3"))
-
 (define (python-launcher)
   (if (url-exists? "$TEXMACS_HOME_PATH/plugins/tmpy")
       (string-append (python-command) " \""
@@ -46,8 +41,10 @@
                      "/plugins/tmpy/session/tm_python.py\"")))
 
 (plugin-configure python
+  (:winpath "python*" ".")
   (:winpath "Python*" ".")
-  (:require (python-exists?))
+  (:winpath "Python/Python*" ".")
+  (:require (python-command))
   (:launch ,(python-launcher))
   (:tab-completion #t)
   (:serializer ,python-serialize)

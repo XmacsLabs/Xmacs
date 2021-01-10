@@ -40,6 +40,7 @@
 #define THE_EXTENTS 64
 #define THE_LOCUS 128
 #define THE_MENUS 256
+#define THE_FREEZE 512
 
 class tm_buffer_rep;
 class tm_view_rep;
@@ -79,10 +80,14 @@ protected:
   virtual typesetter           get_typesetter () = 0;
   virtual hashmap<string,tree> get_init () = 0;
   virtual hashmap<string,tree> get_fin () = 0;
+  virtual hashmap<string,tree> get_ref () = 0;
+  virtual hashmap<string,tree> get_aux () = 0;
   virtual hashmap<string,tree> get_att () = 0;
   virtual void                 set_init (hashmap<string,tree> H= tree ("?"))=0;
   virtual void                 add_init (hashmap<string,tree> H) = 0;
   virtual void                 set_fin (hashmap<string,tree> H) = 0;
+  virtual void                 set_ref (hashmap<string,tree> H) = 0;
+  virtual void                 set_aux (hashmap<string,tree> H) = 0;
   virtual void                 set_att (hashmap<string,tree> H) = 0;
 
   /* exchanging property information */
@@ -138,7 +143,8 @@ public:
   editor_rep ();
   editor_rep (server_rep* sv, tm_buffer buf);
   inline virtual ~editor_rep () {}
-
+  bool is_current_editor ();
+  
   /* public routines from edit_interface */
   virtual void suspend () = 0;
   virtual void resume () = 0;
@@ -149,6 +155,12 @@ public:
   virtual SI   get_visible_height () = 0;
   virtual SI   get_window_width () = 0;
   virtual SI   get_window_height () = 0;
+  virtual SI   get_window_x () = 0;
+  virtual SI   get_window_y () = 0;
+  virtual SI   get_canvas_x () = 0;
+  virtual SI   get_canvas_y () = 0;
+  virtual SI   get_scroll_x () = 0;
+  virtual SI   get_scroll_y () = 0;
   virtual void invalidate (SI x1, SI y1, SI x2, SI y2) = 0;
   virtual void invalidate (rectangles rs) = 0;
   virtual void invalidate_all () = 0;
@@ -224,6 +236,7 @@ public:
   virtual void go_end_with (string var, string val) = 0;
   virtual void go_start_paragraph () = 0;
   virtual void go_end_paragraph () = 0;
+  virtual path search_label (string s, bool local= false) = 0;
   virtual void go_to_label (string s) = 0;
   virtual tree get_labels () = 0;
 
@@ -255,6 +268,9 @@ public:
   virtual void     get_data (new_data& data) = 0;
   virtual SI       as_length (string l) = 0;
   virtual string   add_lengths (string l1, string l2) = 0;
+  virtual string   sub_lengths (string l1, string l2) = 0;
+  virtual string   max_lengths (string l1, string l2) = 0;
+  virtual string   min_lengths (string l1, string l2) = 0;
   virtual string   multiply_length (double x, string l) = 0;
   virtual bool     is_length (string s) = 0;
   virtual double   divide_lengths (string l1, string l2) = 0;
@@ -303,10 +319,19 @@ public:
   virtual tree     get_init_all () = 0;
   virtual void     init_env (string var, tree by) = 0;
   virtual void     init_default (string var) = 0;
+  virtual tree     get_ref (string key) = 0;
+  virtual tree     get_aux (string key) = 0;
   virtual tree     get_att (string key) = 0;
+  virtual void     set_ref (string key, tree im) = 0;
+  virtual void     set_aux (string key, tree im) = 0;
   virtual void     set_att (string key, tree im) = 0;
+  virtual void     reset_ref (string key) = 0;
+  virtual void     reset_aux (string key) = 0;
   virtual void     reset_att (string key) = 0;
-  virtual array<string> list_atts () = 0;
+  virtual array<string> find_refs (string val, bool global= false) = 0;
+  virtual array<string> list_refs (bool global= false) = 0;
+  virtual array<string> list_auxs (bool global= false) = 0;
+  virtual array<string> list_atts (bool global= false) = 0;
   virtual void     typeset_forced () = 0;
   virtual void     typeset_invalidate (path p) = 0;
   virtual void     typeset_invalidate_all () = 0;
@@ -571,6 +596,7 @@ public:
   virtual tree the_line () = 0;
   virtual tree the_root () = 0;
   virtual tree the_buffer () = 0;
+  virtual bool test_subtree (path p) = 0;
   virtual tree the_subtree (path p) = 0;
   virtual path the_path () = 0;
   virtual path the_shifted_path () = 0;
@@ -593,7 +619,9 @@ public:
   friend void   tm_failure (const char* msg);
   friend void   set_buffer_tree (url name, tree doc);
   friend void   set_current_view (url u);
+  friend void   set_current_drd (url name);
   friend void   focus_on_editor (editor ed);
+  friend void   delete_view (url u);
 };
 
 template<> void tm_delete<editor_rep> (editor_rep* ptr);
@@ -603,6 +631,7 @@ EXTEND_NULL(widget,editor);
 public:
   inline bool operator == (editor w) { return rep == w.rep; }
   inline bool operator != (editor w) { return rep != w.rep; }
+  friend class editor_rep;
 };
 EXTEND_NULL_CODE(widget,editor);
 

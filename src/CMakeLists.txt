@@ -1,3 +1,14 @@
+### --------------------------------------------------------------------
+### Set the executable target name and other stuff
+### --------------------------------------------------------------------
+
+if (APPLE)
+  set (TeXmacs_binary_name "Xmacs")
+elseif (WIN32)
+  set (TeXmacs_binary_name "xmacs")
+else (APPLE)
+  set (TeXmacs_binary_name "xmacs.bin")
+endif (APPLE)
 
 add_library(texmacs_body STATIC ${TeXmacs_All_SRCS})
 
@@ -20,13 +31,9 @@ if (APPLE)
     RELEASE_OUTPUT_NAME ${TeXmacs_binary_name}
     RUNTIME_OUTPUT_DIRECTORY ${TEXMACS_BINARY_DIR}
   )
+elseif (WIN32)
+  install (TARGETS ${TeXmacs_binary_name} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 else (APPLE)
-  set_target_properties (${TeXmacs_binary_name}
-    PROPERTIES
-    DEBUG_OUTPUT_NAME ${TeXmacs_binary_name}${EXE_DEBUG_EXTENSION}
-    RELEASE_OUTPUT_NAME ${TeXmacs_binary_name}
-    RUNTIME_OUTPUT_DIRECTORY ${TEXMACS_BINARY_DIR}
-  )
-  install (TARGETS ${TeXmacs_binary_name} DESTINATION lib/texmacs/TeXmacs/bin)
+  install (TARGETS ${TeXmacs_binary_name} DESTINATION ${tmbin}/bin)
 endif (APPLE)
 

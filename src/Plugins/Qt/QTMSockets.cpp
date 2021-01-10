@@ -44,7 +44,7 @@
 #endif
 
 unsigned dbg_cnt;
-int socket_link::id= 0;
+int socket_link::nr_ids= 0;
 int socket_basic::count= 0;
 #ifdef OS_MINGW
 wsoc::WSADATA socket_basic::wsadata;
@@ -79,8 +79,9 @@ socket_basic::~socket_basic () {
 };
 
 
-socket_link::socket_link (int s, struct SOCKADDR_IN *addr) {
-  id++; sock= s; qsnr= NULL; qsnw= NULL;
+socket_link::socket_link (int s, struct SOCKADDR_IN *addr): id (++nr_ids) {
+  //cout << "Socket link [1] ~> " << id << LF;
+  sock= s; qsnr= NULL; qsnw= NULL;
   if (st != ST_VOID) return;
   memcpy (&add, addr, sizeof(add));
   qsnr= tm_new <QSocketNotifier> (s, QSocketNotifier::Read);
@@ -95,10 +96,10 @@ socket_link::socket_link (int s, struct SOCKADDR_IN *addr) {
   st= ST_OK;
 }
 
-socket_link::socket_link(string host, u_short port) {
-  ++id; qsnr= NULL; qsnw= NULL;
+socket_link::socket_link(string host, u_short port): id (++nr_ids) {
+  //cout << "Socket link [2] ~> " << id << LF;
+  qsnr= NULL; qsnw= NULL;
   if (st != ST_VOID) return;
-  id++;
 /* this original code used the deprecated function gethostbyname
   this was signaled in the tracker (#34182, #46726) 
   Below the functionality is implemented using getaddrinfo,
@@ -232,7 +233,7 @@ socket_link::data_set_ready (int s) {
   qsnr->setEnabled(false);
  
   int lgdata = NMSPC (recv (s , data , sizeof(data) , 0));
-  DBG_IO ("Socket incomming code=" << lgdata);
+  DBG_IO ("Socket incoming code=" << lgdata);
   if (lgdata == 0)   {
     DBG_IO ("Client disconnected");   
     stop ();
@@ -248,7 +249,16 @@ socket_link::data_set_ready (int s) {
   }
   else {
     inbuf << string (data, lgdata);
-    DBG_IO ("Data Received:" << string(data, lgdata));
+    if (DEBUG_IO) {
+      string s (data, lgdata);
+      bool ok= true;
+      for (int i=0; i<N(s); i++)
+        if (((int) (unsigned char) s[i]) >= 128 ||
+            (((int) (unsigned char) s[i]) < 32 &&
+             s[i] != '\n' && s[i] != '\t')) ok= false;
+      if (ok) { DBG_IO ("Data received:" << s); }
+      else { DBG_IO ("Binary data received size=" << N(s)); }
+    }
     qsnr->setEnabled (true);
   }
 }
@@ -263,7 +273,7 @@ socket_link::ready_to_send (int s) {
   if (sz) {
     char  *buf= as_charp (outbuf);
     int ret= WRITE (s, buf, sz);
-    DBG_IO ("Socket outcomming code=" << ret);
+    DBG_IO ("Socket outcoming code=" << ret);
     if (ret >0) {
       if (ret == sz) outbuf= ""; else outbuf= outbuf (ret,sz);
       sz -= ret;
@@ -348,9 +358,9 @@ socket_server::connection (int s) {
     clt= tm_new <socket_link> (sclt,  &cltadd);
     if (clt) {
       if (clt->alive ()) {
-        connect (clt, SIGNAL (disconnection(class socket_link*)), this,
-		 SLOT (disconnection (class socket_link*)));
-        clts->insert (clt);
+        connect (clt, SIGNAL (disconnection(socket_link*)), this,
+		 SLOT (disconnection (socket_link*)));
+        clts->insert ((pointer) clt);
         call ("server-add", object (clt->getid ()));
         DBG_IO ("Client Connected " << show_addr (cltadd.sin_addr.s_addr)
 		<< " id:" << clt->getid ());
@@ -366,9 +376,9 @@ socket_server::connection (int s) {
 }
 
 void 
-socket_server::disconnection(class socket_link* clt) {
+socket_server::disconnection(socket_link* clt) {
   call ("server-remove", object (clt->getid()));
-  clts->remove(clt);
+  clts->remove((pointer) clt);
   tm_delete(clt);
 }
 
@@ -389,19 +399,25 @@ socket_server::write (IdClt id, string s) {
 
 class socket_link *
 socket_server::find_client(IdClt id) {
-  iterator<class socket_link*> it= iterate (clts);
+  iterator<pointer> it= iterate (clts);
   while (it->busy ()) {
-    class socket_link* clt= it->next ();
+    socket_link* clt= (socket_link*) it->next ();
     if (clt->getid() == id) return clt;
   }
-  DBG_IO ("Client not found Id " << id);
+  array<IdClt> ids;
+  it= iterate (clts);
+  while (it->busy ()) {
+    socket_link* clt= (socket_link*) it->next ();
+    ids << clt->getid();
+  }
+  DBG_IO ("Client not found, Id = " << id << ", Among = " << ids);
   return NULL;
 }
 
 socket_server::~socket_server() {
-  iterator<class socket_link*> it= iterate (clts);
+  iterator<pointer> it= iterate (clts);
   while (it->busy ()) {
-    class socket_link* clt= it->next ();
+    socket_link* clt= (socket_link*) it->next ();
     disconnection (clt);
   }
 }

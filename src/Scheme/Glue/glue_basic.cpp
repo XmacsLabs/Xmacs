@@ -161,6 +161,15 @@ tmg_qt_guiP () {
 }
 
 tmscm
+tmg_gui_version () {
+  // TMSCM_DEFER_INTS;
+  string out= gui_version ();
+  // TMSCM_ALLOW_INTS;
+
+  return string_to_tmscm (out);
+}
+
+tmscm
 tmg_default_look_and_feel () {
   // TMSCM_DEFER_INTS;
   string out= default_look_and_feel ();
@@ -8634,6 +8643,19 @@ tmg_widget_size (tmscm arg1) {
 }
 
 tmscm
+tmg_texmacs_widget_size (tmscm arg1) {
+  TMSCM_ASSERT_WIDGET (arg1, TMSCM_ARG1, "texmacs-widget-size");
+
+  widget in1= tmscm_to_widget (arg1);
+
+  // TMSCM_DEFER_INTS;
+  array_int out= get_texmacs_widget_size (in1);
+  // TMSCM_ALLOW_INTS;
+
+  return array_int_to_tmscm (out);
+}
+
+tmscm
 tmg_show_balloon (tmscm arg1, tmscm arg2, tmscm arg3) {
   TMSCM_ASSERT_WIDGET (arg1, TMSCM_ARG1, "show-balloon");
   TMSCM_ASSERT_INT (arg2, TMSCM_ARG2, "show-balloon");
@@ -8710,6 +8732,15 @@ tmg_refresh_now (tmscm arg1) {
   // TMSCM_ALLOW_INTS;
 
   return TMSCM_UNSPECIFIED;
+}
+
+tmscm
+tmg_get_screen_size () {
+  // TMSCM_DEFER_INTS;
+  array_int out= get_screen_size ();
+  // TMSCM_ALLOW_INTS;
+
+  return array_int_to_tmscm (out);
 }
 
 tmscm
@@ -9323,6 +9354,19 @@ tmg_switch_to_buffer (tmscm arg1) {
 }
 
 tmscm
+tmg_set_drd (tmscm arg1) {
+  TMSCM_ASSERT_URL (arg1, TMSCM_ARG1, "set-drd");
+
+  url in1= tmscm_to_url (arg1);
+
+  // TMSCM_DEFER_INTS;
+  set_current_drd (in1);
+  // TMSCM_ALLOW_INTS;
+
+  return TMSCM_UNSPECIFIED;
+}
+
+tmscm
 tmg_window_list () {
   // TMSCM_DEFER_INTS;
   array_url out= windows_list ();
@@ -9545,25 +9589,6 @@ tmg_alt_window_handle () {
 }
 
 tmscm
-tmg_alt_window_create (tmscm arg1, tmscm arg2, tmscm arg3, tmscm arg4) {
-  TMSCM_ASSERT_INT (arg1, TMSCM_ARG1, "alt-window-create");
-  TMSCM_ASSERT_WIDGET (arg2, TMSCM_ARG2, "alt-window-create");
-  TMSCM_ASSERT_STRING (arg3, TMSCM_ARG3, "alt-window-create");
-  TMSCM_ASSERT_BOOL (arg4, TMSCM_ARG4, "alt-window-create");
-
-  int in1= tmscm_to_int (arg1);
-  widget in2= tmscm_to_widget (arg2);
-  string in3= tmscm_to_string (arg3);
-  bool in4= tmscm_to_bool (arg4);
-
-  // TMSCM_DEFER_INTS;
-  window_create (in1, in2, in3, in4);
-  // TMSCM_ALLOW_INTS;
-
-  return TMSCM_UNSPECIFIED;
-}
-
-tmscm
 tmg_alt_window_create_quit (tmscm arg1, tmscm arg2, tmscm arg3, tmscm arg4) {
   TMSCM_ASSERT_INT (arg1, TMSCM_ARG1, "alt-window-create-quit");
   TMSCM_ASSERT_WIDGET (arg2, TMSCM_ARG2, "alt-window-create-quit");
@@ -9577,6 +9602,57 @@ tmg_alt_window_create_quit (tmscm arg1, tmscm arg2, tmscm arg3, tmscm arg4) {
 
   // TMSCM_DEFER_INTS;
   window_create (in1, in2, in3, in4);
+  // TMSCM_ALLOW_INTS;
+
+  return TMSCM_UNSPECIFIED;
+}
+
+tmscm
+tmg_alt_window_create_plain (tmscm arg1, tmscm arg2, tmscm arg3) {
+  TMSCM_ASSERT_INT (arg1, TMSCM_ARG1, "alt-window-create-plain");
+  TMSCM_ASSERT_WIDGET (arg2, TMSCM_ARG2, "alt-window-create-plain");
+  TMSCM_ASSERT_STRING (arg3, TMSCM_ARG3, "alt-window-create-plain");
+
+  int in1= tmscm_to_int (arg1);
+  widget in2= tmscm_to_widget (arg2);
+  string in3= tmscm_to_string (arg3);
+
+  // TMSCM_DEFER_INTS;
+  window_create_plain (in1, in2, in3);
+  // TMSCM_ALLOW_INTS;
+
+  return TMSCM_UNSPECIFIED;
+}
+
+tmscm
+tmg_alt_window_create_popup (tmscm arg1, tmscm arg2, tmscm arg3) {
+  TMSCM_ASSERT_INT (arg1, TMSCM_ARG1, "alt-window-create-popup");
+  TMSCM_ASSERT_WIDGET (arg2, TMSCM_ARG2, "alt-window-create-popup");
+  TMSCM_ASSERT_STRING (arg3, TMSCM_ARG3, "alt-window-create-popup");
+
+  int in1= tmscm_to_int (arg1);
+  widget in2= tmscm_to_widget (arg2);
+  string in3= tmscm_to_string (arg3);
+
+  // TMSCM_DEFER_INTS;
+  window_create_popup (in1, in2, in3);
+  // TMSCM_ALLOW_INTS;
+
+  return TMSCM_UNSPECIFIED;
+}
+
+tmscm
+tmg_alt_window_create_tooltip (tmscm arg1, tmscm arg2, tmscm arg3) {
+  TMSCM_ASSERT_INT (arg1, TMSCM_ARG1, "alt-window-create-tooltip");
+  TMSCM_ASSERT_WIDGET (arg2, TMSCM_ARG2, "alt-window-create-tooltip");
+  TMSCM_ASSERT_STRING (arg3, TMSCM_ARG3, "alt-window-create-tooltip");
+
+  int in1= tmscm_to_int (arg1);
+  widget in2= tmscm_to_widget (arg2);
+  string in3= tmscm_to_string (arg3);
+
+  // TMSCM_DEFER_INTS;
+  window_create_tooltip (in1, in2, in3);
   // TMSCM_ALLOW_INTS;
 
   return TMSCM_UNSPECIFIED;
@@ -9918,6 +9994,7 @@ initialize_glue_basic () {
   tmscm_install_procedure ("has-printing-cmd?",  tmg_has_printing_cmdP, 0, 0, 0);
   tmscm_install_procedure ("x-gui?",  tmg_x_guiP, 0, 0, 0);
   tmscm_install_procedure ("qt-gui?",  tmg_qt_guiP, 0, 0, 0);
+  tmscm_install_procedure ("gui-version",  tmg_gui_version, 0, 0, 0);
   tmscm_install_procedure ("default-look-and-feel",  tmg_default_look_and_feel, 0, 0, 0);
   tmscm_install_procedure ("default-chinese-font",  tmg_default_chinese_font, 0, 0, 0);
   tmscm_install_procedure ("default-japanese-font",  tmg_default_japanese_font, 0, 0, 0);
@@ -10529,6 +10606,7 @@ initialize_glue_basic () {
   tmscm_install_procedure ("object->promise-widget",  tmg_object_2promise_widget, 1, 0, 0);
   tmscm_install_procedure ("tree-bounding-rectangle",  tmg_tree_bounding_rectangle, 1, 0, 0);
   tmscm_install_procedure ("widget-size",  tmg_widget_size, 1, 0, 0);
+  tmscm_install_procedure ("texmacs-widget-size",  tmg_texmacs_widget_size, 1, 0, 0);
   tmscm_install_procedure ("show-balloon",  tmg_show_balloon, 3, 0, 0);
   tmscm_install_procedure ("get-style-menu",  tmg_get_style_menu, 0, 0, 0);
   tmscm_install_procedure ("hidden-package?",  tmg_hidden_packageP, 1, 0, 0);
@@ -10536,6 +10614,7 @@ initialize_glue_basic () {
   tmscm_install_procedure ("get-remove-package-menu",  tmg_get_remove_package_menu, 0, 0, 0);
   tmscm_install_procedure ("get-toggle-package-menu",  tmg_get_toggle_package_menu, 0, 0, 0);
   tmscm_install_procedure ("refresh-now",  tmg_refresh_now, 1, 0, 0);
+  tmscm_install_procedure ("get-screen-size",  tmg_get_screen_size, 0, 0, 0);
   tmscm_install_procedure ("buffer-list",  tmg_buffer_list, 0, 0, 0);
   tmscm_install_procedure ("current-buffer-url",  tmg_current_buffer_url, 0, 0, 0);
   tmscm_install_procedure ("path-to-buffer",  tmg_path_to_buffer, 1, 0, 0);
@@ -10582,6 +10661,7 @@ initialize_glue_basic () {
   tmscm_install_procedure ("view-delete",  tmg_view_delete, 1, 0, 0);
   tmscm_install_procedure ("window-set-view",  tmg_window_set_view, 3, 0, 0);
   tmscm_install_procedure ("switch-to-buffer",  tmg_switch_to_buffer, 1, 0, 0);
+  tmscm_install_procedure ("set-drd",  tmg_set_drd, 1, 0, 0);
   tmscm_install_procedure ("window-list",  tmg_window_list, 0, 0, 0);
   tmscm_install_procedure ("windows-number",  tmg_windows_number, 0, 0, 0);
   tmscm_install_procedure ("current-window",  tmg_current_window, 0, 0, 0);
@@ -10602,8 +10682,10 @@ initialize_glue_basic () {
   tmscm_install_procedure ("project-attached?",  tmg_project_attachedP, 0, 0, 0);
   tmscm_install_procedure ("project-get",  tmg_project_get, 0, 0, 0);
   tmscm_install_procedure ("alt-window-handle",  tmg_alt_window_handle, 0, 0, 0);
-  tmscm_install_procedure ("alt-window-create",  tmg_alt_window_create, 4, 0, 0);
   tmscm_install_procedure ("alt-window-create-quit",  tmg_alt_window_create_quit, 4, 0, 0);
+  tmscm_install_procedure ("alt-window-create-plain",  tmg_alt_window_create_plain, 3, 0, 0);
+  tmscm_install_procedure ("alt-window-create-popup",  tmg_alt_window_create_popup, 3, 0, 0);
+  tmscm_install_procedure ("alt-window-create-tooltip",  tmg_alt_window_create_tooltip, 3, 0, 0);
   tmscm_install_procedure ("alt-window-delete",  tmg_alt_window_delete, 1, 0, 0);
   tmscm_install_procedure ("alt-window-show",  tmg_alt_window_show, 1, 0, 0);
   tmscm_install_procedure ("alt-window-hide",  tmg_alt_window_hide, 1, 0, 0);

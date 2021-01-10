@@ -169,6 +169,9 @@ initialize_default_var_type () {
 
 void
 edit_env_rep::update_page_pars () {
+  double magn_old= magn_len;
+  magn_len= 1.0;
+
   page_type         = get_string (PAGE_TYPE);
   page_landscape    = (get_string (PAGE_ORIENTATION) == "landscape");
   page_automatic    = (get_string (PAGE_MEDIUM) == "automatic");
@@ -268,6 +271,8 @@ edit_env_rep::update_page_pars () {
   page_packet= get_int (PAGE_PACKET);
   page_offset= get_int (PAGE_OFFSET);
   page_border= read (PAGE_BORDER);
+
+  magn_len= magn_old;
 }
 
 void
@@ -285,8 +290,11 @@ edit_env_rep::get_page_pars (SI& w, SI& h, SI& width, SI& height,
 
   int nr_cols= get_int (PAR_COLUMNS);
   if (nr_cols > 1) {
+    double magn_old= magn_len;
+    magn_len= 1.0;
     SI col_sep= get_length (PAR_COLUMNS_SEP);
     w= ((w+col_sep) / nr_cols) - col_sep;
+    magn_len= magn_old;
   }
 
   /*
@@ -929,6 +937,7 @@ edit_env_rep::update () {
   zoomf          = normal_zoom (get_double (ZOOM_FACTOR));
   pixel          = (SI) tm_round ((std_shrinkf * PIXEL) / zoomf);
   magn           = get_double (MAGNIFICATION);
+  magn_len       = (get_string (LENGTH_MODE) == "fixed"? 1.0: magn);
   index_level    = get_int (MATH_LEVEL);
   display_style  = get_bool (MATH_DISPLAY);
   math_condensed = get_bool (MATH_CONDENSED);
@@ -988,6 +997,7 @@ edit_env_rep::update (string s) {
     break;
   case Env_Magnification:
     magn= get_double (MAGNIFICATION);
+    magn_len= (get_string (LENGTH_MODE) == "fixed"? 1.0: magn);
     update_font ();
     update_color ();
     update_dash_style_unit ();

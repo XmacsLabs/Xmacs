@@ -18,6 +18,7 @@
 #include <QStyleOptionMenuItem>
 #include <qdrawutil.h>
 #include <QPainter>
+#include <QPainterPath>
 #include <QMainWindow>
 
 int
@@ -424,6 +425,7 @@ QTMStyle::drawControl (ControlElement element, const QStyleOption* option, QPain
       }
 #endif
 
+#if (QT_VERSION < 0x050000)
     case CE_ToolBar: {
 #ifdef UNIFIED_TOOLBAR
       if (use_unified_toolbar &&
@@ -463,6 +465,26 @@ QTMStyle::drawControl (ControlElement element, const QStyleOption* option, QPain
         }
 #endif // UNIFIED_TOOLBAR
     } break;
+#else
+  case CE_ToolBar:
+#ifdef UNIFIED_TOOLBAR
+    if (use_unified_toolbar &&
+        (widget) && (widget->windowTitle() == "main toolbar"))
+      break;
+#endif // UNIFIED_TOOLBAR
+
+    if ((widget) && (widget->windowTitle() == "main toolbar"))
+      painter->fillRect(option->rect, QColor (208, 208, 208));
+      //painter->fillRect(option->rect, QColor (192, 192, 192));
+    else if ((widget) && (widget->windowTitle() == "mode toolbar"))
+      painter->fillRect(option->rect, QColor (224, 224, 224));
+      //painter->fillRect(option->rect, QColor (216, 216, 216));
+    else if ((widget) && (widget->windowTitle() == "focus toolbar"))
+      painter->fillRect(option->rect, QColor (240, 240, 240));
+    else 
+      baseStyle()->drawControl (element, option, painter, widget);
+    break;
+#endif
       
     default:
       baseStyle()->drawControl (element, option, painter, widget);

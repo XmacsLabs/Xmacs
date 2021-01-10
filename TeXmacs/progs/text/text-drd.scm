@@ -22,7 +22,7 @@
   (frame-tag) (frame-titled-tag)
   (textual-tag) (code-tag)
   (ornament-tag) (art-frame-tag) (shadow-tag)
-  (balloon-tag) (reference-tag))
+  (balloon-tag))
 
 (define-group similar-tag
   (section-tag) (list-tag) (figure-tag)
@@ -36,6 +36,10 @@
   (section-tag)
   (theorem-tag) (definition-tag) (remark-tag) (exercise-tag) (solution-tag)
   (figure-tag) (equation-tag))
+
+(define-group mini-flow-tag
+  (frame-tag) (frame-titled-tag)
+  (ornament-tag) (art-frame-tag) (shadow-tag))
 
 ;; Environments with titles
 
@@ -210,11 +214,12 @@
 
 (define-group inline-code-tag
   verbatim scm cpp mmx r fortran octave
-  python java scala scilab shell)
+  python java javascript json scala scilab shell)
 
 (define-group block-code-tag
   verbatim-code scm-code cpp-code dot-code mmx-code r-code fortran-code
-  octave-code python-code java-code scala-code scilab-code shell-code)
+  octave-code python-code java-code javascript-code json-code scala-code
+  scilab-code shell-code)
 
 ;; ornaments
 

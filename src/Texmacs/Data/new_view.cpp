@@ -316,6 +316,7 @@ delete_view (url u) {
       buf->vws= a;
     }
   notify_delete_view (u);
+  vw->ed->buf= NULL;
   tm_delete (vw);
 }
 
@@ -404,6 +405,13 @@ switch_to_buffer (url name) {
   if (nwin != NULL)
     nwin->set_window_zoom_factor (nwin->get_window_zoom_factor ());
   //cout << "Switched to buffer " << vw->buf->buf->name << "\n";
+}
+
+void
+set_current_drd (url name) {
+  url u= get_passive_view (name);
+  tm_view vw= concrete_view (u);
+  if (vw != NULL) the_drd = vw->ed->drd;
 }
 
 void

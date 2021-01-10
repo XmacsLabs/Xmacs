@@ -16,6 +16,7 @@
 #include "tm_window.hpp"
 #include "Metafont/tex_files.hpp"
 #include "data_cache.hpp"
+#include "drd_std.hpp"
 #include "drd_mode.hpp"
 #include "message.hpp"
 #include "tree_traverse.hpp"
@@ -64,6 +65,7 @@ edit_interface_rep::edit_interface_rep ():
   magf (zoomf / std_shrinkf),
   pixel ((SI) tm_round ((std_shrinkf * PIXEL) / zoomf)), copy_always (),
   last_x (0), last_y (0), last_t (0),
+  tremble_count (0), tremble_right (false),
   table_selection (false), mouse_adjusting (false),
   oc (0, 0), temp_invalid_cursor (false),
   shadow (NULL), stored (NULL),
@@ -86,11 +88,13 @@ edit_interface_rep::operator tree () {
 
 void
 edit_interface_rep::suspend () {
+  //cout << "Suspend " << buf->buf->name << LF;
   if (got_focus) {
     interrupt_shortcut ();
     set_message ("", "", false);
   }
   got_focus= false;
+  env_change= env_change & (~THE_FREEZE);
   notify_change (THE_FOCUS);
   if (shadow != NULL) tm_delete (shadow);
   if (stored != NULL) tm_delete (stored);
@@ -100,6 +104,7 @@ edit_interface_rep::suspend () {
 
 void
 edit_interface_rep::resume () {
+  //cout << "Resume " << buf->buf->name << LF;
   got_focus= true;
   SERVER (menu_main ("(horizontal (link texmacs-menu))"));
   SERVER (menu_icons (0, "(horizontal (link texmacs-main-icons))"));
@@ -110,12 +115,16 @@ edit_interface_rep::resume () {
     { SERVER (side_tools (0, "(vertical (link texmacs-side-tools))")); }
   SERVER (bottom_tools (0, "(vertical (link texmacs-bottom-tools))"));
   cur_sb= 2;
+  env_change= env_change & (~THE_FREEZE);
   notify_change (THE_FOCUS + THE_EXTENTS);
+  drd_info old_drd= the_drd;
+  the_drd= drd;
   path new_tp= make_cursor_accessible (tp, true);
   if (new_tp != tp) {
     notify_change (THE_CURSOR);
     tp= new_tp;
   }
+  the_drd= old_drd;
 #ifdef QTTEXMACS
   // FIXME: dirty hack in order to correct a bug introduced
   // after a bugfix by Massimiliano during summer 2016
@@ -212,6 +221,9 @@ edit_interface_rep::get_window_width () {
     if (medium == "automatic" || medium == "beamer") sb= false;
   }
   if (sb) w -= scrollbar_width ();
+#if defined(QTTEXMACS) && !defined(Q_OS_MAC) && (QT_VERSION < 0x050000)
+  w= (SI) (w / retina_zoom);
+#endif
   return w;
 }
 
@@ -220,7 +232,58 @@ edit_interface_rep::get_window_height () {
   SI w, h;
   widget me= ::get_canvas (widget (cvw));
   ::get_size (me, w, h);
+#if defined(QTTEXMACS) && !defined(Q_OS_MAC) && (QT_VERSION < 0x050000)
+  h= (SI) (h / retina_zoom);
+#endif
   return h;
+}
+
+SI
+edit_interface_rep::get_window_x () {
+  SI wx, wy;
+  ::get_position (get_window (this), wx, wy);
+  return wx;
+}
+
+SI
+edit_interface_rep::get_window_y () {
+  SI wx, wy;
+  ::get_position (get_window (this), wx, wy);
+  return wy;
+}
+
+SI
+edit_interface_rep::get_canvas_x () {
+  SI ox, oy;
+  widget me= ::get_canvas (widget (cvw));
+  ::get_position (me, ox, oy);
+  return ox;
+}
+
+SI
+edit_interface_rep::get_canvas_y () {
+  SI ox, oy;
+  widget me= ::get_canvas (widget (cvw));
+  ::get_position (me, ox, oy);
+  return oy;
+}
+
+SI
+edit_interface_rep::get_scroll_x () {
+  SI scx, scy;
+  SERVER (scroll_where (scx, scy));
+  scx= (SI) (scx / magf);
+  scy= (SI) (scy / magf);
+  return scx;
+}
+
+SI
+edit_interface_rep::get_scroll_y () {
+  SI scx, scy;
+  SERVER (scroll_where (scx, scy));
+  scx= (SI) (scx / magf);
+  scy= (SI) (scy / magf);
+  return scy;
 }
 
 void
@@ -257,53 +320,55 @@ edit_interface_rep::cursor_visible () {
       (cu->oy+ cu->y1 <  vy1) ||
       (cu->oy+ cu->y2 >= vy2);
 
-    box pages= eb[0];
-    if (N(pages) > 1) {
-      SI vw= vx2 - vx1, vh= vy2 - vy1;
-      for (int i=0; i<N(pages); i++) {
-        SI scx, scy;
-        SERVER (scroll_where (scx, scy));
-        scx= (SI) (scx / magf);
-        scy= (SI) (scy / magf);
-        SI x1= eb->sy(0)+ pages->sx1 (i);
-        SI x2= eb->sy(0)+ pages->sx2 (i);
-        SI y1= eb->sy(0)+ pages->sy1 (i);
-        SI y2= eb->sy(0)+ pages->sy2 (i);
-        SI pw= x2 - x1, ph= y2 - y1;
-        if (cu->ox >= x1 && x2 > cu->ox &&
-            cu->oy >= y1 && y2 > cu->oy &&
-            5*vw > 3*pw && 5*vh > 3*ph) {
-          if (!must_update) {
-            SI d= 5*pixel;
-            if (pw >= vw) {
-              if (vx1 > x1 + d && absval (x2 - vx2) > d) must_update= true;
-              if (x2 > vx2 + d && absval (x1 - vx1) > d) must_update= true;
+    if (get_user_preference ("snap to pages", "off") == "on") {
+      box pages= eb[0];
+      if (N(pages) > 1) {
+        SI vw= vx2 - vx1, vh= vy2 - vy1;
+        for (int i=0; i<N(pages); i++) {
+          SI scx, scy;
+          SERVER (scroll_where (scx, scy));
+          scx= (SI) (scx / magf);
+          scy= (SI) (scy / magf);
+          SI x1= eb->sy(0)+ pages->sx1 (i);
+          SI x2= eb->sy(0)+ pages->sx2 (i);
+          SI y1= eb->sy(0)+ pages->sy1 (i);
+          SI y2= eb->sy(0)+ pages->sy2 (i);
+          SI pw= x2 - x1, ph= y2 - y1;
+          if (cu->ox >= x1 && x2 > cu->ox &&
+              cu->oy >= y1 && y2 > cu->oy &&
+              5*vw > 3*pw && 5*vh > 3*ph) {
+            if (!must_update) {
+              SI d= 5*pixel;
+              if (pw >= vw) {
+                if (vx1 > x1 + d && absval (x2 - vx2) > d) must_update= true;
+                if (x2 > vx2 + d && absval (x1 - vx1) > d) must_update= true;
+              }
+              else if (vx1 > x1 + d || x2 > vx2 + d) must_update= true;
+              if (ph >= vh) {
+                if (vy1 > y1 + d && absval (y2 - vy2) > d) must_update= true;
+                if (y2 > vy2 + d && absval (y1 - vy1) > d) must_update= true;
+              }
+              else if (vy1 > y1 + d || y2 > vy2 + d) must_update= true;
             }
-            else if (vx1 > x1 + d || x2 > vx2 + d) must_update= true;
-            if (ph >= vh) {
-              if (vy1 > y1 + d && absval (y2 - vy2) > d) must_update= true;
-              if (y2 > vy2 + d && absval (y1 - vy1) > d) must_update= true;
+            if (must_update) {
+              //cout << "Cursor on page " << i << LF;
+              //cout << "Visual " << vx1/PIXEL << ", " << vy1/PIXEL
+              //     << "; " << vx2/PIXEL << ", " << vy2/PIXEL << LF;
+              //cout << "Page " << x1/PIXEL << ", " << y1/PIXEL
+              //     << "; " << x2/PIXEL << ", " << y2/PIXEL << LF;
+              SI mx= (x1 + x2) >> 1, my= (y1 + y2) >> 1;
+              if (pw >= vw) {
+                if (cu->ox > mx) mx= x2 - ((vx2 - vx1) >> 1);
+                else             mx= x1 + ((vx2 - vx1) >> 1);
+              }
+              if (ph >= vh) {
+                if (cu->oy > my) my= y2 - ((vy2 - vy1) >> 1);
+                else             my= y1 + ((vy2 - vy1) >> 1);
+              }
+              scroll_to (mx, my);
+              send_invalidate_all (this);
+              return;
             }
-            else if (vy1 > y1 + d || y2 > vy2 + d) must_update= true;
-          }
-          if (must_update) {
-            //cout << "Cursor on page " << i << LF;
-            //cout << "Visual " << vx1/PIXEL << ", " << vy1/PIXEL
-            //     << "; " << vx2/PIXEL << ", " << vy2/PIXEL << LF;
-            //cout << "Page " << x1/PIXEL << ", " << y1/PIXEL
-            //     << "; " << x2/PIXEL << ", " << y2/PIXEL << LF;
-            SI mx= (x1 + x2) >> 1, my= (y1 + y2) >> 1;
-            if (pw >= vw) {
-              if (cu->ox > mx) mx= x2 - ((vx2 - vx1) >> 1);
-              else             mx= x1 + ((vx2 - vx1) >> 1);
-            }
-            if (ph >= vh) {
-              if (cu->oy > my) my= y2 - ((vy2 - vy1) >> 1);
-              else             my= y1 + ((vy2 - vy1) >> 1);
-            }
-            scroll_to (mx, my);
-            send_invalidate_all (this);
-            return;
           }
         }
       }
@@ -613,6 +678,17 @@ edit_interface_rep::apply_changes () {
       keys_rects= rectangles ();
     }
   }
+
+  if (tremble_count > 0 &&
+      last_change-last_update > 0 &&
+      idle_time (INTERRUPTED_EVENT) >= 80) {
+    tremble_count--;
+    if (tremble_count > 2) {
+      env_change = env_change | (THE_CURSOR + THE_FREEZE);
+      last_change= texmacs_time ();
+    }
+    //cout << "Tremble- " << tremble_count << LF;
+  }
   
   if (env_change == 0) {
     if (last_change-last_update > 0 &&
@@ -774,17 +850,26 @@ edit_interface_rep::apply_changes () {
     int THE_CURSOR_BAK= env_change & THE_CURSOR;
     go_to_here ();
     env_change= (env_change & (~THE_CURSOR)) | THE_CURSOR_BAK;
-    if (env_change & (THE_TREE+THE_ENVIRONMENT+THE_EXTENTS+THE_CURSOR))
+    if ((env_change & (THE_TREE+THE_ENVIRONMENT+
+                       THE_CURSOR+THE_SELECTION+THE_FOCUS)) != 0)
       if (!inside_active_graphics ())
-        cursor_visible ();
-    
+        if ((env_change & THE_FREEZE) == 0 ||
+            (env_change & THE_SELECTION) != 0)
+          cursor_visible ();
+
+    SI dw= 0;
+    if (tremble_count > 3) dw= (1 + min (tremble_count - 3, 25)) * 2 * pixel;
     cursor cu= get_cursor();
-    rectangle ocr (oc->ox+ ((SI) (oc->y1*oc->slope))- P3, oc->oy+ oc->y1- P3,
-                   oc->ox+ ((SI) (oc->y2*oc->slope))+ P2, oc->oy+ oc->y2+ P3);
+    rectangle ocr (oc->ox+ ((SI) ((oc->y1-dw)*oc->slope))- P3 - dw,
+                   oc->oy+ (oc->y1-dw)- P3,
+                   oc->ox+ ((SI) ((oc->y2+dw)*oc->slope))+ P2 + dw,
+                   oc->oy+ (oc->y2+dw)+ P3);
     copy_always= rectangles (ocr, copy_always);
     invalidate (ocr->x1, ocr->y1, ocr->x2, ocr->y2);
-    rectangle ncr (cu->ox+ ((SI) (cu->y1*cu->slope))- P3, cu->oy+ cu->y1- P3,
-                   cu->ox+ ((SI) (cu->y2*cu->slope))+ P2, cu->oy+ cu->y2+ P3);
+    rectangle ncr (cu->ox+ ((SI) ((cu->y1-dw)*cu->slope))- P3 - dw,
+                   cu->oy+ (cu->y1-dw)- P3,
+                   cu->ox+ ((SI) ((cu->y2+dw)*cu->slope))+ P2 + dw,
+                   cu->oy+ (cu->y2+dw)+ P3);
     invalidate (ncr->x1, ncr->y1, ncr->x2, ncr->y2);
     copy_always= rectangles (ncr, copy_always);
     oc= copy (cu);
@@ -917,7 +1002,7 @@ edit_interface_rep::apply_changes () {
   }
 
   // cout << "Graphics snapping\n";
-  if (inside_active_graphics ()) {
+  if (inside_active_graphics () && is_current_editor ()) {
     tree t= as_tree (call ("graphics-get-snap-mode"));
     set_snap_mode (t);
     string val= as_string (call ("graphics-get-snap-distance"));
@@ -1027,7 +1112,8 @@ edit_interface_rep::handle_get_size_hint (SI& w, SI& h) {
 void
 edit_interface_rep::handle_notify_resize (SI w, SI h) {
   (void) w; (void) h;
-  notify_change (THE_TREE);
+  if (is_nil (buf)) return;
+  notify_change (THE_TREE+THE_FREEZE);
 }
 
 void
