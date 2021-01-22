@@ -433,8 +433,8 @@ TeXmacs_main (int argc, char** argv) {
   bench_cumul ("initialize plugins");
   if (DEBUG_STD) debug_boot << "Opening display...\n";
   
-#if defined(X11TEXMACS) && defined(MACOSX_EXTENSIONS)
- // init_mac_application ();
+#ifdef MACOSX_EXTENSIONS
+  macos_remove_help_search();
 #endif
     
   gui_open (argc, argv);

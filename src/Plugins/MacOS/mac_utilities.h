@@ -25,4 +25,6 @@ void mac_fix_yosemite_bug();
 void mac_begin_server ();
 void mac_end_server ();
 
+void macos_remove_help_search ();
+
 #endif // MAC_UTILITIES_H
