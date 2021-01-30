@@ -132,7 +132,6 @@ include (CheckIncludeFile)
 include (CheckTypeSize)
 include (FindPkgConfig)
 include (CheckCSourceCompiles)
-include (FindX11)
 
 
 ### --------------------------------------------------------------------
@@ -148,8 +147,6 @@ check_include_file (strings.h HAVE_STRINGS_H)
 check_include_file (string.h HAVE_STRING_H)
 check_include_file (sys/stat.h HAVE_SYS_STAT_H)
 check_include_file (unistd.h HAVE_UNISTD_H)
-check_include_file (X11/Xlib.h HAVE_X11_XLIB_H)
-check_include_file (X11/Xutil.h HAVE_X11_XUTIL_H)
 check_include_file (pty.h HAVE_PTY_H)
 check_include_file (util.h HAVE_UTIL_H)
 check_function_exists (gettimeofday HAVE_GETTIMEOFDAY)
@@ -234,7 +231,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")
   set (CONFIG_CXXOPTIMIZE "-O3 -fexpensive-optimizations")
   set (CONFIG_CXXOPTIMIZE "-O3")
   set (CONFIG_BPATH "-Wl,-R,")
-#  SET(X11_LDFLAGS "${X_LIBS} -lXext -lX11 -lsocket")
 endif (${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "CYGWIN_NT-5.1")
@@ -352,6 +348,8 @@ else (WIN32)
   option (USE_STACK_TRACE "Use stack trace" ON)
 endif (WIN32)
 
+option (USE_JEAIII "Use JEAIII itoa" ON)
+
 set (CONFIG_STD_SETENV "#define STD_SETENV")
 set (tm_orig ${TEXMACS_SOURCE_DIR})
 set (CONFIG_HOST_OS "linux-gnu") # TODO: should not be hard-coded
@@ -468,6 +466,7 @@ file (GLOB_RECURSE TeXmacs_Std_Plugins_SRCS
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Cairo/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Database/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Freetype/*.cpp"
+  "${TEXMACS_SOURCE_DIR}/src/Plugins/Jeaiii/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Pdf/*.cpp"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Pdf/*.c"
   "${TEXMACS_SOURCE_DIR}/src/Plugins/Ghostscript/*.cpp"
@@ -492,7 +491,6 @@ set (TeXmacs_All_SRCS ${TeXmacs_Base_SRCS}  ${TeXmacs_Std_Plugins_SRCS})
 ### --------------------------------------------------------------------
 
 file (GLOB_RECURSE TeXmacs_Widkit_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/Widkit/*.cpp")
-file (GLOB_RECURSE TeXmacs_X11_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/X11/*.cpp")
 file (GLOB_RECURSE TeXmacs_Qt_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/Qt/*.cpp")
 
 set (TeXmacs_Qt_Moc_HDRS
@@ -626,30 +624,8 @@ elseif (TEXMACS_GUI STREQUAL "Aqua")
   mark_as_advanced(COCOA_LIBRARY)
   mark_as_advanced(COCOA_INCLUDE_DIR)
 else (TEXMACS_GUI STREQUAL "Qt")
-  find_package (X11)
-
-  set (TeXmacs_Include_Dirs
-    ${TeXmacs_Include_Dirs}
-    ${X11_INCLUDE_DIR}
-  )
-  set (TeXmacs_All_SRCS ${TeXmacs_All_SRCS} ${TeXmacs_Widkit_SRCS} ${TeXmacs_X11_SRCS})
-  set (TeXmacs_Libraries ${TeXmacs_Libraries} ${X11_LIBRARIES})
-
-  add_definitions ("-DX11TEXMACS")
-  set (X11TEXMACS 1)
-
-  set (CONFIG_X11 "X11 Widkit Ghostscript")
-  set (CONFIG_GUI "X11")
-
-  message (STATUS "Enabling standard X11 interface")
+  message (STATUS "Not supported GUI interface")
 endif (TEXMACS_GUI MATCHES "Qt.*")
-
-if (APPLE AND TEXMACS_GUI STREQUAL "X11")
-  set (TeXmacs_MacOS_SRCS
-    ${TeXmacs_MacOS_SRCS}
-    ${TEXMACS_SOURCE_DIR}/src/Plugins/MacOS/mac_app.mm
-  )
-endif (APPLE AND TEXMACS_GUI STREQUAL "X11")
 
 if (APPLE AND USE_SPARKLE)
   set (TeXmacs_MacOS_SRCS
