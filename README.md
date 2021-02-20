@@ -8,7 +8,7 @@ Xmacs is a fork of GNU TeXmacs:
 
 Xmacs is released every three months in 2020. Xmacs v2020.1 is the first release.
 
-There are two release (v2021.1/v2021.2) scheduled in 2021.
+There are two release (v2021.1 in August/v2021.2 in December) scheduled in 2021.
 
 ## Disclaimer
 Xmacs aims to be a distribution of GNU TeXmacs but not another TeXmacs. We do not encourage people to create pull requests to Xmacs. Please contribute to GNU TeXmacs directly.
