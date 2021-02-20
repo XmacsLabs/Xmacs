@@ -729,7 +729,7 @@ if (APPLE)
                       GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 elseif (WIN32)
   message (STATUS "No need to install launch scripts for Windows")
-else (WIN32)
+else (APPLE)
   install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs
                  ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
                  misc/scripts/tm_gs
@@ -737,7 +737,7 @@ else (WIN32)
           PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                       GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
                     
-endif (WIN32)
+endif (APPLE)
 
 ### include/
 install (DIRECTORY TeXmacs/include DESTINATION ${CMAKE_INSTALL_PREFIX}
