@@ -531,13 +531,3 @@ mac_end_server () {
 #endif
 #endif
 }
-
-void
-macos_remove_help_search () {
-  NSMenu *unusedMenu;
-  unusedMenu = [[NSMenu alloc] initWithTitle:@"Unused"];
-
-  NSApplication *theApp;
-  theApp = [NSApplication sharedApplication];
-  theApp.helpMenu = unusedMenu;
-}
