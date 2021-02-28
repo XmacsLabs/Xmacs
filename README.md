@@ -17,6 +17,6 @@ Xmacs aims to be a distribution of GNU TeXmacs but not another TeXmacs. We do no
 Lastest stable releases or RC releases are recommended. See https://gitee.com/xmacs/Xmacs/releases
 
 Here is the current recommended release:
-+ [v2020.4-rc1 on Gitee](https://gitee.com/xmacs/Xmacs/releases/v2020.4-rc1)
-+ [v2020.4-rc1 on Github](https://github.com/XmacsLabs/Xmacs/releases/tag/v2020.4-rc1)
++ [v2020.4-rc2 on Gitee](https://gitee.com/xmacs/Xmacs/releases/v2020.4-rc2)
++ [v2020.4-rc2 on Github](https://github.com/XmacsLabs/Xmacs/releases/tag/v2020.4-rc2)
 
