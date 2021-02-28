@@ -1574,6 +1574,7 @@
 ("show all parts" "显示所有部分")
 ("show header and footer" "显示页眉页脚")
 ("show hidden" "显示隐藏内容")
+("show key presses" "显示键盘按键")
 ("show memory usage" "显示内存占用")
 ("show on screen" "")
 ("show one part" "显示一部分")

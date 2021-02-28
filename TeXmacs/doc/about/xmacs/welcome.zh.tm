@@ -4,7 +4,7 @@
 
 <\body>
   <\hide-preamble>
-    <assign|xmacs-version|v2020.4-rc1>
+    <assign|xmacs-version|v2020.4-rc2>
   </hide-preamble>
 
   <tmdoc-title|\<#6B22\>\<#8FCE\>\<#4F7F\>\<#7528\><name|Xmacs>
@@ -55,7 +55,7 @@
     <item>\<#6587\>\<#6863\>\<#FF1A\>\<#66F4\>\<#65B0\><menu|help|configuration|users
     of oriental languages>\<#4E2D\>\<#5173\>\<#4E8E\>\<#8F93\>\<#5165\>\<#6CD5\>\<#548C\>\<#5B57\>\<#4F53\>\<#7684\>\<#63CF\>\<#8FF0\>
 
-    <item><strong|\<#63D2\>\<#4EF6\>\<#FF1A\>Windows\<#5E73\>\<#53F0\>\<#FF0C\>Python\<#63D2\>\<#4EF6\>\<#9ED8\>\<#8BA4\>\<#91C7\>\<#7528\>UTF-8\<#7F16\>\<#7801\>>
+    <item>\<#63D2\>\<#4EF6\>\<#FF1A\>Windows<strong|>\<#5E73\>\<#53F0\>\<#FF0C\>Python\<#63D2\>\<#4EF6\>\<#9ED8\>\<#8BA4\>\<#91C7\>\<#7528\>UTF-8\<#7F16\>\<#7801\>
 
     <item>\<#63D2\>\<#4EF6\>\<#FF1A\>\<#65B0\>\<#589E\>Quiver\<#63D2\>\<#4EF6\>\<#FF0C\>\<#652F\>\<#6301\>\<#76F4\>\<#63A5\>\<#7C98\>\<#8D34\>Quiver\<#5E73\>\<#53F0\>\<#5BFC\>\<#51FA\>\<#7684\><LaTeX>\<#7ED8\>\<#5236\>\<#4EA4\>\<#6362\>\<#56FE\>
   </enumerate>
