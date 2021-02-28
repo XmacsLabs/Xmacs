@@ -87,9 +87,9 @@
   (-> "Miscellaneous"
       ("Test routine" (edit-test))
       ("Provoke scheme error" (oops))
-      ("Provoke C++ error" (cpp-error))
-      (-> "Provoke menu error"
-          (link provoke-error-menu)))
+      ("Provoke C++ error" (cpp-error)))
+      ;; (-> "Provoke menu error"
+      ;;    (link provoke-error-menu))
   ---
   ("auto" (debug-toggle "auto"))
   ("verbose" (debug-toggle "verbose"))

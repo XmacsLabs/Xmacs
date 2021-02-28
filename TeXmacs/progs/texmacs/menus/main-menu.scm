@@ -80,7 +80,7 @@
       (=> "Developer" (link developer-menu)))
   (if (nnull? (test-menu))
       (=> "Test" (link test-menu)))
-  (=> "Help " (link help-menu)))
+  (=> "Help" (link help-menu)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The TeXmacs popup menus
