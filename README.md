@@ -10,6 +10,11 @@ Xmacs is released every three months in 2020. Xmacs v2020.1 is the first release
 
 There are two releases (v2021.1 in August/v2021.2 in December) scheduled in 2021.
 
+## Roadmap
+In 2021, focus on improving performance and Qt 5 integration.
+
+In 2022, start to make Xmacs as an editor for code and lightweight markup language.
+
 ## Disclaimer
 Xmacs aims to be a distribution of GNU TeXmacs but not another TeXmacs. We do not encourage people to create pull requests to Xmacs. Please contribute to GNU TeXmacs directly.
 
