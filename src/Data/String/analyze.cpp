@@ -86,6 +86,23 @@ is_numeric (string s) {
   return true;
 }
 
+bool
+is_cjk_unified_ideographs(string s) {
+  int n= N(s);
+  for (int i=0; i<n; i++)
+    if (s[i] == '<' && i+1<n && s[i+1] == '#') {
+      int start= i+2;
+      i= i+2;
+      while (i<n && s[i] != '>') i++;
+      string r= s(start, i);
+      if ("4E00" <= r && r <= "9FBF") continue;
+      else                            return false;
+    } else {
+      return false;
+    }
+  return true;
+}
+
 /******************************************************************************
 * Changing cases
 ******************************************************************************/
@@ -1299,6 +1316,19 @@ match_wildcard (string s, int spos, string w, int wpos) {
 bool
 match_wildcard (string s, string w) {
   return match_wildcard (s, 0, w, 0);
+}
+
+int
+find_non_alpha (string s, int pos, bool forward) {
+  if (forward) {
+    for (; pos<N(s); pos++)
+      if (!is_alpha (s[pos])) return pos;
+  }
+  else {
+    for (; pos>0; pos--)
+      if (!is_alpha (s[pos-1])) return pos-1;
+  }
+  return -1;
 }
 
 array<string>

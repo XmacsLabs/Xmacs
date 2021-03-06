@@ -377,7 +377,7 @@
 
 (tm-define (git-show-status)
   (cursor-history-add (cursor-path))
-  (revert-buffer (tmfs-url-git (current-git-root) "status")))
+  (revert-buffer-revert (tmfs-url-git (current-git-root) "status")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Log
@@ -436,4 +436,4 @@
 
 (tm-define (git-show-log)
   (cursor-history-add (cursor-path))
-  (revert-buffer (tmfs-url-git (current-git-root) "log")))
+  (revert-buffer-revert (tmfs-url-git (current-git-root) "log")))

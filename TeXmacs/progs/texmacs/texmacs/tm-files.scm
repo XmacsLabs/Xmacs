@@ -528,7 +528,7 @@
 ;; Reverting buffers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(tm-define (revert-buffer . l)
+(tm-define (revert-buffer-revert . l)
   (with name (if (null? l) (current-buffer) (car l))
     (if (not (buffer-exists? name))
         (load-buffer name)
@@ -541,6 +541,14 @@
                 (set-message "Error: file not found" "Revert buffer")
                 (buffer-set name t)))))))
 
+(tm-define (revert-buffer . l)
+  (with name (if (null? l) (current-buffer) (car l))
+    (if (and (buffer-exists? name) (buffer-modified? name))
+        (user-confirm "Buffer has been modified. Really revert?" #f
+          (lambda (answ)
+            (when answ (apply revert-buffer-revert l))))
+        (apply revert-buffer-revert l))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Importing buffers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -548,10 +556,10 @@
 (define (import-buffer-import name fm opts)
   ;;(display* "import-buffer-import " name ", " fm "\n")
   (if (== fm (url-format name))
-      (load-buffer-main name opts)
+      (apply load-buffer-main (cons name opts))
       (let* ((s (url->tmfs-string name))
              (u (string-append "tmfs://import/" fm "/" s)))
-        (load-buffer-main u opts))))
+        (apply load-buffer-main (cons u opts)))))
 
 (define (import-buffer-check-permissions name fm opts)
   ;;(display* "import-buffer-check-permissions " name ", " fm "\n")
@@ -572,7 +580,9 @@
   (import-buffer-check-permissions name fm opts))
 
 (tm-define (import-buffer name fm . opts)
-  (import-buffer-main name fm opts))
+  (if (window-per-buffer?)
+      (import-buffer-main name fm (cons :new-window opts))
+      (import-buffer-main name fm opts)))
 
 (tm-define (buffer-importer fm)
   (lambda (s) (import-buffer s fm)))

@@ -2811,6 +2811,14 @@ source code.
   </explain>
 
   <\explain>
+    <scm|(string-find-non-alpha <scm-arg|string> <scm-arg|int> <scm-arg|bool>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|find_non_alpha> which returns
+    <scm|int>.
+  </explain>
+
+  <\explain>
     <scm|(string-alpha? <scm-arg|string>)>
 <explain-synopsis|no synopsis>
   <|explain>
@@ -4384,6 +4392,22 @@ source code.
   <|explain>
     Calls the <c++> function <cpp|picture_cache_reset> which returns
     <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(set-file-focus <scm-arg|url>)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|set_file_focus> which returns
+    <scm|void>.
+  </explain>
+
+  <\explain>
+    <scm|(get-file-focus)>
+<explain-synopsis|no synopsis>
+  <|explain>
+    Calls the <c++> function <cpp|get_file_focus> which returns
+    <scm|url>.
   </explain>
 
   <\explain>

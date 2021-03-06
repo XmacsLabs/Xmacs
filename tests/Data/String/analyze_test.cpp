@@ -23,6 +23,10 @@ TEST (string, is_alpha) {
   }
 }
 
+TEST (string, is_cjk_unified_ideographs) {
+  ASSERT_TRUE (is_cjk_unified_ideographs ("<#4E2D>"));
+}
+
 TEST (string, locase_all) {
   ASSERT_TRUE (locase_all (string ("true")) == string ("true"));
   ASSERT_TRUE (locase_all (string ("TRue")) == string ("true"));

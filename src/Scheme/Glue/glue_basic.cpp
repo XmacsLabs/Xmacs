@@ -4673,6 +4673,23 @@ tmg_string_replace (tmscm arg1, tmscm arg2, tmscm arg3) {
 }
 
 tmscm
+tmg_string_find_non_alpha (tmscm arg1, tmscm arg2, tmscm arg3) {
+  TMSCM_ASSERT_STRING (arg1, TMSCM_ARG1, "string-find-non-alpha");
+  TMSCM_ASSERT_INT (arg2, TMSCM_ARG2, "string-find-non-alpha");
+  TMSCM_ASSERT_BOOL (arg3, TMSCM_ARG3, "string-find-non-alpha");
+
+  string in1= tmscm_to_string (arg1);
+  int in2= tmscm_to_int (arg2);
+  bool in3= tmscm_to_bool (arg3);
+
+  // TMSCM_DEFER_INTS;
+  int out= find_non_alpha (in1, in2, in3);
+  // TMSCM_ALLOW_INTS;
+
+  return int_to_tmscm (out);
+}
+
+tmscm
 tmg_string_alphaP (tmscm arg1) {
   TMSCM_ASSERT_STRING (arg1, TMSCM_ARG1, "string-alpha?");
 
@@ -7379,6 +7396,28 @@ tmg_picture_cache_reset () {
   // TMSCM_ALLOW_INTS;
 
   return TMSCM_UNSPECIFIED;
+}
+
+tmscm
+tmg_set_file_focus (tmscm arg1) {
+  TMSCM_ASSERT_URL (arg1, TMSCM_ARG1, "set-file-focus");
+
+  url in1= tmscm_to_url (arg1);
+
+  // TMSCM_DEFER_INTS;
+  set_file_focus (in1);
+  // TMSCM_ALLOW_INTS;
+
+  return TMSCM_UNSPECIFIED;
+}
+
+tmscm
+tmg_get_file_focus () {
+  // TMSCM_DEFER_INTS;
+  url out= get_file_focus ();
+  // TMSCM_ALLOW_INTS;
+
+  return url_to_tmscm (out);
 }
 
 tmscm
@@ -10328,6 +10367,7 @@ initialize_glue_basic () {
   tmscm_install_procedure ("string-search-backwards",  tmg_string_search_backwards, 3, 0, 0);
   tmscm_install_procedure ("string-overlapping",  tmg_string_overlapping, 2, 0, 0);
   tmscm_install_procedure ("string-replace",  tmg_string_replace, 3, 0, 0);
+  tmscm_install_procedure ("string-find-non-alpha",  tmg_string_find_non_alpha, 3, 0, 0);
   tmscm_install_procedure ("string-alpha?",  tmg_string_alphaP, 1, 0, 0);
   tmscm_install_procedure ("string-locase-alpha?",  tmg_string_locase_alphaP, 1, 0, 0);
   tmscm_install_procedure ("upcase-first",  tmg_upcase_first, 1, 0, 0);
@@ -10525,6 +10565,8 @@ initialize_glue_basic () {
   tmscm_install_procedure ("url-grep",  tmg_url_grep, 2, 0, 0);
   tmscm_install_procedure ("url-search-upwards",  tmg_url_search_upwards, 3, 0, 0);
   tmscm_install_procedure ("picture-cache-reset",  tmg_picture_cache_reset, 0, 0, 0);
+  tmscm_install_procedure ("set-file-focus",  tmg_set_file_focus, 1, 0, 0);
+  tmscm_install_procedure ("get-file-focus",  tmg_get_file_focus, 0, 0, 0);
   tmscm_install_procedure ("persistent-set",  tmg_persistent_set, 3, 0, 0);
   tmscm_install_procedure ("persistent-remove",  tmg_persistent_remove, 2, 0, 0);
   tmscm_install_procedure ("persistent-has?",  tmg_persistent_hasP, 2, 0, 0);

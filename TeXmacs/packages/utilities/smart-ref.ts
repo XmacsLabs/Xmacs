@@ -1,4 +1,4 @@
-<TeXmacs|1.99.15>
+<TeXmacs|1.99.18>
 
 <style|source>
 
@@ -82,6 +82,8 @@
 
   <assign|not-ref|<xmacro|args|<extern|ext-typed-ref|Notation|<quote-arg|args>>>>
 
+  <assign|nota-ref|<xmacro|args|<extern|ext-typed-ref|Notation|<quote-arg|args>>>>
+
   <assign|notation-ref|<xmacro|args|<extern|ext-typed-ref|Notation|<quote-arg|args>>>>
 
   <assign|ax-ref|<xmacro|args|<extern|ext-typed-ref|Axiom|<quote-arg|args>>>>
@@ -140,6 +142,8 @@
 
   <assign|ch-ref|<xmacro|args|<extern|ext-typed-ref|Chapter|<quote-arg|args>>>>
 
+  <assign|chp-ref|<xmacro|args|<extern|ext-typed-ref|Chapter|<quote-arg|args>>>>
+
   <assign|chap-ref|<xmacro|args|<extern|ext-typed-ref|Chapter|<quote-arg|args>>>>
 
   <assign|chapter-ref|<xmacro|args|<extern|ext-typed-ref|Chapter|<quote-arg|args>>>>
@@ -159,6 +163,12 @@
   <assign|subsec-ref|<xmacro|args|<extern|ext-typed-ref|Subsection|<quote-arg|args>>>>
 
   <assign|subsection-ref|<xmacro|args|<extern|ext-typed-ref|Section|<quote-arg|args>>>>
+
+  <assign|ap-ref|<xmacro|args|<extern|ext-typed-ref|Appendix|<quote-arg|args>>>>
+
+  <assign|app-ref|<xmacro|args|<extern|ext-typed-ref|Appendix|<quote-arg|args>>>>
+
+  <assign|appendix-ref|<xmacro|args|<extern|ext-typed-ref|Appendix|<quote-arg|args>>>>
 
   <assign|par-ref|<xmacro|args|<extern|ext-typed-ref|Paragraph|<quote-arg|args>>>>
 
@@ -197,6 +207,10 @@
   <assign|tab-ref|<xmacro|args|<extern|ext-typed-ref|Table|<quote-arg|args>>>>
 
   <assign|table-ref|<xmacro|args|<extern|ext-typed-ref|Table|<quote-arg|args>>>>
+
+  <assign|a-ref|<xmacro|args|<extern|ext-typed-ref|Algorithm|<quote-arg|args>>>>
+
+  <assign|al-ref|<xmacro|args|<extern|ext-typed-ref|Algorithm|<quote-arg|args>>>>
 
   <assign|alg-ref|<xmacro|args|<extern|ext-typed-ref|Algorithm|<quote-arg|args>>>>
 

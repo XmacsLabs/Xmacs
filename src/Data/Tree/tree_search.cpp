@@ -51,10 +51,14 @@ initialize_search () {
     (get_user_preference ("case-insensitive-match", "off") == "on");
   
   if (get_user_preference ("search-and-replace", "on") == "on") {
-    blank_match_flag    = false;
-    initial_match_flag  = false;
-    partial_match_flag  = false;
-    injective_match_flag= false;
+    blank_match_flag=
+      (get_user_preference ("allow-blank-replace", "off") == "on");
+    initial_match_flag=
+      (get_user_preference ("allow-initial-replace", "off") == "on");
+    partial_match_flag=
+      (get_user_preference ("allow-partial-replace", "off") == "on");
+    injective_match_flag=
+      (get_user_preference ("allow-injective-replace", "off") == "on");
   }
 }
 
@@ -154,8 +158,8 @@ match (tree t, tree what) {
     if (L(t) != L(what)) return false;
     int cur=0;
     for (int i=0; i<N(t); i++) {
-      if (match_cascaded (t[i], what[cur])) cur++;
       if (cur >= N(what)) return true;
+      if (match_cascaded (t[i], what[cur])) cur++;
     }
     return cur >= N(what);
   }

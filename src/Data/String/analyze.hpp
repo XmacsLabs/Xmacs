@@ -49,6 +49,7 @@ bool is_alpha (string s);
 bool is_locase_alpha (string s);
 bool is_iso_alpha (string s);
 bool is_numeric (string s);
+bool is_cjk_unified_ideographs(string s);
 
 char   upcase (char s);
 char   locase (char s);
@@ -154,6 +155,7 @@ bool   occurs (string what, string in);
 int    overlapping (string s1, string s2);
 string replace (string s, string what, string by);
 bool   match_wildcard (string s, string w);
+int    find_non_alpha (string s, int pos, bool forward);
 array<string> tokenize (string s, string sep);
 string recompose (array<string> a, string sep);
 string trim_spaces_left (string s);

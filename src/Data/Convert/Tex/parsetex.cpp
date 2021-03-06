@@ -50,6 +50,7 @@ struct latex_parser {
   char lf;
   bool pic;
   hashmap<string,bool> loaded_package;
+  hashmap<string,bool> loaded_include;
   latex_parser (bool unicode2): level (0), unicode (unicode2) {}
   void latex_error (string s, int i, string message);
 
@@ -792,13 +793,13 @@ count_env_changes (tree t) {
 }
 
 static bool
-contains_board_effects (tree t, bool root= true) {
+contains_side_effects (tree t, bool root= true) {
   if (is_atomic (t)) return false;
   if (is_def (t) || is_var_def (t)) return true;
   if (root && count_env_changes (t) != 0) return true;
   int i, n= N(t);
   for (i=0; i<n; i++)
-    if (contains_board_effects (t[i], false))
+    if (contains_side_effects (t[i], false))
       return true;
   return false;
 }
@@ -1169,7 +1170,7 @@ latex_parser::parse_command (string s, int& i, string cmd, int change) {
     }
   }
 
-  /***************** detecting substitutions and boards effects  *************/
+  /***************** detecting substitutions and side effects  *************/
   if (!done) {
     if (pic && is_def (t)) {
       bool subs= false;
@@ -1180,42 +1181,43 @@ latex_parser::parse_command (string s, int& i, string cmd, int change) {
         string name= string_arg (t[1]);
         command_type (name)= "replace";
       }
-      if (subs && starts (as_string (t[0]), "\\newenvironment")) {
+      if (subs && starts (as_string (t[0]), "\\newenvironment") && N(t) >= 2) {
         string name= string_arg (t[1]);
         command_type ("\\begin-"*name)= "replace";
         command_type ("\\end-"*name)=   "replace";
       }
     }
-    if ((is_tuple (t, "\\def")   && contains_board_effects (t[N(t)-1])) ||
-        (is_tuple (t, "\\def*")  && contains_board_effects (t[N(t)-1])) ||
-        (is_tuple (t, "\\def**") && contains_board_effects (t[N(t)-1])) ||
-        (is_tuple (t, "\\def**") && contains_board_effects (t[N(t)-2]))) {
+    if ((is_tuple (t, "\\def")   && contains_side_effects (t[N(t)-1])) ||
+        (is_tuple (t, "\\def*")  && contains_side_effects (t[N(t)-1])) ||
+        (is_tuple (t, "\\def**") && contains_side_effects (t[N(t)-1])) ||
+        (is_tuple (t, "\\def**") && contains_side_effects (t[N(t)-2]))) {
       string name= string_arg (t[1]);
-      command_type (name)= "bord-effect!";
+      command_type (name)= "side-effect!";
     }
-    if ((is_tuple (t, "\\newenvironment")
-          && contains_board_effects (concat (t[N(t)-2], t[N(t)-1]))) ||
-        (is_tuple (t, "\\newenvironment*")
-         && contains_board_effects (concat (t[N(t)-2], t[N(t)-1]))) ||
-        (is_tuple (t, "\\newenvironment**")
-         && contains_board_effects (concat (t[N(t)-2], t[N(t)-1]))) ||
-        (is_tuple (t, "\\newenvironment**")
-         && contains_board_effects (t[N(t)-3]))) {
+    if ((is_tuple (t, "\\newenvironment") && N(t) >= 2
+          && contains_side_effects (concat (t[N(t)-2], t[N(t)-1]))) ||
+        (is_tuple (t, "\\newenvironment*") && N(t) >= 2
+         && contains_side_effects (concat (t[N(t)-2], t[N(t)-1]))) ||
+        (is_tuple (t, "\\newenvironment**") && N(t) >= 2
+         && contains_side_effects (concat (t[N(t)-2], t[N(t)-1]))) ||
+        (is_tuple (t, "\\newenvironment**") && N(t) >= 3
+         && contains_side_effects (t[N(t)-3]))) {
       string name= string_arg (t[1]);
-      command_type ("\\begin-"*name)= "bord-effect!";
-      command_type ("\\end-"*name)  = "bord-effect!";
+      command_type ("\\begin-"*name)= "side-effect!";
+      command_type ("\\end-"*name)  = "side-effect!";
     }
   }
 
-  /***************** apply substitutions and bords effects  ******************/
+  /***************** apply substitutions and side effects  ******************/
   if ((pic && latex_type (cmd) == "replace")
       || latex_type (cmd) == "begin-end!"
       || latex_type (cmd) == "defined-env!"
-      || latex_type (cmd) == "bord-effect!") {
+      || latex_type (cmd) == "side-effect!") {
     int pos= 0;
     array<string> body= command_def[cmd];
+    if (cmd == "\\def") body= array<string> ();
     arity= command_arity[cmd];
-    if (N(body) > 0 && latex_type (cmd) == "bord-effect!"
+    if (N(body) > 0 && latex_type (cmd) == "side-effect!"
         && !occurs (cmd, body[0]))
       (void) parse (body[0], pos, "", change);
     else if (N(body) > 0 && latex_type (cmd) == "begin-end!"
@@ -1630,6 +1632,41 @@ accented_to_Cork (tree t) {
 * Interface
 ******************************************************************************/
 
+static bool
+skip_expansion (url u) {
+  string s= as_string (tail (u));
+  return
+    s == "aaai1.sty" ||
+    s == "aixi.sty" ||
+    s == "algorithm.sty" ||
+    s == "algorithm2e.sty" ||
+    s == "algorithmic.sty" ||
+    s == "amssymb.sty" ||
+    s == "aopmath.sty" ||
+    s == "boxedeps.sty" ||
+    s == "braids.sty" ||
+    s == "bux2ref.sty" ||
+    s == "buxmath.sty" ||
+    s == "buxlayout.sty" ||
+    s == "chicagob.sty" ||
+    s == "chicagor.sty" ||
+    s == "dfadobe.sty" ||
+    s == "eepic.sty" ||
+    s == "fancyhdr.sty" ||
+    s == "geompsfi.sty" ||
+    s == "hyperref.sty" ||
+    s == "IEEEtrantools.sty" ||
+    s == "jair.sty" ||
+    s == "jmlr2e.sty" ||
+    s == "latexsym.sty" ||
+    s == "natbib.sty" ||
+    s == "psfig.tex" ||
+    s == "soul.sty" ||
+    s == "tcolorbox.sty" ||
+    s == "theapa.sty" ||
+    s == "times.sty";
+}
+
 tree
 latex_parser::parse (string s, int change) {
   command_type ->extend ();
@@ -1688,11 +1725,15 @@ latex_parser::parse (string s, int change) {
           if (!ends (name, suffix)) name= name * suffix;
           url incl= relative (get_file_focus (), name);
           string body;
-          if (!exists (incl) || load_string (incl, body, false));
+          if (!exists (incl) ||
+              skip_expansion (incl) ||
+              loaded_include[as_string (incl)] ||
+              load_string (incl, body, false));
           else {
             //cout << "Include " << name << " -> " << incl << "\n";
             s= s (0, cut) * "\n" * body * "\n" * s (i+1, N(s));
             n= N(s);
+            loaded_include (as_string (incl))= true;
           }
           i= cut + 1;
         }

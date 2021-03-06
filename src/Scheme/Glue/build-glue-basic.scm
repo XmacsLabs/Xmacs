@@ -397,6 +397,7 @@
   (string-search-backwards search_backwards (int string int string))
   (string-overlapping overlapping (int string string))
   (string-replace replace (string string string string))
+  (string-find-non-alpha find_non_alpha (int string int bool))
   (string-alpha? is_alpha (bool string))
   (string-locase-alpha? is_locase_alpha (bool string))
   (upcase-first upcase_first (string string))
@@ -611,6 +612,8 @@
   (url-grep grep (url string url))
   (url-search-upwards search_file_upwards (url url string array_string))
   (picture-cache-reset picture_cache_reset (void))
+  (set-file-focus set_file_focus (void url))
+  (get-file-focus get_file_focus (url))
 
   ;; Persistent data
   (persistent-set persistent_set (void url string string))

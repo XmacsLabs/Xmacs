@@ -80,8 +80,14 @@
 	    ((== l 'doc-title-options)
 	     (tree-insert! t pos `((,l))))
 	    ((in? l doc-data-inactive-tags)
-	     (tree-insert! t pos `((doc-inactive (,l ""))))
-	     (tree-go-to t pos 0 0 0))
+             (let* ((r (tree-search t (cut tree-is? <> l)))
+                    (x (and (pair? r) (car r))))
+               (cond ((not x)
+                      (tree-insert! t pos `((doc-inactive (,l ""))))
+                      (tree-go-to t pos 0 0 0))
+                     (else
+                      (tree-set! x `(doc-inactive ,x))
+                      (tree-go-to x 0 0 :end)))))
 	    (else
 	     (tree-insert! t pos `((,l "")))
 	     (tree-go-to t pos 0 0))))))
@@ -157,6 +163,24 @@
 (tm-define (kbd-enter t shift?)
   (:require (tree-is? t 'doc-inactive))
   (doc-data-activate-here))
+
+(tm-define (doc-data-clean t)
+  (for (c (reverse (tree-children t)))
+    (cond ((tree-empty? c)
+           (tree-remove t (tree-index c) 1))
+          ((and (tree-func? c 'doc-author 1)
+                (tree-empty? (tree-ref c 0)))
+           (tree-remove t (tree-index c) 1))
+          ((and (tree-func? c 'doc-author 1)
+                (tm-is? (tree-ref c 0) 'author-data))
+           (doc-data-clean (tree-ref c 0))))))
+
+(tm-define (kbd-remove t forwards?)
+  (:require (tree-search-upwards t 'doc-data))
+  (with d (tree-search-upwards t 'doc-data)
+    (former t forwards?)
+    (when (and (tree->path d) (tree-is? d 'doc-data))
+      (doc-data-clean d))))
 
 (tm-define (set-doc-title-options opts)
   (with-innermost t 'doc-data
