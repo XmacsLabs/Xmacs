@@ -2,5 +2,5 @@
 	path = plugins
 	url = https://gitee.com/texmacs/plugins.git
 [submodule "texmacs"]
-	path = plugins
+	path = texmacs
 	url = https://gitee.com/texmacs/texmacs.git
