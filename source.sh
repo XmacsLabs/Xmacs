@@ -18,6 +18,7 @@ clean_source_dir
 echo "==> Git Apply prepared patches"
 git apply $FWDIR/patches/1.diff
 git apply $FWDIR/patches/2.diff
+git apply $FWDIR/patches/3.diff
 
 echo "==> Cleaning Unused Code"
 ### Autotools
@@ -40,7 +41,24 @@ rm -rf $FWDIR/texmacs/src/Plugins/X11
 ### Widkit
 rm -rf $FWDIR/texmacs/src/Plugins/Widkit
 ### Cocoa Related
-rm -rf $FWDIR/texmacs/src/Plugins/Cocoa
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/TMButtonsController.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/TMButtonsController.m
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/TMView.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_basic_widgets.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_dialogues.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_dialogues.mm
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_gui.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_gui.mm
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_menu.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_menu.mm
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_other_widgets.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_renderer.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_renderer.mm
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_simple_widget.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_utilities.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_utilities.mm
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_widget.h
+rm -rf $FWDIR/texmacs/src/Plugins/Cocoa/aqua_widget.mm
 
 ## Using the latest Plugins and remove some of them
 rm -rf $FWDIR/texmacs/plugins
@@ -56,6 +74,8 @@ cp -rf $FWDIR/xmacs/ $FWDIR/texmacs/
 echo "==> Output to /tmp/Xmacs"
 rm -rf /tmp/Xmacs
 cp -r $FWDIR/texmacs /tmp/Xmacs
+find /tmp/Xmacs -iname ".git" | xargs -I% rm -f %
+find /tmp/Xmacs -iname ".gitignore" | xargs -I% rm -f %
 
 clean_source_dir
 
