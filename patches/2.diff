@@ -1,0 +1,27 @@
+diff --git a/TeXmacs/progs/doc/help-menu.scm b/TeXmacs/progs/doc/help-menu.scm
+index 42b740855..c67bc8214 100644
+--- a/TeXmacs/progs/doc/help-menu.scm
++++ b/TeXmacs/progs/doc/help-menu.scm
+@@ -30,6 +30,9 @@
+        (load-help-article (string-append name))))))
+ 
+ (menu-bind help-menu
++  (when (url-exists-in-help? "about/xmacs/welcome.zh.tm")
++     ("Xmacs" (load-help-buffer "about/xmacs/welcome"))
++     ---)
+   (when (url-exists-in-help? "about/welcome/new-welcome.en.tm")
+ 	("Welcome" (load-help-article "about/welcome/new-welcome"))
+ 	---)
+diff --git a/src/Texmacs/Texmacs/texmacs.cpp b/src/Texmacs/Texmacs/texmacs.cpp
+index 56601e1e8..9da08ad8f 100644
+--- a/src/Texmacs/Texmacs/texmacs.cpp
++++ b/src/Texmacs/Texmacs/texmacs.cpp
+@@ -671,7 +671,7 @@ main (int argc, char** argv) {
+ #endif
+   TeXmacs_init_paths (argc, argv);
+ #ifdef QTTEXMACS
+-  qtmapp->set_window_icon("/misc/images/texmacs-512.png");
++  qtmapp->set_window_icon("/misc/images/xmacs-512.png");
+ #endif
+   //cout << "Bench  ] Started TeXmacs\n";
+   the_et     = tuple ();

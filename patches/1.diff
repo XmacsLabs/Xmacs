@@ -1,0 +1,619 @@
+diff --git a/TeXmacs/progs/debug/debug-menu.scm b/TeXmacs/progs/debug/debug-menu.scm
+index 3d82b35d3..6df71f89e 100644
+--- a/TeXmacs/progs/debug/debug-menu.scm
++++ b/TeXmacs/progs/debug/debug-menu.scm
+@@ -87,9 +87,9 @@
+   (-> "Miscellaneous"
+       ("Test routine" (edit-test))
+       ("Provoke scheme error" (oops))
+-      ("Provoke C++ error" (cpp-error))
+-      (-> "Provoke menu error"
+-          (link provoke-error-menu)))
++      ("Provoke C++ error" (cpp-error)))
++      ;; (-> "Provoke menu error"
++      ;;    (link provoke-error-menu))
+   ---
+   ("auto" (debug-toggle "auto"))
+   ("verbose" (debug-toggle "verbose"))
+diff --git a/TeXmacs/progs/version/version-git.scm b/TeXmacs/progs/version/version-git.scm
+index 1d01248df..3815e6528 100644
+--- a/TeXmacs/progs/version/version-git.scm
++++ b/TeXmacs/progs/version/version-git.scm
+@@ -121,32 +121,35 @@
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; File history
+-;; 1. Eval `git log --pretty=%ai%n%an%n%s%n%H%n <name>`
++;; 1. Eval `git log --follow --pretty=%ai%n%an%n%s%n%H --name-only <name>`
+ ;; 2. Split the result by \n\n
+ ;; 3. Transform each string record to texmacs document
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define (string->commit str name)
+-  (if (string-null? str) '()
+-      (with alist (string-split str #\nl)
+-        (with (date by msg commit . opts) alist
+-          (set! date (string-take date (min 19 (string-length date))))
+-          (list commit by date msg)))))
++(define (git-history-item alist root)
++  (with (date by msg commit blank path) alist
++        (list
++         (string-append commit ":"
++          (url->tmfs-string (system->url (string-append root "/" path))))
++         by date msg)))
++
++(define (git-history-items alist root)
++  (if (< (length alist) 6)
++      (list)
++      (cons (git-history-item (list-take alist 6) root)
++            (git-history-items (list-drop alist 6) root))))
+ 
+ (tm-define (version-history name)
+   (:require (== (version-tool name) "git"))
+   (let* ((cmd (string-append
+-               (git-command name) " log --pretty=%ai%n%an%n%s%n%H%n"
++               (git-command name) " log --follow --pretty=%ai%n%an%n%s%n%H --name-only"
+                NR_LOG_OPTION
+                (url->system name)))
++         (root (current-git-root))
+          (ret1 (eval-system cmd))
+-         (ret2 (string-decompose ret1 "\n\n")))
++         (ret2 (string-decompose ret1 "\n")))
+ 
+-    (define (string->commit-file str)
+-      (string->commit str (url->tmfs-string name)))
+-    (and (> (length ret2) 0)
+-         (string-null? (cAr ret2))
+-         (map string->commit-file (cDr ret2)))))
++    (git-history-items ret2 root)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; File revisions
+diff --git a/TeXmacs/progs/version/version-tmfs.scm b/TeXmacs/progs/version/version-tmfs.scm
+index c955736e6..f760273a4 100644
+--- a/TeXmacs/progs/version/version-tmfs.scm
++++ b/TeXmacs/progs/version/version-tmfs.scm
+@@ -109,7 +109,9 @@
+     (string-append (url->system (url-tail u)) " - History")))
+ 
+ (tm-define (version-revision-url u rev)
+-  (string-append "tmfs://revision/" rev "/" (url->tmfs-string u)))
++  (if (string-contains rev ":")
++    (string-append "tmfs://revision/" (string-replace rev ":" "/"))
++    (string-append "tmfs://revision/" rev "/" (url->tmfs-string u))))
+ 
+ (tmfs-load-handler (history name)
+   (let* ((u (tmfs-string->url name))
+diff --git a/misc/CMakeLists.txt b/misc/CMakeLists.txt
+index dc8335ca5..bc7b2d81f 100644
+--- a/misc/CMakeLists.txt
++++ b/misc/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-configure_file(scripts/texmacs.in ${TEXMACS_BINARY_DIR}/misc/scripts/texmacs @ONLY)
++configure_file(scripts/texmacs.in ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs @ONLY)
+ configure_file(scripts/fig2ps.in ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps @ONLY)
+ configure_file(man/texmacs.1.in ${TEXMACS_SOURCE_DIR}/misc/man/texmacs.1 @ONLY)
+ 
+diff --git a/misc/scripts/texmacs.in b/misc/scripts/texmacs.in
+index d9d697c8a..6883fe2d5 100755
+--- a/misc/scripts/texmacs.in
++++ b/misc/scripts/texmacs.in
+@@ -35,4 +35,4 @@ PATH="$TEXMACS_BIN_PATH/bin:$PATH"
+ @CONFIG_LIB_PATH@="$TEXMACS_BIN_PATH/lib${@CONFIG_LIB_PATH@+":$@CONFIG_LIB_PATH@"}"
+ export PATH @CONFIG_LIB_PATH@
+ 
+-exec texmacs.bin "$@" < /dev/null
++exec xmacs.bin "$@" < /dev/null
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 058f3053c..9ca332c03 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -3,11 +3,11 @@
+ ### --------------------------------------------------------------------
+ 
+ if (APPLE)
+-  set (TeXmacs_binary_name "TeXmacs")
++  set (TeXmacs_binary_name "Xmacs")
+ elseif (WIN32)
+-  set (TeXmacs_binary_name "texmacs")
++  set (TeXmacs_binary_name "xmacs")
+ else (APPLE)
+-  set (TeXmacs_binary_name "texmacs.bin")
++  set (TeXmacs_binary_name "xmacs.bin")
+ endif (APPLE)
+ 
+ add_library(texmacs_body STATIC ${TeXmacs_All_SRCS})
+diff --git a/src/Data/String/analyze.cpp b/src/Data/String/analyze.cpp
+index b88008f6d..fc284afbd 100644
+--- a/src/Data/String/analyze.cpp
++++ b/src/Data/String/analyze.cpp
+@@ -86,6 +86,23 @@ is_numeric (string s) {
+   return true;
+ }
+ 
++bool
++is_cjk_unified_ideographs(string s) {
++  int n= N(s);
++  for (int i=0; i<n; i++)
++    if (s[i] == '<' && i+1<n && s[i+1] == '#') {
++      int start= i+2;
++      i= i+2;
++      while (i<n && s[i] != '>') i++;
++      string r= s(start, i);
++      if ("4E00" <= r && r <= "9FBF") continue;
++      else                            return false;
++    } else {
++      return false;
++    }
++  return true;
++}
++
+ /******************************************************************************
+ * Changing cases
+ ******************************************************************************/
+diff --git a/src/Data/String/analyze.hpp b/src/Data/String/analyze.hpp
+index 41ebf044a..4701d94a2 100644
+--- a/src/Data/String/analyze.hpp
++++ b/src/Data/String/analyze.hpp
+@@ -49,6 +49,7 @@ bool is_alpha (string s);
+ bool is_locase_alpha (string s);
+ bool is_iso_alpha (string s);
+ bool is_numeric (string s);
++bool is_cjk_unified_ideographs(string s);
+ 
+ char   upcase (char s);
+ char   locase (char s);
+diff --git a/src/Edit/Interface/edit_repaint.cpp b/src/Edit/Interface/edit_repaint.cpp
+index 83d9ee784..baef5dec7 100644
+--- a/src/Edit/Interface/edit_repaint.cpp
++++ b/src/Edit/Interface/edit_repaint.cpp
+@@ -193,11 +193,54 @@ edit_interface_rep::draw_graphics (renderer ren) {
+   }
+ }
+ 
++void draw_keys_cjk(renderer ren, rectangle r, string ch,int &base_x, int &base_y) {
++  // Only support Chinese for now
++  tree t= tuple (default_chinese_font_name(), "rm", "medium", "right");
++  t << tree ("14") << tree ("600");
++  font fn= find_font (t);
++
++  fn->draw (ren, ch, r->x1 + base_x, r->y1 + base_y);
++
++  metric ex;
++  fn->get_extents (ch, ex);
++  base_x= base_x + ex->x2 - ex->x1;
++}
++
++void draw_keys_sub(renderer ren, rectangle r, string ns, int &base_x, int &base_y) {
++  // Find the right font to use
++  tree t;
++  if (use_macos_fonts ()) {
++    t= tuple ("apple-lucida", "ss", "medium", "right");
++  }
++  else {
++    t= tuple ("pagella", "rm", "medium", "right");
++  }
++  t << tree ("14") << tree ("600");
++  font fn= find_font (t);
++
++  // SI dp= 25 * pixel;
++  // if ((ex->x2 - ex->x1 + dp) > (r->x2 - r->x1))
++  //   dx= r->x2 - r->x1 + ex->x1 - ex->x2 - dp;
++  fn->draw (ren, ns, r->x1 + base_x, r->y1 + base_y);
++
++  metric ex;
++  fn->get_extents (ns, ex);
++  base_x= base_x + ex->x2 - ex->x1;
++}
++
+ void
+ edit_interface_rep::draw_keys (renderer ren) {
+-  if (kbd_show_keys && got_focus && N(kbd_shown_keys) > 0 &&
++  if (kbd_show_keys &&
++      got_focus &&
++      N(kbd_shown_keys) > 0 &&
+       !is_nil (keys_rects) &&
+       vy2 - vy1 > 3 * (keys_rects->item->y2 - keys_rects->item->y1)) {
++    // Init renderer and rectangle
++    ren->set_background (rgb_color (240, 224, 208));
++    rectangle r= keys_rects->item;
++    ren->clear (r->x1, r->y1, r->x2, r->y2);
++    ren->set_pencil (pencil (rgb_color (0, 0, 64)));
++
+     string s;
+     for (int i=0; i<N(kbd_shown_keys); i++) {
+       if (i>0) s << " ";
+@@ -205,6 +248,10 @@ edit_interface_rep::draw_keys (renderer ren) {
+     }
+     tree rew= get_server () -> kbd_system_rewrite (s);
+     if (!is_concat (rew)) rew= tree (CONCAT, rew);
++
++    int base_x= (r->x2 - r->x1) / 3;
++    int base_y= (r->y2 - r->y1) / 3;
++
+     string ns;
+     for (int i=0; i<N(rew); i++) {
+       tree t= rew[i];
+@@ -212,32 +259,21 @@ edit_interface_rep::draw_keys (renderer ren) {
+         t= t[N(t)-1];
+       if (is_atomic (t)) {
+         if (N(ns) != 0) ns << "  ";
+-        ns << t->label;
++        if (is_cjk_unified_ideographs(t->label)) {
++          draw_keys_sub(ren, r, ns, base_x, base_y);
++          cout << ns << LF;
++          // Clear it after the drawing
++          ns= "";
++          draw_keys_cjk(ren, r, t->label, base_x, base_y);
++          cout << t->label << LF;
++        } else {
++          ns << t->label;
++        }
+       }
+     }
+-    ren->set_background (rgb_color (240, 224, 208));
+-    rectangle r= keys_rects->item;
+-    ren->clear (r->x1, r->y1, r->x2, r->y2);
+-    font fn;
+-    if (use_macos_fonts ()) {
+-      tree t= tuple ("apple-lucida", "ss", "medium", "right");
+-      t << tree ("14") << tree ("600");
+-      fn= find_font (t);
+-    }
+-    else {
+-      tree t= tuple ("pagella", "rm", "medium", "right");
+-      t << tree ("14") << tree ("600");
+-      fn= find_font (t);
++    if (!is_empty(ns)) {
++      draw_keys_sub(ren, r, ns, base_x, base_y);
+     }
+-    metric ex;
+-    fn->get_extents (ns, ex);
+-    SI dx= (r->x2 - r->x1 + ex->x1 - ex->x2) >> 1;
+-    SI dy= (r->y2 - r->y1) / 3;
+-    SI dp= 25 * pixel;
+-    if ((ex->x2 - ex->x1 + dp) > (r->x2 - r->x1))
+-      dx= r->x2 - r->x1 + ex->x1 - ex->x2 - dp;
+-    ren->set_pencil (pencil (rgb_color (0, 0, 64)));
+-    fn->draw (ren, ns, r->x1 + dx, r->y1 + dy);
+   }
+ }
+ 
+diff --git a/src/Graphics/Renderer/renderer.cpp b/src/Graphics/Renderer/renderer.cpp
+index 2d3963899..5993ba4ca 100644
+--- a/src/Graphics/Renderer/renderer.cpp
++++ b/src/Graphics/Renderer/renderer.cpp
+@@ -18,7 +18,11 @@
+ int    std_shrinkf  = 5;
+ bool   retina_manual= false;
+ bool   retina_iman  = false;
++#ifdef OS_MACOS
++int    retina_factor= 2;
++#else
+ int    retina_factor= 1;
++#endif
+ int    retina_zoom  = 1;
+ int    retina_icons = 1;
+ double retina_scale = 1.0;
+diff --git a/src/Kernel/Types/string.cpp b/src/Kernel/Types/string.cpp
+index a9fe59544..455121535 100644
+--- a/src/Kernel/Types/string.cpp
++++ b/src/Kernel/Types/string.cpp
+@@ -15,6 +15,10 @@
+ #include <string.h>
+ #include <stdlib.h>
+ 
++#ifdef USE_JEAIII
++#include "Jeaiii/itoa_jeaiii.hpp"
++#endif
++
+ /******************************************************************************
+ * Low level routines and constructors
+ ******************************************************************************/
+@@ -286,7 +290,11 @@ as_string_bool (bool f) {
+ string
+ as_string (int i) {
+   char buf[64];
++#ifdef USE_JEAIII
++  i32toa_jeaiii (i, buf);
++#else
+   sprintf (buf, "%i", i);
++#endif
+   // sprintf (buf, "%i\0", i);
+   return string (buf);
+ }
+@@ -294,7 +302,11 @@ as_string (int i) {
+ string
+ as_string (unsigned int i) {
+   char buf[64];
++#ifdef USE_JEAIII
++  u32toa_jeaiii (i, buf);
++#else
+   sprintf (buf, "%u", i);
++#endif
+   // sprintf (buf, "%u\0", i);
+   return string (buf);
+ }
+@@ -302,7 +314,11 @@ as_string (unsigned int i) {
+ string
+ as_string (long int i) {
+   char buf[64];
++#ifdef USE_JEAIII
++  i64toa_jeaiii (i, buf);
++#else
+   sprintf (buf, "%li", i);
++#endif
+   // sprintf (buf, "%li\0", i);
+   return string (buf);
+ }
+@@ -322,7 +338,11 @@ as_string (long long int i) {
+ string
+ as_string (unsigned long int i) {
+   char buf[64];
++#ifdef USE_JEAIII
++  u64toa_jeaiii (i, buf);
++#else
+   sprintf (buf, "%lu", i);
++#endif
+   // sprintf (buf, "%lu\0", i);
+   return string (buf);
+ }
+diff --git a/src/Plugins/Jeaiii/itoa_jeaiii.cpp b/src/Plugins/Jeaiii/itoa_jeaiii.cpp
+new file mode 100644
+index 000000000..e49900672
+--- /dev/null
++++ b/src/Plugins/Jeaiii/itoa_jeaiii.cpp
+@@ -0,0 +1,132 @@
++/*
++MIT License
++Copyright (c) 2017 James Edward Anhalt III - https://github.com/jeaiii/itoa
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
++*/
++
++#include "itoa_jeaiii.hpp"
++
++// form a 4.32 fixed point number: t = u * 2^32 / 10^log10(u)
++// use as much precision as possible when needed (log10(u) >= 5)
++// so shift up then down afterwards by log10(u) * log2(10) ~= 53/16
++// need to round up before and or after in some cases
++// once we have the fixed point number we can read off the digit in the upper 32 bits
++// and multiply the lower 32 bits by 10 to get the next digit and so on
++// we can do 2 digits at a time by multiplying by 100 each time
++
++// TODO:
++// x64 optimized verison (no need to line up on 32bit boundary, so can multiply by 5 instead of 10 using lea instruction)
++// full 64 bit LG()
++// try splitting the number into chucks that can be processed independently
++// try odd digit first
++// try writing 4 chars at a time
++
++#if 0
++// 1 char at a time
++
++#define W(N, I) b[N] = char(I) + '0'
++#define A(N) t = (uint64_t(1) << (32 + N / 5 * N * 53 / 16)) / uint32_t(1e##N) + 1 - N / 9, t *= u, t >>= N / 5 * N * 53 / 16, t += N / 5 * 4, W(0, t >> 32)
++#define D(N) t = uint64_t(10) * uint32_t(t), W(N, t >> 32)
++
++#define L0 W(0, u)
++#define L1 A(1), D(1)
++#define L2 A(2), D(1), D(2)
++#define L3 A(3), D(1), D(2), D(3)
++#define L4 A(4), D(1), D(2), D(3), D(4)
++#define L5 A(5), D(1), D(2), D(3), D(4), D(5)
++#define L6 A(6), D(1), D(2), D(3), D(4), D(5), D(6)
++#define L7 A(7), D(1), D(2), D(3), D(4), D(5), D(6), D(7)
++#define L8 A(8), D(1), D(2), D(3), D(4), D(5), D(6), D(7), D(8)
++#define L9 A(9), D(1), D(2), D(3), D(4), D(5), D(6), D(7), D(8), D(9)
++
++#else
++// 2 chars at a time
++
++struct pair { char t, o; };
++#define P(T) T, '0',  T, '1', T, '2', T, '3', T, '4', T, '5', T, '6', T, '7', T, '8', T, '9'
++static const pair s_pairs[] = { P('0'), P('1'), P('2'), P('3'), P('4'), P('5'), P('6'), P('7'), P('8'), P('9') };
++
++#define W(N, I) *(pair*)&b[N] = s_pairs[I]
++#define A(N) t = (uint64_t(1) << (32 + N / 5 * N * 53 / 16)) / uint32_t(1e##N) + 1 + N/6 - N/8, t *= u, t >>= N / 5 * N * 53 / 16, t += N / 6 * 4, W(0, t >> 32)
++#define S(N) b[N] = char(uint64_t(10) * uint32_t(t) >> 32) + '0'
++#define D(N) t = uint64_t(100) * uint32_t(t), W(N, t >> 32)
++
++#define L0 b[0] = char(u) + '0'
++#define L1 W(0, u)
++#define L2 A(1), S(2)
++#define L3 A(2), D(2)
++#define L4 A(3), D(2), S(4)
++#define L5 A(4), D(2), D(4)
++#define L6 A(5), D(2), D(4), S(6)
++#define L7 A(6), D(2), D(4), D(6)
++#define L8 A(7), D(2), D(4), D(6), S(8)
++#define L9 A(8), D(2), D(4), D(6), D(8)
++
++#endif
++
++#define LN(N) (L##N, b += N + 1)
++// #define LZ LN
++// if you want to '\0' terminate
++#define LZ(N) &(L##N, b[N + 1] = '\0')
++
++#define LG(F) (u<100 ? u<10 ? F(0) : F(1) : u<1000000 ? u<10000 ? u<1000 ? F(2) : F(3) : u<100000 ? F(4) : F(5) : u<100000000 ? u<10000000 ? F(6) : F(7) : u<1000000000 ? F(8) : F(9))
++
++char* u32toa_jeaiii(uint32_t u, char* b)
++{
++    uint64_t t;
++    return LG(LZ);
++}
++
++char* i32toa_jeaiii(int32_t i, char* b)
++{
++    uint32_t u = i < 0 ? *b++ = '-', 0 - uint32_t(i) : i;
++    uint64_t t;
++    return LG(LZ);
++}
++
++char* u64toa_jeaiii(uint64_t n, char* b)
++{
++    uint32_t u;
++    uint64_t t;
++
++    if (uint32_t(n >> 32) == 0)
++        return u = uint32_t(n), LG(LZ);
++
++    uint64_t a = n / 100000000;
++
++    if (uint32_t(a >> 32) == 0)
++    {
++        u = uint32_t(a);
++        LG(LN);
++    }
++    else
++    {
++        u = uint32_t(a / 100000000);
++        LG(LN);
++        u = a % 100000000;
++        LN(7);
++    }
++
++    u = n % 100000000;
++    return LZ(7);
++}
++
++char* i64toa_jeaiii(int64_t i, char* b)
++{
++    uint64_t n = i < 0 ? *b++ = '-', 0 - uint64_t(i) : i;
++    return u64toa_jeaiii(n, b);
++}
+\ No newline at end of file
+diff --git a/src/Plugins/Jeaiii/itoa_jeaiii.hpp b/src/Plugins/Jeaiii/itoa_jeaiii.hpp
+new file mode 100644
+index 000000000..8c3b7c830
+--- /dev/null
++++ b/src/Plugins/Jeaiii/itoa_jeaiii.hpp
+@@ -0,0 +1,21 @@
++
++/******************************************************************************
++* MODULE     : itoa_jeaiii.hpp
++* COPYRIGHT  : (C) 2019  Darcy Shen
++*******************************************************************************
++* This software falls under the GNU general public license version 3 or later.
++* It comes WITHOUT ANY WARRANTY WHATSOEVER. For details, see the file LICENSE
++* in the root directory or <http://www.gnu.org/licenses/gpl-3.0.html>.
++******************************************************************************/
++
++#ifndef ITOA_JEAIII_H
++#define ITOA_JEAIII_H
++
++#include <stdint.h>
++
++char* u32toa_jeaiii (uint32_t u, char* b);
++char* i32toa_jeaiii (int32_t i, char* b);
++char* u64toa_jeaiii (uint64_t n, char* b);
++char* i64toa_jeaiii (int64_t i, char* b);
++
++#endif // ITOA_JEAIII_H
+diff --git a/src/Plugins/Qt/QTMWidget.cpp b/src/Plugins/Qt/QTMWidget.cpp
+index 63d1d8778..6abe16fbd 100644
+--- a/src/Plugins/Qt/QTMWidget.cpp
++++ b/src/Plugins/Qt/QTMWidget.cpp
+@@ -498,12 +498,12 @@ QTMWidget::inputMethodEvent (QInputMethodEvent* event) {
+   
+   if (!commit_string.isEmpty()) {
+     bool done= false;
++    string s= from_qstring (commit_string);
+ #ifdef OS_MACOS
+ #if (QT_VERSION < 0x050000)
+     // NOTE: this hack is only needed for Qt4 under MacOS,
+     // but it only works for standard US keyboards
+     done= true;
+-    string s= from_qstring (commit_string);
+     Qt::KeyboardModifiers SA= Qt::ShiftModifier | Qt::AltModifier;
+     if (s == "\17") kbdEvent (36, Qt::AltModifier, commit_string);
+     else if (s == "<ddagger>") kbdEvent (38, Qt::AltModifier, commit_string);
+@@ -524,6 +524,12 @@ QTMWidget::inputMethodEvent (QInputMethodEvent* event) {
+ #endif
+ #endif
+     
++#ifdef OS_MINGW
++    if (commit_string.size() == 1 && is_alpha(s[0])) {
++      done= true; 
++    }
++#endif
++
+     if (!done) {
+       if (DEBUG_QT)
+         debug_qt << "IM committing: " << commit_string.toUtf8().data() << LF;
+@@ -833,17 +839,15 @@ QTMWidget::dropEvent (QDropEvent *event)
+   }
+ }
+ 
+-/*
+ void
+ QTMWidget::wheelEvent(QWheelEvent *event) {
+   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
+     if (event->delta() > 0) {
+-      the_gui->process_keypress (tm_widget(), string("C-+"), texmacs_time());
++      call ("zoom-in", object (sqrt (sqrt (2.0))));
+     } else {
+-      the_gui->process_keypress (tm_widget(), string("C--"), texmacs_time());
++      call ("zoom-out", object (sqrt (sqrt (2.0))));
+     }
+   } else {
+     QAbstractScrollArea::wheelEvent(event);
+   }
+ }
+-*/
+diff --git a/src/Plugins/Qt/QTMWidget.hpp b/src/Plugins/Qt/QTMWidget.hpp
+index c5ee8cd89..c9c64b556 100644
+--- a/src/Plugins/Qt/QTMWidget.hpp
++++ b/src/Plugins/Qt/QTMWidget.hpp
+@@ -69,8 +69,7 @@ protected:
+   //virtual void dragMoveEvent (QDragMoveEvent *event);
+   virtual void dropEvent(QDropEvent *event);
+ 
+-  // void wheelEvent(QWheelEvent *event) override;
+-  // FIXME: Plugins/Qt/QTMWidget.hpp:61: error: expected ';' before 'override'
++  virtual void wheelEvent(QWheelEvent *event) override;
+   virtual QVariant inputMethodQuery (Qt::InputMethodQuery query) const;
+ 
+ };
+diff --git a/src/System/config.h.cmake b/src/System/config.h.cmake
+index 9cb1de341..4e3acdea7 100644
+--- a/src/System/config.h.cmake
++++ b/src/System/config.h.cmake
+@@ -166,6 +166,8 @@
+ 
+ #cmakedefine USE_STACK_TRACE 1
+ 
++#cmakedefine USE_JEAIII 1
++
+ /* Define to 1 if the X Window System is missing or not being used. */
+ #cmakedefine X_DISPLAY_MISSING 1
+ 
+diff --git a/tests/Data/String/analyze_test.cpp b/tests/Data/String/analyze_test.cpp
+index 27672d714..844cf33f4 100644
+--- a/tests/Data/String/analyze_test.cpp
++++ b/tests/Data/String/analyze_test.cpp
+@@ -23,6 +23,10 @@ TEST (string, is_alpha) {
+   }
+ }
+ 
++TEST (string, is_cjk_unified_ideographs) {
++  ASSERT_TRUE (is_cjk_unified_ideographs ("<#4E2D>"));
++}
++
+ TEST (string, locase_all) {
+   ASSERT_TRUE (locase_all (string ("true")) == string ("true"));
+   ASSERT_TRUE (locase_all (string ("TRue")) == string ("true"));
