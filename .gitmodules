@@ -4,3 +4,6 @@
 [submodule "texmacs"]
 	path = texmacs
 	url = https://gitee.com/texmacs/texmacs.git
+[submodule "xmacs/plugins/quiver"]
+	path = xmacs/plugins/quiver
+	url = https://gitee.com/xmacs/quiver.git
