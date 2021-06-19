@@ -19,6 +19,7 @@ echo "==> Git Apply prepared patches"
 git apply $FWDIR/patches/1.diff
 git apply $FWDIR/patches/2.diff
 git apply $FWDIR/patches/3.diff
+git apply $FWDIR/patches/4.diff
 
 echo "==> Cleaning Unused Code"
 ### Autotools
