@@ -1,3 +1,17 @@
+diff --git a/TeXmacs/progs/doc/help-menu.scm b/TeXmacs/progs/doc/help-menu.scm
+index eadc23577..b10b37eb3 100644
+--- a/TeXmacs/progs/doc/help-menu.scm
++++ b/TeXmacs/progs/doc/help-menu.scm
+@@ -30,6 +30,9 @@
+        (load-help-article (string-append name))))))
+ 
+ (menu-bind help-menu
++  (when (url-exists-in-help? "about/xmacs/welcome.zh.tm")
++        ("Xmacs" (load-help-buffer "about/xmacs/welcome"))
++        ---)
+   (when (url-exists-in-help? "about/welcome/new-welcome.en.tm")
+ 	("Welcome" (load-help-article "about/welcome/new-welcome"))
+ 	("Getting started" (load-help-article "about/welcome/start"))
 diff --git a/misc/CMakeLists.txt b/misc/CMakeLists.txt
 index dc8335ca5..bc7b2d81f 100644
 --- a/misc/CMakeLists.txt
