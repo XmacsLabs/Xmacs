@@ -51,10 +51,11 @@ project (TEXMACS CXX C) # check for C/C++ compiler
 set (PACKAGE TeXmacs)
 set (CMAKE_MODULE_PATH ${TEXMACS_SOURCE_DIR}/cmake)
 
-set (VERSION_MAJOR "1")
-set (VERSION_MINOR "99")
-set (VERSION_BUILD "19")
-set (TEXMACS_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
+set (VERSION_MAJOR "2")
+set (VERSION_MINOR "1")
+set (VERSION_BUILD "")
+#set (TEXMACS_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD})
+set (TEXMACS_VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
 
 set (DEVEL_VERSION ${TEXMACS_VERSION})
 set (DEVEL_RELEASE "1")
@@ -132,6 +133,7 @@ include (CheckIncludeFile)
 include (CheckTypeSize)
 include (FindPkgConfig)
 include (CheckCSourceCompiles)
+include (FindX11)
 
 
 ### --------------------------------------------------------------------
@@ -147,6 +149,8 @@ check_include_file (strings.h HAVE_STRINGS_H)
 check_include_file (string.h HAVE_STRING_H)
 check_include_file (sys/stat.h HAVE_SYS_STAT_H)
 check_include_file (unistd.h HAVE_UNISTD_H)
+check_include_file (X11/Xlib.h HAVE_X11_XLIB_H)
+check_include_file (X11/Xutil.h HAVE_X11_XUTIL_H)
 check_include_file (pty.h HAVE_PTY_H)
 check_include_file (util.h HAVE_UTIL_H)
 check_function_exists (gettimeofday HAVE_GETTIMEOFDAY)
@@ -231,6 +235,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")
   set (CONFIG_CXXOPTIMIZE "-O3 -fexpensive-optimizations")
   set (CONFIG_CXXOPTIMIZE "-O3")
   set (CONFIG_BPATH "-Wl,-R,")
+#  SET(X11_LDFLAGS "${X_LIBS} -lXext -lX11 -lsocket")
 endif (${CMAKE_SYSTEM_NAME} STREQUAL "SunOS")
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "CYGWIN_NT-5.1")
@@ -491,6 +496,7 @@ set (TeXmacs_All_SRCS ${TeXmacs_Base_SRCS}  ${TeXmacs_Std_Plugins_SRCS})
 ### --------------------------------------------------------------------
 
 file (GLOB_RECURSE TeXmacs_Widkit_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/Widkit/*.cpp")
+file (GLOB_RECURSE TeXmacs_X11_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/X11/*.cpp")
 file (GLOB_RECURSE TeXmacs_Qt_SRCS "${TEXMACS_SOURCE_DIR}/src/Plugins/Qt/*.cpp")
 
 set (TeXmacs_Qt_Moc_HDRS
@@ -574,7 +580,20 @@ if (TEXMACS_GUI MATCHES "Qt.*")
     # Homebrew installs Qt5 in /usr/local/opt/qt5
     if (APPLE AND EXISTS /usr/local/opt/qt5)
       list (APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt5")
-    endif()
+    endif ()
+    if (WIN32 AND EXISTS ${QT_CMAKE_DIR})
+      set (Qt5Core_DIR "${QT_CMAKE_DIR}/Qt5Core")
+      set (Qt5Gui_DIR "${QT_CMAKE_DIR}/Qt5Gui")
+      set (Qt5EventDispatcherSupport_DIR "${QT_CMAKE_DIR}/Qt5EventDispatcherSupport")
+      set (Qt5FontDatabaseSupport_DIR "${QT_CMAKE_DIR}/Qt5FontDatabaseSupport")
+      set (Qt5Svg_DIR "${QT_CMAKE_DIR}/Qt5Svg")
+      set (Qt5Widgets_DIR "${QT_CMAKE_DIR}/Qt5Widgets")
+      set (Qt5Network_DIR "${QT_CMAKE_DIR}/Qt5Network")
+      set (Qt5ThemeSupport_DIR "${QT_CMAKE_DIR}/Qt5ThemeSupport")
+      set (Qt5AccessibilitySupport_DIR "${QT_CMAKE_DIR}/Qt5AccessibilitySupport")
+      set (Qt5WindowsUIAutomationSupport_DIR "${QT_CMAKE_DIR}/Qt5WindowsUIAutomationSupport")
+      set (Qt5PrintSupport_DIR "${QT_CMAKE_DIR}/Qt5PrintSupport")
+    endif ()
     find_package (Qt5 COMPONENTS Core Gui Widgets PrintSupport REQUIRED)
     set (QT_LIBRARIES Qt5::Core Qt5::Gui Qt5::Widgets Qt5::PrintSupport)
     set (TeXmacs_Include_Dirs
@@ -624,8 +643,30 @@ elseif (TEXMACS_GUI STREQUAL "Aqua")
   mark_as_advanced(COCOA_LIBRARY)
   mark_as_advanced(COCOA_INCLUDE_DIR)
 else (TEXMACS_GUI STREQUAL "Qt")
-  message (STATUS "Not supported GUI interface")
+  find_package (X11)
+
+  set (TeXmacs_Include_Dirs
+    ${TeXmacs_Include_Dirs}
+    ${X11_INCLUDE_DIR}
+  )
+  set (TeXmacs_All_SRCS ${TeXmacs_All_SRCS} ${TeXmacs_Widkit_SRCS} ${TeXmacs_X11_SRCS})
+  set (TeXmacs_Libraries ${TeXmacs_Libraries} ${X11_LIBRARIES})
+
+  add_definitions ("-DX11TEXMACS")
+  set (X11TEXMACS 1)
+
+  set (CONFIG_X11 "X11 Widkit Ghostscript")
+  set (CONFIG_GUI "X11")
+
+  message (STATUS "Enabling standard X11 interface")
 endif (TEXMACS_GUI MATCHES "Qt.*")
+
+if (APPLE AND TEXMACS_GUI STREQUAL "X11")
+  set (TeXmacs_MacOS_SRCS
+    ${TeXmacs_MacOS_SRCS}
+    ${TEXMACS_SOURCE_DIR}/src/Plugins/MacOS/mac_app.mm
+  )
+endif (APPLE AND TEXMACS_GUI STREQUAL "X11")
 
 if (APPLE AND USE_SPARKLE)
   set (TeXmacs_MacOS_SRCS
@@ -692,16 +733,6 @@ include_directories (${TeXmacs_Include_Dirs})
 ### --------------------------------------------------------------------
 
 ### --------------------------------------------------------------------
-### Set the executable target name and other stuff
-### --------------------------------------------------------------------
-
-if (APPLE)
-  set (TeXmacs_binary_name "Xmacs")
-else (APPLE)
-  set (TeXmacs_binary_name "texmacs.bin")
-endif (APPLE)
-
-### --------------------------------------------------------------------
 ### Compile sources
 ### --------------------------------------------------------------------
 
@@ -715,29 +746,20 @@ add_subdirectory (TeXmacs)
 ### --------------------------------------------------------------------
 
 if (APPLE)
-  install (FILES packages/macos/Xmacs.icns DESTINATION ${CMAKE_INSTALL_PREFIX})
+  install (FILES packages/macos/TeXmacs.icns DESTINATION ${CMAKE_INSTALL_PREFIX})
   install (FILES packages/macos/TeXmacs-document.icns DESTINATION ${CMAKE_INSTALL_PREFIX})
   install (DIRECTORY src/Plugins/Cocoa/English.lproj DESTINATION ${CMAKE_INSTALL_PREFIX})
   install (DIRECTORY src/Plugins/Cocoa/zh_CN.lproj DESTINATION ${CMAKE_INSTALL_PREFIX})
 endif (APPLE)
 
-if (APPLE)
-  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
-                 misc/scripts/tm_gs
-          DESTINATION share/TeXmacs/bin
-          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-                      GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
-elseif (WIN32)
-  message (STATUS "No need to install launch scripts for Windows")
-else (APPLE)
-  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs
+if (NOT WIN32)
+  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/texmacs
                  ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
                  misc/scripts/tm_gs
           DESTINATION bin
           PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                       GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
-                    
-endif (APPLE)
+endif (NOT WIN32)
 
 ### include/
 install (DIRECTORY TeXmacs/include DESTINATION ${CMAKE_INSTALL_PREFIX}
@@ -759,10 +781,17 @@ else (WIN32)
 endif (WIN32)
 
 install (FILES TeXmacs/misc/mime/texmacs.desktop DESTINATION share/applications)
-install (FILES TeXmacs/misc/images/texmacs.svg DESTINATION share/icons/gnome/scalable/apps)
-install (FILES TeXmacs/misc/images/text-x-texmacs.svg DESTINATION share/icons/gnome/scalable/mimetypes)
+install (FILES TeXmacs/misc/images/texmacs.svg RENAME TeXmacs.svg
+  DESTINATION share/icons/hicolor/scalable/apps)
+install (FILES TeXmacs/misc/images/text-x-texmacs.svg
+  DESTINATION share/icons/hicolor/scalable/mimetypes)
 install (FILES TeXmacs/misc/mime/texmacs.xml DESTINATION share/mime/packages)
 install (FILES TeXmacs/misc/pixmaps/TeXmacs.xpm DESTINATION share/pixmaps)
+foreach (size IN ITEMS 16 22 24 32 48 64 128 256 512)
+  message (STATUS ${size})
+  install (FILES TeXmacs/misc/images/texmacs-${size}.png RENAME TeXmacs.png
+    DESTINATION share/icons/hicolor/${size}x${size}/apps/)
+endforeach ()
 
 ### --------------------------------------------------------------------
 ### Testing
