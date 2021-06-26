@@ -70,7 +70,7 @@ rm -rf $FWDIR/texmacs/plugins/mathematica
 rm -rf $FWDIR/texmacs/plugins/matlab
 
 echo "==> Overwirte using Xmacs-only files"
-cp -rf $FWDIR/xmacs/ $FWDIR/texmacs/
+cp -rf $FWDIR/xmacs/* $FWDIR/texmacs/
 
 echo "==> Output to /tmp/Xmacs"
 rm -rf /tmp/Xmacs
