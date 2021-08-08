@@ -19,9 +19,9 @@ In 2022, start to make Xmacs as a structured editor for code and lightweight mar
 Xmacs aims to be a distribution of GNU TeXmacs but not another TeXmacs. We do not encourage people to create pull requests to Xmacs. Please contribute to GNU TeXmacs directly.
 
 ## Download
-Lastest stable releases or RC releases are recommended. See https://gitee.com/xmacs/Xmacs/releases
+Lastest stable releases or RC releases are recommended. See https://gitee.com/XmacsLabs/Xmacs/releases
 
 Here is the current recommended release:
-+ [v2020.4 on Gitee](https://gitee.com/xmacs/Xmacs/releases/v2020.4)
++ [v2020.4 on Gitee](https://gitee.com/XmacsLabs/Xmacs/releases/v2020.4)
 + [v2020.4 on Github](https://github.com/XmacsLabs/Xmacs/releases/tag/v2020.4)
 

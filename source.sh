@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FWDIR=$HOME/gitee/xmacs/Xmacs
+FWDIR=$HOME/gitee/XmacsLabs/Xmacs
 
 function clean_source_dir(){
   echo "==> Cleaning Source Code Directory"
