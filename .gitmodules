@@ -6,4 +6,4 @@
 	url = https://gitee.com/texmacs/texmacs.git
 [submodule "xmacs/plugins/quiver"]
 	path = xmacs/plugins/quiver
-	url = https://gitee.com/xmacs/quiver.git
+	url = https://gitee.com/XmacsLabs/quiver.git
