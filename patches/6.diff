@@ -1,0 +1,75 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4fc4931ea..d5398f33a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -285,23 +285,27 @@ find_package (JPEG)
+ ### --------------------------------------------------------------------
+ find_package (Guile REQUIRED)
+ 
++message (STATUS "Using Guile_VERSION " ${Guile_VERSION})
++
+ if (Guile_VERSION VERSION_LESS 1.6)
+   set (CONFIG_GUILE_SERIAL "A")
+   option (GUILE_A "Using Guile < 1.6.x" ON)
+-  message (STATUS "Using GUILE_A: " ${Guile_VERSION_STRING})
++  message (STATUS "Using GUILE_A")
+ elseif (Guile_VERSION VERSION_LESS 1.8)
+   set (CONFIG_GUILE_SERIAL "B")
+   option (GUILE_B "Using Guile 1.6.x" ON)
+-  message (STATUS "Using GUILE_B: " ${Guile_VERSION_STRING})
++  message (STATUS "Using GUILE_B")
+ elseif (Guile_VERSION VERSION_LESS 2.0)
+   set (CONFIG_GUILE_SERIAL "C")
+   option (GUILE_C "Using Guile 1.8.x" ON)
+-  message (STATUS "Using GUILE_C: " ${Guile_VERSION_STRING})
+-else (Guile_VERSION VERSION_LESS 1.6)
++  message (STATUS "Using GUILE_C")
++elseif (Guile_VERSION VERSION_LESS 4)
+   set (CONFIG_GUILE_SERIAL "D")
+-  option (GUILE_D "Using Guile >= 2.x" ON)
++  option (GUILE_D "Using Guile 2.x/3.x" ON)
+   set (SCM_SIZET size_t)
+-  message (STATUS "Using GUILE_D >= 2.x: " ${Guile_VERSION_STRING})
++  message (STATUS "Using GUILE_D")
++else (Guile_VERSION VERSION_LESS 1.6)
++  message (ERROR "Not Guile serial A,B,C or D???")
+ endif (Guile_VERSION VERSION_LESS 1.6)
+ 
+ 
+diff --git a/src/Scheme/Guile/guile_tm.cpp b/src/Scheme/Guile/guile_tm.cpp
+index 4defc1e1f..c3590c671 100644
+--- a/src/Scheme/Guile/guile_tm.cpp
++++ b/src/Scheme/Guile/guile_tm.cpp
+@@ -420,8 +420,8 @@ string_to_tmscm (string s) {
+ /* (from libguile) True if the string is 'narrow', meaning it has a 8-bit Latin-1
+    encoding.  False if it is 'wide', having a 32-bit UCS-4
+    encoding.  */
+-int
+-scm_i_is_narrow_string (SCM str)
++static int
++t_scm_i_is_narrow_string (SCM str)
+ {
+   return !STRINGBUF_WIDE (STRING_STRINGBUF (str));
+ }
+@@ -431,7 +431,7 @@ tmscm_to_string (tmscm s) {
+   guile_str_size_t len_r;
+   char* _r;
+   
+-  if (scm_i_is_narrow_string(s)) {
++  if (t_scm_i_is_narrow_string(s)) {
+     _r = scm_scm2str (s, &len_r);
+     string r (_r, len_r);
+     #ifdef OS_WIN32
+diff --git a/src/System/Boot/init_texmacs.cpp b/src/System/Boot/init_texmacs.cpp
+index 4685e63b3..305e0e9d0 100644
+--- a/src/System/Boot/init_texmacs.cpp
++++ b/src/System/Boot/init_texmacs.cpp
+@@ -301,6 +301,8 @@ init_guile () {
+ 
+   guile_path= guile_path | "$TEXMACS_HOME_PATH/progs" | plugin_path ("progs");
+   set_env_path ("GUILE_LOAD_PATH", guile_path);
++  url guile_compiled_path= "$TEXMACS_PATH/ccache";
++  set_env_path ("GUILE_LOAD_COMPILED_PATH", guile_compiled_path);
+ }
+ 
+ /******************************************************************************

@@ -155,17 +155,26 @@ index 83d9ee784..baef5dec7 100644
  }
  
 diff --git a/tests/Data/String/analyze_test.cpp b/tests/Data/String/analyze_test.cpp
-index 27672d714..844cf33f4 100644
+index 7af762a05..e30a8b15a 100644
 --- a/tests/Data/String/analyze_test.cpp
 +++ b/tests/Data/String/analyze_test.cpp
-@@ -23,6 +23,10 @@ TEST (string, is_alpha) {
-   }
+@@ -30,6 +30,7 @@ private slots:
+   void test_starts ();
+   void test_ends ();
+   void test_read_word ();
++  void test_is_cjk_unified_ideographs ();
+ };
+ 
+ void
+@@ -51,6 +52,11 @@ TestAnalyze::test_locase_all () {
+   QVERIFY (locase_all (string ("123TRUE")) == string ("123true"));
  }
  
-+TEST (string, is_cjk_unified_ideographs) {
-+  ASSERT_TRUE (is_cjk_unified_ideographs ("<#4E2D>"));
++void
++TestAnalyze::test_is_cjk_unified_ideographs () {
++  QVERIFY (is_cjk_unified_ideographs ("<#4E2D>"));
 +}
 +
- TEST (string, locase_all) {
-   ASSERT_TRUE (locase_all (string ("true")) == string ("true"));
-   ASSERT_TRUE (locase_all (string ("TRue")) == string ("true"));
+ void
+ TestAnalyze::test_upcase_all () {
+   QVERIFY (upcase_all (string ("true")) == string ("TRUE"));

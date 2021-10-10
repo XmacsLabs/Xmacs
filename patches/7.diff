@@ -1,0 +1,79 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d5398f33a..caf357271 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -756,7 +756,7 @@ if (APPLE)
+ endif (APPLE)
+ 
+ if (NOT WIN32)
+-  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/texmacs
++  install (FILES ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs
+                  ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps
+                  misc/scripts/tm_gs
+           DESTINATION bin
+diff --git a/TeXmacs/progs/doc/help-menu.scm b/TeXmacs/progs/doc/help-menu.scm
+index eadc23577..b10b37eb3 100644
+--- a/TeXmacs/progs/doc/help-menu.scm
++++ b/TeXmacs/progs/doc/help-menu.scm
+@@ -30,6 +30,9 @@
+        (load-help-article (string-append name))))))
+ 
+ (menu-bind help-menu
++  (when (url-exists-in-help? "about/xmacs/welcome.zh.tm")
++        ("Xmacs" (load-help-buffer "about/xmacs/welcome"))
++        ---)
+   (when (url-exists-in-help? "about/welcome/new-welcome.en.tm")
+ 	("Welcome" (load-help-article "about/welcome/new-welcome"))
+ 	("Getting started" (load-help-article "about/welcome/start"))
+diff --git a/misc/CMakeLists.txt b/misc/CMakeLists.txt
+index dc8335ca5..bc7b2d81f 100644
+--- a/misc/CMakeLists.txt
++++ b/misc/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-configure_file(scripts/texmacs.in ${TEXMACS_BINARY_DIR}/misc/scripts/texmacs @ONLY)
++configure_file(scripts/texmacs.in ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs @ONLY)
+ configure_file(scripts/fig2ps.in ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps @ONLY)
+ configure_file(man/texmacs.1.in ${TEXMACS_SOURCE_DIR}/misc/man/texmacs.1 @ONLY)
+ 
+diff --git a/misc/scripts/texmacs.in b/misc/scripts/texmacs.in
+index d9d697c8a..6883fe2d5 100755
+--- a/misc/scripts/texmacs.in
++++ b/misc/scripts/texmacs.in
+@@ -35,4 +35,4 @@ PATH="$TEXMACS_BIN_PATH/bin:$PATH"
+ @CONFIG_LIB_PATH@="$TEXMACS_BIN_PATH/lib${@CONFIG_LIB_PATH@+":$@CONFIG_LIB_PATH@"}"
+ export PATH @CONFIG_LIB_PATH@
+ 
+-exec texmacs.bin "$@" < /dev/null
++exec xmacs.bin "$@" < /dev/null
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 058f3053c..9ca332c03 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -3,11 +3,11 @@
+ ### --------------------------------------------------------------------
+ 
+ if (APPLE)
+-  set (TeXmacs_binary_name "TeXmacs")
++  set (TeXmacs_binary_name "Xmacs")
+ elseif (WIN32)
+-  set (TeXmacs_binary_name "texmacs")
++  set (TeXmacs_binary_name "xmacs")
+ else (APPLE)
+-  set (TeXmacs_binary_name "texmacs.bin")
++  set (TeXmacs_binary_name "xmacs.bin")
+ endif (APPLE)
+ 
+ add_library(texmacs_body STATIC ${TeXmacs_All_SRCS})
+diff --git a/src/Texmacs/Texmacs/texmacs.cpp b/src/Texmacs/Texmacs/texmacs.cpp
+index 56601e1e8..9da08ad8f 100644
+--- a/src/Texmacs/Texmacs/texmacs.cpp
++++ b/src/Texmacs/Texmacs/texmacs.cpp
+@@ -671,7 +671,7 @@ main (int argc, char** argv) {
+ #endif
+   TeXmacs_init_paths (argc, argv);
+ #ifdef QTTEXMACS
+-  qtmapp->set_window_icon("/misc/images/texmacs-512.png");
++  qtmapp->set_window_icon("/misc/images/xmacs-512.png");
+ #endif
+   //cout << "Bench  ] Started TeXmacs\n";
+   the_et     = tuple ();

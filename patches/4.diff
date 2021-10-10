@@ -1,66 +1,2982 @@
-diff --git a/TeXmacs/progs/doc/help-menu.scm b/TeXmacs/progs/doc/help-menu.scm
-index eadc23577..b10b37eb3 100644
---- a/TeXmacs/progs/doc/help-menu.scm
-+++ b/TeXmacs/progs/doc/help-menu.scm
-@@ -30,6 +30,9 @@
-        (load-help-article (string-append name))))))
+diff --git a/.gitignore b/.gitignore
+index fcf281ec1..bd9e27477 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -32,3 +32,35 @@ CMakeLists.txt.user
+ misc/benchmark/gbench
  
- (menu-bind help-menu
-+  (when (url-exists-in-help? "about/xmacs/welcome.zh.tm")
-+        ("Xmacs" (load-help-buffer "about/xmacs/welcome"))
-+        ---)
-   (when (url-exists-in-help? "about/welcome/new-welcome.en.tm")
- 	("Welcome" (load-help-article "about/welcome/new-welcome"))
- 	("Getting started" (load-help-article "about/welcome/start"))
-diff --git a/misc/CMakeLists.txt b/misc/CMakeLists.txt
-index dc8335ca5..bc7b2d81f 100644
---- a/misc/CMakeLists.txt
-+++ b/misc/CMakeLists.txt
-@@ -1,4 +1,4 @@
--configure_file(scripts/texmacs.in ${TEXMACS_BINARY_DIR}/misc/scripts/texmacs @ONLY)
-+configure_file(scripts/texmacs.in ${TEXMACS_BINARY_DIR}/misc/scripts/xmacs @ONLY)
- configure_file(scripts/fig2ps.in ${TEXMACS_BINARY_DIR}/misc/scripts/fig2ps @ONLY)
- configure_file(man/texmacs.1.in ${TEXMACS_SOURCE_DIR}/misc/man/texmacs.1 @ONLY)
- 
-diff --git a/misc/scripts/texmacs.in b/misc/scripts/texmacs.in
-index d9d697c8a..6883fe2d5 100755
---- a/misc/scripts/texmacs.in
-+++ b/misc/scripts/texmacs.in
-@@ -35,4 +35,4 @@ PATH="$TEXMACS_BIN_PATH/bin:$PATH"
- @CONFIG_LIB_PATH@="$TEXMACS_BIN_PATH/lib${@CONFIG_LIB_PATH@+":$@CONFIG_LIB_PATH@"}"
- export PATH @CONFIG_LIB_PATH@
- 
--exec texmacs.bin "$@" < /dev/null
-+exec xmacs.bin "$@" < /dev/null
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 058f3053c..9ca332c03 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -3,11 +3,11 @@
+ TeXmacs/progs/ice-9
++src/Plugins/Qt/moc_*.cpp
++src/Deps
++src/Objects
++TeXmacs/plugins/
++src/System/config.h
++src/System/tm_configure.hpp
++misc/man/texmacs.1
++misc/admin/admin.makefile
++misc/scripts/texmacs
++misc/scripts/fig2ps
++misc/doxygen/Doxyfile
++misc/vscode/c_cpp_properties.json
++misc/autotroll/test.sh
++cmake/CreateBundle.sh
++cmake/CompleteBundle.cmake
++TeXmacs/examples/plugins/dynlink/Makefile
++packages/macos/Info-Xcode.plist
++packages/macos/Base.xcconfig
++packages/macos/Info.plist
++packages/debian/control
++packages/debian/changelog
++packages/mandriva/TeXmacs.spec
++packages/centos/TeXmacs.spec
++packages/fedora/TeXmacs.spec
++packages/windows/resource.rc
++packages/windows/TeXmacs.iss
++packages/redhat/TeXmacs.spec
++Makefile
++src/makefile
++packages/macos/TeXmacs.xcodeproj/project.xcworkspace
++packages/macos/TeXmacs.xcodeproj/xcuserdata
++config.status
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6868fc4df..4fc4931ea 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -285,26 +285,24 @@ find_package (JPEG)
  ### --------------------------------------------------------------------
+ find_package (Guile REQUIRED)
  
- if (APPLE)
--  set (TeXmacs_binary_name "TeXmacs")
-+  set (TeXmacs_binary_name "Xmacs")
- elseif (WIN32)
--  set (TeXmacs_binary_name "texmacs")
-+  set (TeXmacs_binary_name "xmacs")
- else (APPLE)
--  set (TeXmacs_binary_name "texmacs.bin")
-+  set (TeXmacs_binary_name "xmacs.bin")
- endif (APPLE)
+-if (Guile_VERSION_STRING VERSION_LESS 1.6)
++if (Guile_VERSION VERSION_LESS 1.6)
+   set (CONFIG_GUILE_SERIAL "A")
+   option (GUILE_A "Using Guile < 1.6.x" ON)
+   message (STATUS "Using GUILE_A: " ${Guile_VERSION_STRING})
+-elseif (Guile_VERSION_STRING VERSION_LESS 1.8)
++elseif (Guile_VERSION VERSION_LESS 1.8)
+   set (CONFIG_GUILE_SERIAL "B")
+   option (GUILE_B "Using Guile 1.6.x" ON)
+   message (STATUS "Using GUILE_B: " ${Guile_VERSION_STRING})
+-elseif (Guile_VERSION_STRING VERSION_LESS 2.0)
++elseif (Guile_VERSION VERSION_LESS 2.0)
+   set (CONFIG_GUILE_SERIAL "C")
+   option (GUILE_C "Using Guile 1.8.x" ON)
+   message (STATUS "Using GUILE_C: " ${Guile_VERSION_STRING})
+-elseif (Guile_VERSION_STRING VERSION_LESS 3.0)
++else (Guile_VERSION VERSION_LESS 1.6)
+   set (CONFIG_GUILE_SERIAL "D")
+-  option (GUILE_D ON)
++  option (GUILE_D "Using Guile >= 2.x" ON)
+   set (SCM_SIZET size_t)
+-  message (STATUS "Using GUILE_D > 1.8.x: " ${Guile_VERSION_STRING})
+-else (Guile_VERSION_STRING VERSION_LESS 1.6)
+-  message (ERROR "Not Guile serial A,B,C or D???")
+-endif (Guile_VERSION_STRING VERSION_LESS 1.6)
++  message (STATUS "Using GUILE_D >= 2.x: " ${Guile_VERSION_STRING})
++endif (Guile_VERSION VERSION_LESS 1.6)
  
- add_library(texmacs_body STATIC ${TeXmacs_All_SRCS})
-diff --git a/src/Texmacs/Texmacs/texmacs.cpp b/src/Texmacs/Texmacs/texmacs.cpp
-index 56601e1e8..9da08ad8f 100644
---- a/src/Texmacs/Texmacs/texmacs.cpp
-+++ b/src/Texmacs/Texmacs/texmacs.cpp
-@@ -671,7 +671,7 @@ main (int argc, char** argv) {
+ 
+ set (CMAKE_REQUIRED_FLAGS "-Werror ${Guile_CFLAGS}")
+diff --git a/TeXmacs/progs/convert/coq/init-coqml.scm b/TeXmacs/progs/convert/coq/init-coqml.scm
+index 6ff84e9a2..88d784c43 100644
+--- a/TeXmacs/progs/convert/coq/init-coqml.scm
++++ b/TeXmacs/progs/convert/coq/init-coqml.scm
+@@ -11,7 +11,8 @@
+ ;;
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(texmacs-module (convert coq init-coqml))
++(texmacs-module (convert coq init-coqml)
++    (:use (convert coq gallinatm)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Gallina
+diff --git a/TeXmacs/progs/convert/html/htmltm-test.scm b/TeXmacs/progs/convert/html/htmltm-test.scm
+index a69dee742..1694c7f6f 100644
+--- a/TeXmacs/progs/convert/html/htmltm-test.scm
++++ b/TeXmacs/progs/convert/html/htmltm-test.scm
+@@ -209,11 +209,12 @@
+      (regtest-htmltm-list-kinds)
+      (regtest-htmltm-list-br)))
+ 
++(eval-when (expand load eval)
+ (define (define-self-evaluating* syms)
+   (map (lambda (name)
+          (let ((sym (gensym)))
+            `(define (,name . ,sym) (cons (quote ,name) ,sym))))
+-       syms))
++       syms)))
+ 
+ (define-macro (regtest-html-table-library . body)
+   `(begin
+diff --git a/TeXmacs/progs/convert/latex/latex-command-drd.scm b/TeXmacs/progs/convert/latex/latex-command-drd.scm
+index b7ff5718d..bd3298b94 100644
+--- a/TeXmacs/progs/convert/latex/latex-command-drd.scm
++++ b/TeXmacs/progs/convert/latex/latex-command-drd.scm
+@@ -28,7 +28,7 @@
+ (logic-group latex-command-0%
+   ,(string->symbol " ") ,(string->symbol ";") 
+   ,(string->symbol ",") ,(string->symbol ":") 
+-  - / [ ] ! * ,(string->symbol "|") i j ss SS oe OE ae AE
++  - / ,(string->symbol "[")  ,(string->symbol "]")  ! * ,(string->symbol "|") i j ss SS oe OE ae AE
+   AA DH L NG O S TH aa dh dj l ng o P th pounds colon and lq rq
+   quad qquad enspace thinspace par smallskip medskip bigskip
+   noindent newline linebreak nobreak nolinebreak strut
+diff --git a/TeXmacs/progs/convert/latex/latex-overload.scm b/TeXmacs/progs/convert/latex/latex-overload.scm
+index ca7fee944..bd198d399 100644
+--- a/TeXmacs/progs/convert/latex/latex-overload.scm
++++ b/TeXmacs/progs/convert/latex/latex-overload.scm
+@@ -14,7 +14,8 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (convert latex latex-overload)
+-  (:use (convert latex latex-define)))
++  (:use (convert latex latex-define)
++        (convert latex latex-tools)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Letter and article styles
+diff --git a/TeXmacs/progs/convert/latex/tmtex.scm b/TeXmacs/progs/convert/latex/tmtex.scm
+index af3f3951e..af790a605 100644
+--- a/TeXmacs/progs/convert/latex/tmtex.scm
++++ b/TeXmacs/progs/convert/latex/tmtex.scm
+@@ -3286,27 +3286,25 @@
+ ;; Tags which are customized in particular style files
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(eval-when (expand load eval)
+ (tm-define (style-dependent-declare x)
+   (with (tag fun narg) x
+     (with fun+bis (symbol-append fun '+bis)
+       (if (== narg 2)
+         `(begin
+-           (when (not (defined? ',fun))
+-             (tm-define (,fun s l) (tmtex-function (string->symbol s) l)))
+-           (when (not (defined? ',fun+bis))
+-             (tm-define (,fun+bis s l) (,fun s l))))
++             (tm-define-once (,fun s l) (tmtex-function (string->symbol s) l))
++             (tm-define-once (,fun+bis s l) (,fun s l)))
+         `(begin
+-           (when (not (defined? ',fun))
+-             (tm-define (,fun t)
+-               (tmtex-function (string->symbol (car t)) (cdr t))))
+-           (when (not (defined? ',fun+bis))
+-             (tm-define (,fun+bis s l)
++             (tm-define-once (,fun t)
++               (tmtex-function (string->symbol (car t)) (cdr t)))
++             (tm-define-once (,fun+bis s l)
+                (,fun (append (list (string->symbol s)) l)))))))))
+ 
++(eval-when (expand load eval)
+ (tm-define (style-dependent-transform x)
+   (with (tag fun narg) x
+     (with fun+bis (symbol-append fun '+bis)
+-      `(,tag (,(list 'unquote fun+bis) -1)))))
++      `(,tag (,(list 'unquote fun+bis) -1))))))
+ 
+ (define-macro (tmtex-style-dependent . l)
+   `(begin
+diff --git a/TeXmacs/progs/convert/tools/environment.scm b/TeXmacs/progs/convert/tools/environment.scm
+index 4cd63b8bb..e5d516757 100644
+--- a/TeXmacs/progs/convert/tools/environment.scm
++++ b/TeXmacs/progs/convert/tools/environment.scm
+@@ -88,12 +88,12 @@
+ 
+ (tm-define-macro (with-environment env bindings . body)
+   (if (nlist? bindings)
+-      (syntax-error "with-environment" "Bindings are not a list: ~A" bindings))
++      (tm-syntax-error "with-environment" "Bindings are not a list: ~A" bindings))
+   `(with-environment* ,env
+        (list ,@(map-in-order
+ 		(lambda (b)
+ 		  (if (not (list-length=2? b))
+-		      (syntax-error "with-environment"
++		      (tm-syntax-error "with-environment"
+ 				    "Ill-formed binding: ~A" b))
+ 		  `(list (quote ,(first b)) ,(second b)))
+ 		bindings))
+diff --git a/TeXmacs/progs/convert/tools/old-tmtable.scm b/TeXmacs/progs/convert/tools/old-tmtable.scm
+index 123e52c9e..e9bd3b7a0 100644
+--- a/TeXmacs/progs/convert/tools/old-tmtable.scm
++++ b/TeXmacs/progs/convert/tools/old-tmtable.scm
+@@ -29,7 +29,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Foundation
+ 
+-(define tmtable-type (make-record-type "tmtable" '(nrows ncols cells formats)))
++(define tmtable-type (make-record-type 'tmtable '(nrows ncols cells formats)))
+ (define tmtable-record (record-constructor tmtable-type))
+ (tm-define tmtable? (record-predicate tmtable-type))
+ (tm-define tmtable-nrows (record-accessor tmtable-type 'nrows))
+diff --git a/TeXmacs/progs/convert/tools/tmcolor.scm b/TeXmacs/progs/convert/tools/tmcolor.scm
+index 5abb311bb..8232a70ab 100644
+--- a/TeXmacs/progs/convert/tools/tmcolor.scm
++++ b/TeXmacs/progs/convert/tools/tmcolor.scm
+@@ -17,7 +17,7 @@
+ ;; Internal record utilities
+ 
+ (define tmcolor-type (make-record-type
+-		      "tmcolor" '(name-promise red green blue)))
++		      'tmcolor '(name-promise red green blue)))
+ (define tmcolor-record (record-constructor tmcolor-type))
+ (define tmcolor-name-promise (record-accessor tmcolor-type 'name-promise))
+ 
+diff --git a/TeXmacs/progs/convert/tools/xmltm.scm b/TeXmacs/progs/convert/tools/xmltm.scm
+index da687a0e3..946808b02 100644
+--- a/TeXmacs/progs/convert/tools/xmltm.scm
++++ b/TeXmacs/progs/convert/tools/xmltm.scm
+@@ -42,11 +42,12 @@
+ ;; no provisions are made to preserve the namespace prefixes used in the
+ ;; orginial sxml tree. Namespace normalization is not reversible.
+ 
+-(define xmlns-uri-xml "http://www.w3.org/XML/1998/namespace")
+-(define xmlns-uri-xhtml "http://www.w3.org/1999/xhtml")
+-(define xmlns-uri-mathml "http://www.w3.org/1998/Math/MathML")
+-(define xmlns-uri-gallina "Gallina")
+-(define xmlns-uri-coqml "CoqML")
++(eval-when (expand load eval)
++  (define xmlns-uri-xml "http://www.w3.org/XML/1998/namespace")
++  (define xmlns-uri-xhtml "http://www.w3.org/1999/xhtml")
++  (define xmlns-uri-mathml "http://www.w3.org/1998/Math/MathML")
++  (define xmlns-uri-gallina "Gallina")
++  (define xmlns-uri-coqml "CoqML"))
+ 
+ ;;; Building the namespace bindings environment
+ 
+diff --git a/TeXmacs/progs/database/bib-manage.scm b/TeXmacs/progs/database/bib-manage.scm
+index 1ec1120fb..88393b7d9 100644
+--- a/TeXmacs/progs/database/bib-manage.scm
++++ b/TeXmacs/progs/database/bib-manage.scm
+@@ -297,7 +297,7 @@
+ 
+ (tm-define (bib-generate prefix style doc)
+   (with m `(bibtex ,(string->symbol style))
+-    (module-provide m)
++    (module-load m)
+     (bib-process prefix style doc)))
+ 
+ (define (bib-difference l1 l2)
+diff --git a/TeXmacs/progs/database/db-version.scm b/TeXmacs/progs/database/db-version.scm
+index 2b32d9c2b..6904940fb 100644
+--- a/TeXmacs/progs/database/db-version.scm
++++ b/TeXmacs/progs/database/db-version.scm
+@@ -12,7 +12,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (database db-version)
+-  (:use (database db-users)))
++  (:use (database db-users) (database db-convert)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Warnings
+diff --git a/TeXmacs/progs/debug/debug-menu.scm b/TeXmacs/progs/debug/debug-menu.scm
+index 3d82b35d3..1aa6c4f55 100644
+--- a/TeXmacs/progs/debug/debug-menu.scm
++++ b/TeXmacs/progs/debug/debug-menu.scm
+@@ -46,9 +46,6 @@
+ ;; Memory
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(menu-bind provoke-error-menu
+-  (xxx))
+-
+ (menu-bind debug-menu
+   (-> "Guile"
+       ("Backtrace errors" (debug-toggle-backtrace-errors)))
+@@ -87,9 +84,10 @@
+   (-> "Miscellaneous"
+       ("Test routine" (edit-test))
+       ("Provoke scheme error" (oops))
+-      ("Provoke C++ error" (cpp-error))
+-      (-> "Provoke menu error"
+-          (link provoke-error-menu)))
++      ("Provoke C++ error" (cpp-error)))
++;;FIXME: the code below does not compile
++;;      (-> "Provoke menu error"
++;;          (link provoke-error-menu)))
+   ---
+   ("auto" (debug-toggle "auto"))
+   ("verbose" (debug-toggle "verbose"))
+diff --git a/TeXmacs/progs/doc/apidoc-collect.scm b/TeXmacs/progs/doc/apidoc-collect.scm
+index f1d9205a2..c00150521 100644
+--- a/TeXmacs/progs/doc/apidoc-collect.scm
++++ b/TeXmacs/progs/doc/apidoc-collect.scm
+@@ -31,7 +31,8 @@
+ ;;    (i.e. linked with <branch>) anywhere in the manuals.
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(texmacs-module (doc apidoc-collect))
++(texmacs-module (doc apidoc-collect)
++    (:use (prog scheme-tools)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Internal variables and generic one-use routines.
+diff --git a/TeXmacs/progs/doc/apidoc-widgets.scm b/TeXmacs/progs/doc/apidoc-widgets.scm
+index 009d69f35..78d2fa462 100644
+--- a/TeXmacs/progs/doc/apidoc-widgets.scm
++++ b/TeXmacs/progs/doc/apidoc-widgets.scm
+@@ -21,7 +21,8 @@
+ (texmacs-module (doc apidoc-widgets)
+   (:use (doc apidoc-funcs)
+         (doc apidoc-collect)
+-        (kernel texmacs tm-preferences)))
++        (kernel texmacs tm-preferences)
++        (prog scheme-autocomplete)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; A contextual help widget
+diff --git a/TeXmacs/progs/dynamic/calc-edit.scm b/TeXmacs/progs/dynamic/calc-edit.scm
+index 0428ffe24..db1ac804a 100644
+--- a/TeXmacs/progs/dynamic/calc-edit.scm
++++ b/TeXmacs/progs/dynamic/calc-edit.scm
+@@ -150,6 +150,7 @@
+                  (else (tm->tree `(concat "(" ,val ")"))))))
+ 	(else (tree-map-children (cut calc-substitute <> lan) t))))
+ 
++;;FIXME: in this definition 't is unbounded
+ (tm-define (calc-reevaluate-output lan ses var in out)
+   (when (calc-available? in)
+     ;;(display* "Reevaluate output " t "\n")
+diff --git a/TeXmacs/progs/generic/generic-menu.scm b/TeXmacs/progs/generic/generic-menu.scm
+index c6d337b9d..731657aae 100644
+--- a/TeXmacs/progs/generic/generic-menu.scm
++++ b/TeXmacs/progs/generic/generic-menu.scm
+@@ -18,7 +18,8 @@
+         (generic format-edit)
+         (generic format-geometry-edit)
+         (generic document-edit)
+-        (source source-edit)))
++        (source source-edit)
++        (graphics graphics-menu)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Variants
+@@ -189,6 +190,7 @@
+   (:require (== (tree-child-type t i) "duration"))
+   (list "0.25s" "0.5s" "1s" "1.5s" "2s" "2.5s" "3s" "4s" "5s" "10s" :other))
+ 
++;;FIXME: There is a symbol 'in which is not bounded.
+ (tm-menu (string-input-menu t i)
+   (push-focus t
+     (let* ((name (tree-child-long-name* t i))
+diff --git a/TeXmacs/progs/generic/insert-menu.scm b/TeXmacs/progs/generic/insert-menu.scm
+index 7ca8ab4dc..55294340d 100644
+--- a/TeXmacs/progs/generic/insert-menu.scm
++++ b/TeXmacs/progs/generic/insert-menu.scm
+@@ -15,7 +15,8 @@
+   (:use (utils edit selections)
+ 	(generic generic-edit)
+ 	(generic format-edit)
+-	(generic format-geometry-edit)))
++	(generic format-geometry-edit)
++    (graphics graphics-main)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Insert links
+diff --git a/TeXmacs/progs/graphics/graphics-env.scm b/TeXmacs/progs/graphics/graphics-env.scm
+index 710f545b4..85810d970 100644
+--- a/TeXmacs/progs/graphics/graphics-env.scm
++++ b/TeXmacs/progs/graphics/graphics-env.scm
+@@ -21,6 +21,7 @@
+ 
+ ;;NOTE: This section is OK
+ ;; State variables
++(eval-when (expand load eval)
+ (define-state graphics-state
+   (slots ((graphics-action #f)
+ 	  (current-graphical-object #f)
+@@ -65,11 +66,13 @@
+ 	    (if (not sticky-point)
+ 		(begin
+ 		   (set! current-point-no (if sel (cAr (car sel)) #f))
+-		   (set! current-edge-sel? (and sel (== (length sel) 2)))))))))
++		   (set! current-edge-sel? (and sel (== (length sel) 2))))))))))
+ 
+ ;; State stack (1)
++
++(eval-when (expand load eval)
+ (tm-define state-slots
+-  `(quote ,(state-names graphics-state)))
++  `(quote ,(state-names graphics-state))))
+ 
+ (define-public-macro (state-len)
+   `(length ,state-slots))
+@@ -379,11 +382,13 @@
+ 
+ (hash-set! define-option-table :state define-option-state)
+ 
++(eval-when (expand load eval)
+ (define (define-option-state-slots opt decl)
+   (with (fun head . body) decl
+-    `(,fun ,head (with-state-slots-by-name ,(car opt) ,@body))))
++    `(,fun ,head (with-state-slots-by-name ,(car opt) ,@body)))))
+ 
+-(hash-set! define-option-table :state-slots define-option-state-slots)
++(eval-when (expand load eval)
++(hash-set! define-option-table :state-slots define-option-state-slots))
+ 
+ 
+ ;; Graphics context [reset]
+diff --git a/TeXmacs/progs/graphics/graphics-utils.scm b/TeXmacs/progs/graphics/graphics-utils.scm
+index 527603b65..6d165902d 100644
+--- a/TeXmacs/progs/graphics/graphics-utils.scm
++++ b/TeXmacs/progs/graphics/graphics-utils.scm
+@@ -14,7 +14,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (graphics graphics-utils)
+-  (:use (graphics graphics-drd)))
++  (:use (graphics graphics-drd) (graphics graphics-env)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Basic scheme processing
+diff --git a/TeXmacs/progs/init-texmacs.scm b/TeXmacs/progs/init-texmacs.scm
+index 8dcbbc242..14e7ac87a 100644
+--- a/TeXmacs/progs/init-texmacs.scm
++++ b/TeXmacs/progs/init-texmacs.scm
+@@ -11,6 +11,47 @@
+ ;;
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(cond-expand (guile-2
++;; we remove all optimizations from the compiler
++;; this allows for faster loading times
++((@ (system base compile) default-optimization-level) 0))
++(else #t))
++
++;(cond-expand (guile-2 (display "Guile-2\n")) (else #t))
++
++(cond-expand (guile-2
++  (set! %auto-compilation-options
++    '(#:warnings (shadowed-toplevel macro-use-before-definition
++                  arity-mismatch format duplicate-case-datum
++                  bad-case-datum))))
++  (else #t))
++
++(cond-expand (guile-2 (module-export-all! (current-module))) (else #t))
++
++; we import some modules which are standard in versions of Guile before 2.2
++(cond-expand
++  (guile-2
++    (use-modules (ice-9 curried-definitions)))
++  (else #t))
++
++; conditional expansion of code via macros
++; Guile 2 does not allow to have top-level definitions inside conditional statements
++; we go around this at macroexpansion
++; note that this macro introduces a binding which can clash with others!!!
++
++(define-macro (tm-cond-expand cond . code)
++  `(begin (define-macro (tm-cond-expand-init-TEMP) (if ,cond '(begin ,@code) '(begin #t))) (tm-cond-expand-init-TEMP)))
++(export-syntax tm-cond-expand)
++
++; Guile 2 has separate expand and evaluation phases so we have several eval-when in the code
++; which can be ignored in previous Guile versions.
++
++(cond-expand (guile-2 #t)
++  (else
++    (define-macro (eval-when a . b) `(begin ,@b)) (export-syntax eval-when)))
++
++; continue with initialization
++
+ (cond ((os-mingw?)
+        (debug-set! stack 0))
+       ((os-macos?)
+@@ -25,7 +66,9 @@
+   (equal? (cpp-get-preference "developer tool" "off") "on"))
+ 
+ (if developer-mode?
+-    (debug-enable 'backtrace 'debug))
++   (if (equal? (scheme-dialect) "guile-d")
++     (debug-enable 'backtrace)
++     (debug-enable 'backtrace 'debug)))
+ 
+ (define (%new-read-hook sym) (noop)) ; for autocompletion
+ 
+@@ -33,7 +76,7 @@
+                                 tm-define-macro))
+ (define-public def-keywords
+   `(define-public provide-public
+-    tm-define tm-menu menu-bind tm-widget ,@macro-keywords))
++    tm-define tm-define-once tm-menu menu-bind tm-widget ,@macro-keywords))
+ 
+ (define old-read read)
+ (define (new-read port)
+@@ -49,9 +92,12 @@
+               (let ((old (or (symbol-property sym 'defs) '()))
+                     (new `(,f ,l ,c)))
+                 (%new-read-hook sym)
+-                (if (and (member (car form) macro-keywords)
+-                         (not (member sym def-keywords)))
+-                    (set! def-keywords (cons sym def-keywords)))
++; (max) I do not understand the logic of the code below
++; since there are macros which do not introduce new definitions
++; so I will disable it for the moment.
++;               (if (and (member (car form) macro-keywords)
++;                        (not (member sym def-keywords)))
++;                   (set! def-keywords (cons sym def-keywords)))
+                 (if (not (member new old))
+                     (set-symbol-property! sym 'defs (cons new old)))))))
+     form))
+@@ -91,9 +137,20 @@
+ ;; (set! primitive-load new-primitive-load)
+ 
+ ;(display "Booting TeXmacs kernel functionality\n")
++
++; this boots the main TeXmacs module system facilities
++
+ (if (os-mingw?)
+     (load "kernel/boot/boot.scm")
+     (load (url-concretize "$TEXMACS_PATH/progs/kernel/boot/boot.scm")))
++
++(cond-expand (guile-2
++(export! display write object->string string-replace) ;; silence some warnings
++) (else #t))
++
++; now we collect basic functionalities by re-exporting all the public symbols
++; as part of the current module
++
+ (inherit-modules (kernel boot compat) (kernel boot abbrevs)
+                  (kernel boot debug) (kernel boot srfi)
+                  (kernel boot ahash-table) (kernel boot prologue))
+@@ -103,6 +160,11 @@
+ (inherit-modules (kernel regexp regexp-match) (kernel regexp regexp-select))
+ (inherit-modules (kernel logic logic-rules) (kernel logic logic-query)
+                  (kernel logic logic-data))
++
++(cond-expand (guile-2
++(export! ... compose select) ;; silence some warnings
++) (else #t))
++
+ (inherit-modules (kernel texmacs tm-define)
+                  (kernel texmacs tm-preferences) (kernel texmacs tm-modes)
+                  (kernel texmacs tm-plugins) (kernel texmacs tm-secure)
+@@ -136,6 +198,7 @@
+ (lazy-tmfs-handler (utils automate auto-tmfs) automate)
+ (lazy-define (utils automate auto-tmfs) auto-load-help)
+ (lazy-keyboard (utils automate auto-kbd) in-auto?)
++;;FIXME: handle the evaluation phase of the following two lines
+ (define supports-email? (url-exists-in-path? "mmail"))
+ (if supports-email? (use-modules (utils email email-tmfs)))
+ ;(display* "time: " (- (texmacs-time) boot-start) "\n")
+@@ -498,10 +561,10 @@
+ (when (updater-supported?) 
+   (use-modules (utils misc updater))
+   (delayed (:idle 2000) (updater-initialize)))
+-;(display* "time: " (- (texmacs-time) boot-start) "\n")
+-;(display* "memory: " (texmacs-memory) " bytes\n")
++(display* "time: " (- (texmacs-time) boot-start) "\n")
++(display* "memory: " (texmacs-memory) " bytes\n")
+ 
+-;(display "------------------------------------------------------\n")
++(display "------------------------------------------------------\n")
+ (delayed (:idle 10000) (autosave-delayed))
+ (texmacs-banner)
+-;(display "Initialization done\n")
++(display "Initialization done\n")
+diff --git a/TeXmacs/progs/kernel/boot/abbrevs.scm b/TeXmacs/progs/kernel/boot/abbrevs.scm
+index 02d9465ff..56be7f2b8 100644
+--- a/TeXmacs/progs/kernel/boot/abbrevs.scm
++++ b/TeXmacs/progs/kernel/boot/abbrevs.scm
+@@ -69,13 +69,19 @@
+ (define-public (number->keyword x)
+   (symbol->keyword (string->symbol (string-append "%" (number->string x)))))
+ 
+-(if (guile-c?)
++(cond-expand
++  (guile-2
++    (define-public (save-object file value)
++      (write value (open-file (url-materialize file "") OPEN_WRITE))
++      (flush-all-ports)))
++  (else (if (guile-c?)
+     (define-public (save-object file value)
+       (pretty-print value (open-file (url-materialize file "") OPEN_WRITE))
+       (flush-all-ports))
+     (define-public (save-object file value)
+       (write value (open-file (url-materialize file "") OPEN_WRITE))
+-      (flush-all-ports)))
++      (flush-all-ports))))
++)
+ 
+ (define-public (load-object file)
+   (let ((r (read (open-file (url-materialize file "r") OPEN_READ))))
+@@ -89,11 +95,13 @@
+ ;; Common programming constructs
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define-public-macro (when cond? . body)
+-  `(if ,cond? (begin ,@body)))
++(cond-expand (guile-2 #t) (else
++  (define-public-macro (when cond? . body)
++    `(if ,cond? (begin ,@body)))
+ 
+-(define-public-macro (unless cond? . body)
+-  `(if (not ,cond?) (begin ,@body)))
++  (define-public-macro (unless cond? . body)
++   `(if (not ,cond?) (begin ,@body)))
++))
+ 
+ (define-public-macro (with var val . body)
+   (if (pair? var)
+@@ -107,10 +115,10 @@
+ (define-public-macro (with-global var val . body)
+   (let ((old (gensym)) (new (gensym)))
+     `(let ((,old ,var))
+-       (set! ,var ,val)
+-       (let ((,new (begin ,@body)))
+-         (set! ,var ,old)
+-         ,new))))
++       (dynamic-wind
++         (lambda () (set! ,var ,val))
++         (lambda () ,@body)
++         (lambda () (set! ,var ,old))))))
+ 
+ (define-public-macro (and-with var val . body)
+   `(with ,var ,val
+diff --git a/TeXmacs/progs/kernel/boot/ahash-table.scm b/TeXmacs/progs/kernel/boot/ahash-table.scm
+index 6b22ecc53..9a36bf402 100644
+--- a/TeXmacs/progs/kernel/boot/ahash-table.scm
++++ b/TeXmacs/progs/kernel/boot/ahash-table.scm
+@@ -17,6 +17,18 @@
+ ;; Adaptive hash tables
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(cond-expand (guile-2
++      (define-public make-ahash-table make-hash-table)
++      (define-public ahash-ref hash-ref)
++      (define-public ahash-get-handle hash-get-handle)
++      (define-public (ahash-size h)
++	(hash-fold (lambda (key value seed) (+ 1 seed)) 0 h))
++      (define-public ahash-set! hash-set!)
++      (define-public ahash-remove! hash-remove!)
++      (define-public ahash-fold hash-fold)
++      (define-public (ahash-table->list h)
++	(hash-fold acons '() h)))
++ (else
+ (if (vector? (make-hash-table 1))
+     (begin ;; old style
+       (define-public (make-ahash-table)
+@@ -71,7 +83,7 @@
+       (define-public ahash-remove! hash-remove!)
+       (define-public ahash-fold hash-fold)
+       (define-public (ahash-table->list h)
+-	(hash-fold acons '() h))))
++	(hash-fold acons '() h))))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Extra routines on adaptive hash tables
+@@ -156,10 +168,7 @@
+ 
+ (define-public-macro (define-table name . l)
+   `(begin
+-     (when (not (defined? ',name))
+-       (if (defined? 'tm-define)
+-           (tm-define ,name (make-ahash-table))
+-           (define-public ,name (make-ahash-table))))
++     (eval-when (expand load eval) (tm-define ,name (make-ahash-table)))
+      (define-table-decls ,name ,(list 'quasiquote l))))
+ 
+ (define-public-macro (extend-table name . l)
+diff --git a/TeXmacs/progs/kernel/boot/boot.scm b/TeXmacs/progs/kernel/boot/boot.scm
+index d4ab8dabc..f858e4dca 100644
+--- a/TeXmacs/progs/kernel/boot/boot.scm
++++ b/TeXmacs/progs/kernel/boot/boot.scm
+@@ -12,16 +12,22 @@
+ ;;
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define texmacs-user (current-module))
+-(define temp-module (current-module))
+-(define temp-value #f)
+-
+-(define (guile-a?) (equal? (scheme-dialect) "guile-a"))
+-(define (guile-b?) (equal? (scheme-dialect) "guile-b"))
+-(define (guile-c?) (equal? (scheme-dialect) "guile-c"))
+-(define (guile-b-c?) (or (guile-b?) (guile-c?)))
+-(if (guile-c?) (use-modules (ice-9 rdelim) (ice-9 pretty-print)))
+-(define has-look-and-feel? (lambda (x) (== x "emacs")))
++(eval-when (expand load eval)
++  (define texmacs-user (current-module))
++  (define temp-module (current-module))
++  (define temp-value #f))
++
++(cond-expand
++  (guile-2
++    (use-modules (ice-9 rdelim) (ice-9 pretty-print)))
++  (else
++    (define (guile-a?) (equal? (scheme-dialect) "guile-a"))
++    (define (guile-b?) (equal? (scheme-dialect) "guile-b"))
++    (define (guile-c?) (equal? (scheme-dialect) "guile-c"))
++    (define (guile-b-c?) (or (guile-b?) (guile-c?)))
++    (if (guile-c?) (use-modules (ice-9 rdelim) (ice-9 pretty-print)))))
++
++(define has-look-and-feel? (lambda (x) (equal? x "emacs")))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Redirect standard output
+@@ -46,106 +52,201 @@
+ ;; Provide functions if not defined and public macros
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define-macro (provide-public head . body)
++
++(cond-expand
++  (guile-2
++    (define-macro (define-public-macro head . body)
++      `(defmacro-public ,(car head)
++            ,(cdr head) ,@body))
++         (export-syntax define-public-macro))
++  (else
++    (if (guile-a?)
++       (define-macro (define-public-macro head . body)
++         `(define-public ,(car head)
++	     ;; FIXME: why can't we use procedure->macro
++	     ;; for a non-memoizing variant?
++	     (procedure->memoizing-macro
++	       (lambda (cmd env)
++	         (apply (lambda ,(cdr head) ,@body) (cdr cmd)))))))
++    (if (not (guile-a?))
++       (define-macro (define-public-macro head . body)
++         `(begin
++	        (define-macro ,(car head)
++	          (lambda ,(cdr head) ,@body))
++	        (export ,(car head)))))))
++
++(define-public-macro (provide-public head . body)
+   (if (or (and (symbol? head) (not (defined? head)))
+ 	  (and (pair? head) (symbol? (car head)) (not (defined? (car head)))))
+       `(define-public ,head ,@body)
+       '(noop)))
+ 
+-(if (guile-a?)
+-    (define-macro (define-public-macro head . body)
+-      `(define-public ,(car head)
+-	 ;; FIXME: why can't we use procedure->macro
+-	 ;; for a non-memoizing variant?
+-	 (procedure->memoizing-macro
+-	  (lambda (cmd env)
+-	    (apply (lambda ,(cdr head) ,@body) (cdr cmd)))))))
+-
+-(if (not (guile-a?))
+-    (define-macro (define-public-macro head . body)
+-      `(begin
+-	 (define-macro ,(car head)
+-	   (lambda ,(cdr head) ,@body))
+-	 (export ,(car head)))))
++(cond-expand
++  (guile-2)
++  (else
++    (define-public-macro (define-once head . body)
++      (let ((h (if (pair? head) (car head) head)))
++        `(when (not (defined? ',h)) (define ,head ,@body))))))
++
++(define-public-macro (define-public-once head . body)
++  `(begin (define-once ,head ,@body) (export ,(if (pair? head) (car head) head))))
++
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; On-entry and on-exit macros
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define (quit-TeXmacs-scheme) (noop))
++(define-public (quit-TeXmacs-scheme) (noop))
+ 
+ (define-macro (on-entry . cmd)
+   `(begin ,@cmd))
+ 
+ (define-macro (on-exit . cmd)
+-  `(set! quit-TeXmacs-scheme (lambda () ,@cmd (,quit-TeXmacs-scheme))))
++  `(let ((prev-quit-cmd quit-TeXmacs-scheme))
++     (set! quit-TeXmacs-scheme (lambda () ,@cmd (prev-quit-cmd)))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Module switching
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(cond-expand (guile-2
++(define-macro (with-module module . body)
++  `(begin
++     (eval-when (expand load eval)
++       (set! (@@ (guile-user) temp-module) (current-module))
++       (set-current-module ,module))
++     ,@body
++     (eval-when (expand load eval) (set-current-module (@@ (guile-user) temp-module))))))
++     (else
+ (define-macro (with-module module . body)
+   `(begin
+      (set! temp-module (current-module))
+      (set-current-module ,module)
+      ,@body
+-     (set-current-module temp-module)))
++     (set-current-module temp-module)))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Module handling
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(if (guile-a?)
+-    (begin
+-      (define import-from use-modules)
+-      (define re-export export)))
+-
+-(if (guile-b-c?)
+-    (begin
+-      (define-macro (import-from . modules)
+-	`(process-use-modules
+-	  (list ,@(map (lambda (m)
+-			 `(list ,@(compile-interface-spec m)))
+-		       modules))))
++; the definition
++; (define-macro (import-from . modules)
++;    `(eval-when (expand load eval) (process-use-modules
++;        (list ,@(map (lambda (m) `(list (quote ,m))) modules)))))
++; is equivalent in Guile 2.2 to
++;    (define-macro (import-from . modules) `(use-modules ,@ modules )))
++; but works also in Guile 1.8
++
++
++(cond-expand
++  (guile-2
++    (define-macro (import-from . modules) `(use-modules ,@ modules )))
++  (else (if (guile-a?)
++      (begin
++        (define import-from use-modules)
++        (define re-export export)))
++    (if (guile-b-c?)
++      (begin
++        (define-macro (import-from . modules)
++	  `(process-use-modules
++	    (list ,@(map (lambda (m)
++	  		 `(list ,@(compile-interface-spec m)))
++	  	       modules))))
+       ;; FIXME: why does this not work?
+       ;; (define-macro (import-from . modules)
+       ;;   (define (import-from-body module)
+       ;;     `(module-use! (current-module) (resolve-module ',module)))
+       ;;   `(begin
+       ;;     ,@(map import-from-body modules)))
+-      ))
+-
+-(define-macro (inherit-modules . which-list)
+-  (define (module-exports which)
+-    (let* ((m (resolve-module which))
+-	   (m-public (module-ref m '%module-public-interface)))
+-      (module-map (lambda (sym var) sym) m-public)))
+-  (let ((l (apply append (map module-exports which-list))))
+-    `(begin
+-       (use-modules ,@which-list)
+-       (re-export ,@l))))
+-
+-(define-macro (texmacs-module name . options)
+-  (define (transform action)
+-    (cond ((not (pair? action)) (noop))
+-	  ((equal? (car action) :use) (cons 'use-modules (cdr action)))
+-	  ((equal? (car action) :inherit) (cons 'inherit-modules (cdr action)))
+-	  ((equal? (car action) :export)
+-	   (display "Warning] The option :export is no longer supported\n")
+-	   (display "       ] Please use tm-define instead\n"))
+-	  (else '(noop))))
+-  (let ((l (map-in-order transform options)))
++      ))))
++
++(define-public (module-exported-symbols m)
++  (module-map (lambda (sym var) sym) (module-public-interface (resolve-module m))))
++
++(define-public-macro (inherit-modules . which-list)
++ `(begin (use-modules ,@which-list)
++     (eval-when (expand load) ,@(map (lambda (m) `(module-re-export! (current-module) (module-exported-symbols ',m))) which-list))
++     ))
++
++(cond-expand
++    (guile-2
++      (with-module the-root-module
++        (define-macro (texmacs-module name . options)
++          (define (transform action)
++            (cond ((not (pair? action)) (noop))
++              ((equal? (car action) :use) (cons 'use-modules (cdr action)))
++              ((equal? (car action) :inherit) (cons 'inherit-modules (cdr action)))
++              ((equal? (car action) :export)
++               (display "Warning] The option :export is no longer supported\n")
++               (display "       ] Please use tm-define instead\n"))
++              (else '(noop))))
++          (let ((l (map-in-order transform options)))
++          ;; (display "Loading ") (display name) (display "\n")
++            `(begin
++               ;; (eval-when (expand) (display "* IN MODULE: ") (display ',name) (display "\n"))
++               (cond-expand (guile-3.0
++                  (define-module ,name #:declarative? #f))
++                  (else (define-module ,name)))
++               ;; (ice-9 curried-definitions) needs to be imported every time since has bindings replacing core bindings
++               (use-modules (ice-9 curried-definitions)) 
++               ,@l
++               (eval-when (expand load eval) (module-use! (current-module) (resolve-interface '(guile-user))))
++               ;; (eval-when (expand) (display "* END MODULE HEADER: ") (display ',name) (display "\n"))
++              )))
++        (export-syntax texmacs-module)))
++   (else
++        (define-macro (texmacs-module name . options)
++          (define (transform action)
++            (cond ((not (pair? action)) (noop))
++              ((equal? (car action) :use) (cons 'use-modules (cdr action)))
++              ((equal? (car action) :inherit) (cons 'inherit-modules (cdr action)))
++              ((equal? (car action) :export)
++               (display "Warning] The option :export is no longer supported\n")
++               (display "       ] Please use tm-define instead\n"))
++              (else '(noop))))
++          (let ((l (map-in-order transform options)))
+     (if (guile-b-c?)
+-	(set! l (cons `(module-use! (current-module) ,texmacs-user) l)))
+-    ;;(display "loading ") (display name) (display "\n")
+-    `(begin
+-       (define-module ,name)
+-       ,@l)))
++   (set! l (cons `(module-use! (current-module) ,texmacs-user) l)))
++            ;;(display "loading ") (display name) (display "\n")
++            `(begin
++               (define-module ,name)
++              ; (module-use! (current-module) (@@ (guile-user) texmacs-user))
++               ,@l)))))
+ 
+ (define-public (module-available? module-name)
+   (catch #t
+     (lambda () (resolve-interface module-name) #t)
+     (lambda (key . args) #f)))
+ 
+-(define-public (module-provide m)
+-  (if (not (module-available? m)) (module-load m)))
++(define-public (module-load module)
++  ;(display* ">>> module-load" module "\n")
++  (resolve-module module)
++  ;(display "---\n")
++  )
++
++
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++;; Some compatibility utilities
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; tagged-lambda marks certain closures in order to recover the code
++;; for retrieving the correct shortcuts
++;; in Guile 2.2 the procedure procedure-source does not work
++;; so we bake our in-house solution tm-procedure-source
++;; see e.g. promise-source in kernel/gui/menu-widget.scm
++
++(cond-expand
++  (guile-2
++    (define-public-macro (tagged-lambda head . body)
++      `(let ((p (lambda ,head ,@body)) (s '(lambda ,head ,@body)))
++         (set-procedure-property! p 'tm-source s)
++         p))
++
++    (define-public (tm-procedure-source action)
++      (and (procedure? action) (procedure-property action 'tm-source))))
++  (else
++    (define-public-macro (tagged-lambda head . body)
++     `(lambda ,head ,@body))
++    (define-public (tm-procedure-source action)
++      (procedure-source action))))
++
+diff --git a/TeXmacs/progs/kernel/boot/compat.scm b/TeXmacs/progs/kernel/boot/compat.scm
+index fe2a21655..14c523734 100644
+--- a/TeXmacs/progs/kernel/boot/compat.scm
++++ b/TeXmacs/progs/kernel/boot/compat.scm
+@@ -27,6 +27,7 @@
+       (set-current-output-port cout-port)
+       (set-current-error-port cout-port)))
+ 
++;;; FIXME: maybe we can remove this code?
+ ;;; make eval from guile>=1.6.0 backwards compatible
+ (catch 'wrong-number-of-args
+        (lambda () (eval 1))
+@@ -42,6 +43,5 @@
+   (noop))
+ 
+ ;;; certain Guile versions do not define 'filter'
+-(if (not (defined? 'filter))
+-    (define-public (filter pred? l)
+-      (apply append (map (lambda (x) (if (pred? x) (list x) (list))) l))))
++(provide-public (filter pred? l)
++   (apply append (map (lambda (x) (if (pred? x) (list x) (list))) l)))
+diff --git a/TeXmacs/progs/kernel/boot/debug.scm b/TeXmacs/progs/kernel/boot/debug.scm
+index 5d9a1790c..0cfdcefb3 100644
+--- a/TeXmacs/progs/kernel/boot/debug.scm
++++ b/TeXmacs/progs/kernel/boot/debug.scm
+@@ -71,6 +71,7 @@
+ ;; TeXmacs errors and assertions
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++;; FIXME: this requires to be run at eval time
+ (define old-format?
+   (catch 'wrong-number-of-args
+ 	 (lambda () (car))
+@@ -104,8 +105,8 @@
+       (scm-error* 'out-of-range caller
+ 		  "Argument out of range: ~S" (list arg) '())))
+ 
+-(define-public (syntax-error where message . args)
+-  (scm-error* 'syntax-error where message args #f))
++(define-public (tm-syntax-error where message . args)
++  (scm-error* 'tm-syntax-error where message args #f))
+ 
+ (define-public (former . l)
+   (texmacs-error "former" "no next method"))
+@@ -221,18 +222,25 @@
+ ;;; Debugging
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++;(use-modules (system repl error-handling))
++
++(cond-expand (guile-2 #t)
++ (else (define with-throw-handler lazy-catch)))
++
+ (define-public (wrap-catch proc)
+   ;; Wrap a procedure in a closure which displays and passes exceptions.
+   (lambda args
+-    (lazy-catch #t
+-		(lambda () (apply proc args))
++    (with-throw-handler #t
++;		(lambda () (call-with-error-handling  (lambda () (apply proc args))))
++        (lambda () (apply proc args))
+ 		(lambda err
+ 		  (tm-display-error "Guile error: " (list err))
++          ;;(cpp-error)
+ 		  (apply throw err)))))
+ 
+ (define-public (wrap-catch-list expr)
+   ;; Similar to wrap-catch for a scheme expression in list form.
+-  `(lazy-catch #t
++  `(with-throw-handler #t
+ 	       (lambda () ,expr)
+ 	       (lambda err
+ 		 (tm-display-error "Guile error: " (list err))
+@@ -277,7 +285,7 @@
+ 		  ,@(map (lambda (x) (string-append " " (object->string x)))
+ 			 args) "]"))))
+     (set! trace-level (1+ trace-level))
+-    (lazy-catch #t
++    (with-throw-handler #t
+ 		(lambda ()
+ 		  (let ((res (apply lam args)))
+ 		    (set! trace-level (1- trace-level))      
+diff --git a/TeXmacs/progs/kernel/boot/prologue.scm b/TeXmacs/progs/kernel/boot/prologue.scm
+index 27a31d92d..c46f33538 100644
+--- a/TeXmacs/progs/kernel/boot/prologue.scm
++++ b/TeXmacs/progs/kernel/boot/prologue.scm
+@@ -12,34 +12,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (kernel boot prologue)
+-  (:use (kernel boot ahash-table)))
+-
+-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-;; Additional support for loading modules
+-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-
+-(define module-loaded-table (make-ahash-table))
+-
+-(define-public (list->module module)
+-  (let* ((aux (lambda (s) (string-append "/" (symbol->string s))))
+-	 (name* (apply string-append (map aux module)))
+-	 (name (substring name* 1 (string-length name*)))
+-	 (u (url-unix "$GUILE_LOAD_PATH" (string-append name ".scm")))
+-	 ;; FIXME: should use %load-path instead of $GUILE_LOAD_PATH
+-	 )
+-    (url-materialize u "r")))
+-
+-(define-public (module-load module*)
+-  (if (list? module*)
+-      (let* ((module (list->module module*))
+-	     (loaded (ahash-ref module-loaded-table module)))
+-	(ahash-set! module-loaded-table module #t)
+-	;;(if (not loaded) (display* "TeXmacs] Loading module " module* "\n"))
+-	(if (not loaded) (load-module module)))))
+-
+-;; FIXME: why does this not work?
+-;(define-public (module-load name)
+-;  (module-use! (current-module) (resolve-module name)))
++  (:use (kernel boot abbrevs) (kernel boot ahash-table)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Work around broken 'symbol-property'
+diff --git a/TeXmacs/progs/kernel/boot/srfi.scm b/TeXmacs/progs/kernel/boot/srfi.scm
+index 52b3af721..04df62ef4 100644
+--- a/TeXmacs/progs/kernel/boot/srfi.scm
++++ b/TeXmacs/progs/kernel/boot/srfi.scm
+@@ -22,7 +22,7 @@
+ ;; The copyright of the reference implementation of SRFI-2 by Oleg Kiselyov was
+ ;; assigned to the Free Software Foundation in Feb. 2001. The following
+ ;; implementation also includes incidental changes by Dale Jordan.
+-;; Modified by David Allouche to use TeXmacs syntax-error procedure.
++;; Modified by David Allouche to use TeXmacs tm-syntax-error procedure.
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; and-let* is a generalized and: it evaluates a sequence of forms one
+ ;; after another till the first one that yields #f; the non-#f result
+@@ -45,7 +45,7 @@
+         (set! growth-point clause-cell)))
+ 
+     (if (not (list? claws))
+-	(syntax-error "and-let*" "Bindings are not a list: ~A" claws))
++	(tm-syntax-error "and-let*" "Bindings are not a list: ~A" claws))
+     (for-each
+      (lambda (claw)
+        (cond
+@@ -58,13 +58,13 @@
+ 	 (let* ((var (car claw))
+ 		(var-cell (cons var '())))
+ 	   (if (memq var new-vars)
+-	       (syntax-error "and-let*"
++	       (tm-syntax-error "and-let*"
+ 			     "Duplicate variable in bindings: ~A" var))
+ 	   (set! new-vars (cons var new-vars))
+ 	   (set-cdr! growth-point `((let (,claw) (and . ,var-cell))))
+ 	   (set! growth-point var-cell)))
+ 	(else
+-	 (syntax-error "and-let*" "Ill-formed binding: ~A" claw))))
++	 (tm-syntax-error "and-let*" "Ill-formed binding: ~A" claw))))
+      claws)
+     (if (not (null? body))
+ 	(if (null? (cdr body))
+@@ -88,6 +88,8 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Copied from guile-1.6.0. Author: Martin Grabmueller
+ 
++(cond-expand (guile-2 #t)
++ (else
+ (define-public-macro (case-lambda . clauses)
+ 
+   ;; Return the length of the list @var{l}, but allow dotted list.
+@@ -153,6 +155,7 @@
+ 	      (let ((,length-name (length ,args-name)))
+ 		(cond ,@(gen-clauses clauses length-name args-name))))))
+       proc)))
++)) ; cond-exp
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; SECTION : curry which is not curry (SRFI-26)
+diff --git a/TeXmacs/progs/kernel/gui/gui-markup.scm b/TeXmacs/progs/kernel/gui/gui-markup.scm
+index 7182b5c00..3eaf0445f 100644
+--- a/TeXmacs/progs/kernel/gui/gui-markup.scm
++++ b/TeXmacs/progs/kernel/gui/gui-markup.scm
+@@ -261,7 +261,7 @@
+   (:synopsis "Make button")
+   (if developer-mode?
+     (ahash-set! all-translations text #t))
+-  `(list ,text (lambda () ,@cmds)))
++  `(list ,text (tagged-lambda () ,@cmds)))
+ 
+ (tm-define-macro ($check text check pred?)
+   (:synopsis "Make check")
+@@ -303,7 +303,7 @@
+   (:synopsis "Make a menu symbol")
+   (if (null? l)
+       `(list 'symbol ,sym)
+-      `(list 'symbol ,sym (lambda () ,(car l)))))
++      `(list 'symbol ,sym (tagged-lambda () ,(car l)))))
+ 
+ (tm-define-macro ($menu-group text)
+   (:synopsis "Make a menu group")
+diff --git a/TeXmacs/progs/kernel/gui/kbd-define.scm b/TeXmacs/progs/kernel/gui/kbd-define.scm
+index 029858014..a3c7b9a49 100644
+--- a/TeXmacs/progs/kernel/gui/kbd-define.scm
++++ b/TeXmacs/progs/kernel/gui/kbd-define.scm
+@@ -30,7 +30,7 @@
+   `(delayed
+      (:idle 250)
+      (ahash-set! lazy-keyboard-done ',module #t)
+-     (module-provide ',module)))
++     (module-load ',module)))
+ 
+ (define lazy-force-all? #f)
+ (define lazy-force-busy? #f)
+@@ -40,7 +40,7 @@
+ 	((ahash-ref lazy-keyboard-done (cdar l))
+ 	 (lazy-keyboard-force-do (cdr l)))
+ 	((or lazy-force-all? (texmacs-in-mode? (caar l)))
+-         (module-provide (cdar l))
++         (module-load (cdar l))
+ 	 (ahash-set! lazy-keyboard-done (cdar l) #t)
+ 	 (lazy-keyboard-force-do (cdr l)))
+ 	(else (cons (car l) (lazy-keyboard-force-do (cdr l))))))
+@@ -228,7 +228,7 @@
+     (if (string? action)
+ 	(with help (if (null? opt) "" (car opt))
+ 	  `(kbd-binding (list ,@conds) ,key ,action ,help))
+-	`(kbd-binding (list ,@conds) ,key (lambda () ,action ,@opt) ""))))
++	`(kbd-binding (list ,@conds) ,key (tagged-lambda () ,action ,@opt) ""))))
+ 
+ (define (kbd-map-body conds l)
+   (cond ((null? l) '())
+diff --git a/TeXmacs/progs/kernel/gui/menu-define.scm b/TeXmacs/progs/kernel/gui/menu-define.scm
+index a1e2b1eec..ace43846f 100644
+--- a/TeXmacs/progs/kernel/gui/menu-define.scm
++++ b/TeXmacs/progs/kernel/gui/menu-define.scm
+@@ -18,6 +18,8 @@
+ ;; Definition of dynamic menus
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(eval-when (expand load eval)
++
+ (define (require-format x pattern)
+   (if (not (match? x pattern))
+     (texmacs-error "gui-make" "invalid menu item ~S" x)))
+@@ -355,10 +357,12 @@
+   (require-format x '(form-toggle :%2))
+   `($form-toggle ,@(cdr x)))
+ 
++)
++
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Table with Gui primitives and dispatching
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-
++(eval-when (expand load eval)
+ (define-table gui-make-table
+   (eval ,gui-make-eval)
+   (dynamic ,gui-make-dynamic)
+@@ -436,8 +440,9 @@
+   (form-enum ,gui-make-form-enum)
+   (form-choice ,gui-make-form-choice)
+   (form-choices ,gui-make-form-choices)
+-  (form-toggle ,gui-make-form-toggle))
++  (form-toggle ,gui-make-form-toggle)))
+ 
++(eval-when (expand load eval)
+ (tm-define (gui-make x)
+   ;;(display* "x= " x "\n")
+   (cond ((symbol? x)
+@@ -458,7 +463,7 @@
+         ((and (pair? x) (or (string? (car x)) (pair? (car x))))
+          `($> ,(gui-make (car x)) ,@(cdr x)))
+         (else
+-          (texmacs-error "gui-make" "invalid menu item ~S" x))))
++          (texmacs-error "gui-make" "invalid menu item ~S" x)))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; User interface for dynamic menu definitions
+@@ -491,7 +496,7 @@
+      (lazy-define ,module ,@menus)
+      (delayed
+        (:idle 500)
+-       (module-provide ',module))))
++       (module-load ',module))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Basic color pickers
+diff --git a/TeXmacs/progs/kernel/gui/menu-widget.scm b/TeXmacs/progs/kernel/gui/menu-widget.scm
+index 71cb51201..e06a55cd4 100644
+--- a/TeXmacs/progs/kernel/gui/menu-widget.scm
++++ b/TeXmacs/progs/kernel/gui/menu-widget.scm
+@@ -337,7 +337,7 @@
+ (define-public (promise-source action)
+   "Helper routines for menu-widget and kbd-define"
+   (and (procedure? action)
+-       (with source (procedure-source action)
++       (with source (tm-procedure-source action)
+          (and (== (car source) 'lambda)
+               (== (cadr source) '())
+               (null? (cdddr source))
+diff --git a/TeXmacs/progs/kernel/regexp/regexp-select.scm b/TeXmacs/progs/kernel/regexp/regexp-select.scm
+index c536b5449..88dc266b8 100644
+--- a/TeXmacs/progs/kernel/regexp/regexp-select.scm
++++ b/TeXmacs/progs/kernel/regexp/regexp-select.scm
+@@ -270,16 +270,20 @@
+     ;; (display* "sols= " sols "\n")
+     (map cadr sols)))
+ 
+-(if (os-mingw?) ;; mingw guile does not define select
+-    (with-module texmacs-user
+-      (define-public (select . args) (apply tm-select args)))
+-    (with-module texmacs-user
+-      (begin (define-public guile-select select)
+-	     (define-public (select . args)
+-	       (import-from (kernel regexp regexp-select))
+-	       (if (= (length args) 2)
+-		   (apply tm-select args)
+-		   (apply guile-select args))))))
++;; save core procedure 'select' if it exists
++(cond-expand
++  (guile-2
++    (module-define! texmacs-user 'guile-select select)
++    (module-export! texmacs-user '(guile-select)))
++  (else
++     (if (not (os-mingw?)) ;; mingw guile does not define select
++       (module-define! texmacs-user 'guile-select select)
++       (module-export! texmacs-user '(guile-select)))))
++ 
++;; install our own 'select'
++(define select tm-select)
++(module-define! texmacs-user 'select tm-select)
++(module-export! texmacs-user '(select))
+ 
+ (define-public (tm-ref t . l)
+   (and (tm? t)
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-convert.scm b/TeXmacs/progs/kernel/texmacs/tm-convert.scm
+index 92276843d..3119ad6a2 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-convert.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-convert.scm
+@@ -12,7 +12,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (kernel texmacs tm-convert)
+-  (:use (kernel texmacs tm-define) (kernel texmacs tm-modes)))
++  (:use (kernel texmacs tm-define) (kernel texmacs tm-modes) (kernel texmacs tm-preferences)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Lazy formats
+@@ -72,55 +72,57 @@
+     (define-preferences
+       (option val converter-set-option))))
+ 
+-(define-public (converter-cmd from to cmd)
++(define (run-cmd from to cmd)
+   "Helper routine for converter macro"
++  ;;(display* "cmd=" cmd "\n")
+   (cond ((func? cmd :penalty 1)
+-	 (converter-set-penalty from to (second cmd)))
+-;;        ((func? cmd :require 1) ;; already handled earlier now 
+-;;	 (if (not ((second cmd))) (converter-remove from to)))
++              (converter-set-penalty from to (second cmd)))
++;;      ((func? cmd :require 1) ;; already handled earlier now
++;;            (if (not ((second cmd))) (converter-remove from to)))
+         ((func? cmd :option 2)
+-	 (converter-define-option from to (second cmd) (third cmd)))
++              (converter-define-option from to (second cmd) (third cmd)))
+         ((func? cmd :function 1)
+-	 (ahash-set! converter-function (list from to)
+-		     (lambda (x opts) ((second cmd) x))))
+-        ((func? cmd :function-with-options 1)
+-	 (ahash-set! converter-function (list from to) (second cmd)))
++              (ahash-set! converter-function (list from to) (second cmd)))
++;;        ((func? cmd :function-with-options 1) ;; should not be seen (see normalize-cmd)
++;;              (ahash-set! converter-function (list from to) (second cmd)))
+         ((func? cmd :shell)
+-	 (if (not (url-exists-in-path? (second cmd)))
+-	     (converter-remove from to))
+-	 (ahash-set! converter-function (list from to)
+-		     (lambda (what opts)
+-		       (converter-shell (cdr cmd) what to opts))))))
+-
+-(define-public (converter-sub cmd)
++              (if (not (url-exists-in-path? (second cmd)))
++                  (converter-remove from to))
++                  (ahash-set! converter-function (list from to)
++                     (lambda (what opts)
++                        (converter-shell (cdr cmd) what to opts))))))
++
++(define-public (converter-sub from to . options)
++  ;;(display* "options=" options "\n")
+   "Helper routine for converter macro"
+-  (cond ((and (list? cmd) (= (length cmd) 2)
+-	      (in? (car cmd) '(:function :function-with-options)))
+-	 (list (car cmd) (list 'unquote (cadr cmd))))
+-	((and (list? cmd) (= (length cmd) 2)
+-	      (in? (car cmd) '(:require)))
+-	 (list (car cmd) (list 'unquote `(lambda () ,(cadr cmd)))))
+-	(else cmd)))
++  (set! converter-distance (make-ahash-table))
++  (set! converter-path (make-ahash-table))
++  (let ((req (cond ((and (in? (car (first options)) '(:penalty))
++              (in? (car (second options)) '(:require))) (apply (second (second options)) '()))
++             ((in? (car (first options)) '(:require)) (apply (second (first options)) '()))
++             (else #t))))
++    (if req (begin
++       (converter-set-penalty from to 1.0)
++       (map (lambda (x) (run-cmd from to x)) options)))))
++
++(define (normalize-cmd cmd)
++  (cond
++    ((func? cmd :function 1)
++       	`(list :function (lambda (x opts) (,(second cmd) x))))
++     ((func? cmd :function-with-options 1)
++        `(list :function (lambda (x opts) (,(second cmd) x opts))))
++     ((func? cmd :require 1)
++        `(list :require (lambda () ,(second cmd))))
++     (else `(quote ,cmd))))
+ 
+ (define-public-macro (converter from* to* . options)
+   "Declare a converter between @from@ and @to* according to @options"
+   (let* ((from (if (string? from*) from* (symbol->string from*)))
+-	 (to (if (string? to*) to* (symbol->string to*))))
+-    (set! converter-distance (make-ahash-table))
+-    (set! converter-path (make-ahash-table))
+-;; NEW if (:required) clause present but not fulfilled do nothing
+-;; this enables to define several possible implementations of a given converter
+-;; not presuming on the availability of external tools : the last valid one is retained
+-;; (previously the last defined -even if unavailable- erased whatever was already defined)
+-    (cond ((and (in? (car (first options)) '(:penalty)) 
+-            (in? (car (second options)) '(:require)) 
+-            (not (eval (second (second options))))) (noop))
+-          ((and (in? (car (first options)) '(:require)) 
+-            (not (eval (second (first options))))) (noop))
+-          (else (converter-set-penalty from to 1.0) 
+-             `(for-each (lambda (x) (converter-cmd ,from ,to x))
+-	         ,(list 'quasiquote (map converter-sub options)))))))
++         (to (if (string? to*) to* (symbol->string to*)))
++         (cmd `(converter-sub ,from ,to ,@(map normalize-cmd options))))
++         cmd))
+ 
++                    
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Special converters
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-define.scm b/TeXmacs/progs/kernel/texmacs/tm-define.scm
+index be5341774..557dd9727 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-define.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-define.scm
+@@ -13,6 +13,7 @@
+ 
+ (texmacs-module (kernel texmacs tm-define))
+ 
++
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Contextual overloading
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@@ -65,9 +66,9 @@
+ (define (ca*r x) (if (pair? x) (ca*r (car x)) x))
+ (define (ca*adr x) (ca*r (cadr x)))
+ 
+-(define (lambda* head body)
++(define (make-lambda head body)
+   (if (pair? head)
+-      (lambda* (car head) `((lambda ,(cdr head) ,@body)))
++      (make-lambda (car head) `((lambda ,(cdr head) ,@body)))
+       (car body)))
+ 
+ (define (listify args)
+@@ -238,43 +239,43 @@
+ (define-public-macro (tm-define-overloaded head . body)
+   (let* ((var (ca*r head))
+          (nbody (tm-add-condition var head body))
+-         (nval (lambda* head nbody)))
+-    (if (ahash-ref tm-defined-table var)
+-        `(let ((former ,var))
+-           ;;(if (== (length (ahash-ref tm-defined-table ',var)) 1)
+-           ;;    (display* "Overloaded " ',var "\n"))
+-           ;;(display* "Overloaded " ',var "\n")
+-           ;;(display* "   " ',nval "\n")
+-           (set! temp-module ,(current-module))
+-           (set! temp-value ,nval)
+-           (set-current-module texmacs-user)
+-           (set! ,var temp-value)
+-           (set-current-module temp-module)
+-           (ahash-set! tm-defined-table ',var
++         (nval (make-lambda head nbody))
++         (s `(begin
++             (eval-when (expand load eval)
++                  (when (not (module-local-variable texmacs-user ',var))
++                    (module-define! texmacs-user ',var (lambda args #f))
++                    (module-export! texmacs-user '(,var))
++                    (cond-expand (guile-2
++                        (set-procedure-property! (module-ref texmacs-user ',var #f) 'name ',var)
++                        (hash-clear! (module-import-obarray (current-module)))) (else #t))))
++             (let ((first? (and (not (ahash-ref tm-defined-table ',var))
++                           (begin (lazy-define-force ',var) (and (not (ahash-ref tm-defined-table ',var)))))))
++              (if first?
++                 (begin
++                   (when (nnull? ',cur-conds)
++                     (display* "warning: conditional master routine " ',var "\n")
++                     (display* "   " ',nval "\n"))
++                  (ahash-set! tm-defined-table ',var '())
++                  (ahash-set! tm-defined-module ',var '())))
++               (ahash-set! tm-defined-name ,var ',var)
++               (ahash-set! tm-defined-table ',var
+                        (cons ',nval (ahash-ref tm-defined-table ',var)))
+-           (ahash-set! tm-defined-name ,var ',var)
+-	   (ahash-set! tm-defined-module ',var
+-		       (cons (module-name temp-module)
+-			     (ahash-ref tm-defined-module ',var)))
+-           ,@(map property-rewrite cur-props))
+-        `(begin
+-           (when (nnull? cur-conds)
+-             (display* "warning: conditional master routine " ',var "\n")
+-             (display* "   " ',nval "\n"))
+-           ;;(display* "Defined " ',var "\n")
+-           ;;(if (nnull? cur-conds) (display* "   " ',nval "\n"))
+-           (set! temp-module ,(current-module))
+-           (set! temp-value
+-                 (if (null? cur-conds) ,nval
+-                     ,(list 'let '((former (lambda args (noop)))) nval)))
+-           (set-current-module texmacs-user)
+-           (define-public ,var temp-value)
+-           (set-current-module temp-module)
+-           (ahash-set! tm-defined-table ',var (list ',nval))
+-           (ahash-set! tm-defined-name ,var ',var)
+-	   (ahash-set! tm-defined-module ',var
+-                       (list (module-name temp-module)))
+-           ,@(map property-rewrite cur-props)))))
++               (ahash-set! tm-defined-module ',var
++                       (cons (module-name (current-module))
++                           (ahash-ref tm-defined-module ',var)))
++               (let ((former ,var))
++                     (module-set! texmacs-user ',var ,nval))
++               (cond-expand (guile-2
++               ;; Tricky: module-set! do not set up the procedure name property
++               ;; we have to do it ourselves.
++               ;; We rely on the name to fetch properties
++               (if (procedure? (module-ref texmacs-user ',var #f))
++                   (begin
++                      (set-procedure-property! (module-ref texmacs-user ',var #f) 'name ',var)
++                      (set-procedure-property! (module-ref texmacs-user ',var #f) 'tm-source ',nval)))) (else #t))
++            ,@(map property-rewrite cur-props)))))
++        ;(display s) (newline)
++         s))
+ 
+ (define-public (tm-define-sub head body)
+   (if (and (pair? (car body)) (keyword? (caar body)))
+@@ -289,6 +290,10 @@
+   (set! cur-props '())
+   (tm-define-sub head body))
+ 
++(define-public-macro (tm-define-once head . body)
++  `(eval-when (expand load eval) (if (not (ahash-ref tm-defined-table ',(ca*r head)))
++     (tm-define ,head ,@body))))
++
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Overloaded macros with properties
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+@@ -305,12 +310,10 @@
+     ;;(display* "   " `(define-public-macro ,head
+     ;;                   ,(apply* (ca*r macro-head) head)) "\n")
+     `(begin
+-       (tm-define ,macro-head ,@body)
+-       (set! temp-module ,(current-module))
+-       (set-current-module texmacs-user)
+-       (define-public-macro ,head
+-         ,(apply* (ca*r macro-head) head))
+-       (set-current-module temp-module))))
++       (eval-when (expand load eval) (tm-define ,macro-head ,@body))
++       (with-module texmacs-user
++         (define-public-macro ,head
++            ,(apply* (ca*r macro-head) head))))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Associating extra properties to existing function symbols
+@@ -340,31 +343,31 @@
+ (define-public (not-define-option? item)
+   (not (and (pair? item) (keyword? (car item)))))
+ 
+-(define-public (lazy-define-one module opts name)
++(define (lazy-define-one module name)
+   (let* ((old (ahash-ref lazy-define-table name))
+-	 (new (if old (cons module old) (list module))))
++         (new (if old (cons module old) (list module))))
+     (ahash-set! lazy-define-table name new))
+-  (with name-star (string->symbol (string-append (symbol->string name) "*"))
+-    `(when (not (defined? ',name))
+-       (tm-define (,name . args)
+-         ,@opts
+-         (let* ((m (resolve-module ',module))
+-                (p (module-ref texmacs-user '%module-public-interface))
+-                (r (module-ref p ',name #f)))
+-           (if (not r)
+-               (texmacs-error "lazy-define"
+-                              ,(string-append "Could not retrieve "
+-                                              (symbol->string name))))
+-           (apply r args))))))
++    `(eval-when (expand load eval) (if (not (module-ref texmacs-user ',name #f))
++         (begin
++           (module-define! texmacs-user ',name
++            (lambda args
++              (let* ((m (resolve-module ',module))
++                     (r (module-ref texmacs-user ',name #f)))
++                (if (not r)
++                    (texmacs-error "lazy-define"
++                                  ,(string-append "Could not retrieve "
++                                                (symbol->string name))))
++                ;;(display* "lazy:" ',name "\n")
++                (apply r args))))
++           (module-export! texmacs-user '(,name))))))
+ 
+ (define-public-macro (lazy-define module . names)
+-  (receive (opts real-names) (list-break names not-define-option?)
+-    `(begin
+-       ,@(map (lambda (name) (lazy-define-one module opts name)) names))))
++   `(begin
++       ,@(map (lambda (name) (lazy-define-one module name)) names)))
+ 
+ (define-public (lazy-define-force name)
+   (if (procedure? name) (set! name (procedure-name name)))
+   (let* ((im (ahash-ref lazy-define-table name))
+ 	 (modules (if im im '())))
+     (ahash-remove! lazy-define-table name)
+-    (for-each module-provide modules)))
++    (for-each module-load modules)))
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-dialogue.scm b/TeXmacs/progs/kernel/texmacs/tm-dialogue.scm
+index 49d802089..22f801287 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-dialogue.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-dialogue.scm
+@@ -40,9 +40,14 @@
+ ;; Delayed execution of commands
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define-public (delayed-sub body)
++(eval-when (expand load eval)
++(define (delayed-sub body)
+   (cond ((or (npair? body) (nlist? (car body)) (not (keyword? (caar body))))
+-	 `(lambda () ,@body #t))
++     `(lambda ()
++        ;(display* "RUN DELAYED:" ',body "\n")
++         ,@body
++        ;(display "END DELAYED\n")
++         #t))
+ 	((== (caar body) :pause)
+ 	 `(let* ((start (texmacs-time))
+ 		 (proc ,(delayed-sub (cdr body))))
+@@ -109,6 +114,7 @@
+ 	      ,(cadar body)
+ 	      (proc))))
+ 	(else (delayed-sub (cdr body)))))
++)
+ 
+ (define-public-macro (delayed . body)
+   `(exec-delayed-pause ,(delayed-sub body)))
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-file-system.scm b/TeXmacs/progs/kernel/texmacs/tm-file-system.scm
+index f1cf8caba..8d61ea220 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-file-system.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-file-system.scm
+@@ -27,7 +27,8 @@
+   (if (string? class) (set! class (string->symbol class)))
+   (and-with module (ahash-ref lazy-tmfs-table class)
+     (ahash-remove! lazy-tmfs-table class)
+-    (eval `(use-modules ,module))))
++    (module-use! (current-module) (resolve-module ',module))))
++;;    (eval `(use-modules ,module))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Handler system
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-modes.scm b/TeXmacs/progs/kernel/texmacs/tm-modes.scm
+index 2538ce3dd..d69685b0b 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-modes.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-modes.scm
+@@ -14,40 +14,41 @@
+ (texmacs-module (kernel texmacs tm-modes)
+   (:use
+     (kernel logic logic-rules) (kernel logic logic-query) (kernel logic logic-data)
+-    (kernel texmacs tm-plugins) (kernel texmacs tm-preferences)))
++    (kernel texmacs tm-preferences)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Defining new modes
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define (texmacs-mode-pred mode)
+-  (let* ((mode-str (symbol->string mode))
+-         (mode-root (substring mode-str 0 (- (string-length mode-str) 1)))
+-         (pred-str (string-append mode-root "?")))
+-    (string->symbol pred-str)))
+-
+-(define-public (texmacs-mode item)
+-  (with (mode action . deps) item
+-    (let* ((pred (texmacs-mode-pred mode))
+-           (deps* (map list (map texmacs-mode-pred deps)))
+-           (l (if (== action #t) deps* (cons action deps*)))
+-           (test (if (null? l) #t (if (null? (cdr l)) (car l) (cons 'and l))))
+-           (defn `(define-public (,pred) ,test))
+-           (rules (map (lambda (dep) (list dep mode)) deps))
+-           (logic-cmd `(logic-rules ,@rules))
+-           (arch1 `(set-symbol-procedure! ',mode ,pred))
+-           (arch2 `(set-symbol-procedure! ',pred ,pred)))
+-      (if (== mode 'always%) (set! defn '(noop)))
+-      (if (null? deps)
+-          (list 'begin defn arch1 arch2)
+-          (list 'begin defn arch1 arch2 logic-cmd)))))
++(eval-when (expand load eval)
++   (define (texmacs-mode-pred mode)
++     (let* ((mode-str (symbol->string mode))
++           (mode-root (substring mode-str 0 (- (string-length mode-str) 1)))
++           (pred-str (string-append mode-root "?")))
++      (string->symbol pred-str)))
++
++ (define (texmacs-mode item)
++(with (mode action . deps) item
++  (let* ((pred (texmacs-mode-pred mode))
++         (deps* (map list (map texmacs-mode-pred deps)))
++         (l (if (== action #t) deps* (cons action deps*)))
++         (test (if (null? l) #t (if (null? (cdr l)) (car l) (cons 'and l))))
++         (defn `(define-public (,pred) ,test))
++         (rules (map (lambda (dep) (list dep mode)) deps))
++         (logic-cmd `(logic-rules ,@rules))
++         (arch1 `(set-symbol-procedure! ',mode ,pred))
++         (arch2 `(set-symbol-procedure! ',pred ,pred)))
++    (if (== mode 'always%) (set! defn '(noop)))
++    (if (null? deps)
++        (list 'begin defn arch1 arch2)
++        (list 'begin defn arch1 arch2 logic-cmd)))))
++)
+ 
+ (define-public-macro (texmacs-modes . l)
++ (begin
+   `(begin
+-     (set! temp-module ,(current-module))
+-     (set-current-module texmacs-user)
+-     ,@(map texmacs-mode l)
+-     (set-current-module temp-module)))
++     (with-module texmacs-user
++       ,@(map texmacs-mode l)))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Checking modes
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-plugins.scm b/TeXmacs/progs/kernel/texmacs/tm-plugins.scm
+index 771d29658..740bf4bb1 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-plugins.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-plugins.scm
+@@ -12,7 +12,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (kernel texmacs tm-plugins)
+-  (:use (kernel texmacs tm-define) (kernel texmacs tm-modes)))
++  (:use (kernel texmacs tm-define) (kernel texmacs tm-modes) (kernel texmacs tm-dialogue)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Lazy exports from other modules
+@@ -511,9 +511,10 @@
+     `(begin
+        (texmacs-modes (,in-name (== (get-env "prog-language") ,name)))
+        (texmacs-modes (,name-scripts (== (get-env "prog-scripts") ,name)))
+-       (define (,supports-name?)
+-         (or (ahash-ref plugin-data-table ,name)
+-             (remote-connection-defined? ,name)))
++       (eval-when (expand load eval)
++         (define (,supports-name?)
++           (or (ahash-ref plugin-data-table ,name)
++               (remote-connection-defined? ,name))))
+        (if reconfigure-flag? (ahash-set! plugin-data-table ,name #t))
+        (plugin-configure-cmds ,name
+ 	 ,(list 'quasiquote (map plugin-configure-sub options))))))
+@@ -544,7 +545,7 @@
+ 	      ;;(with start (texmacs-time)
+ 	      ;;  (load fname)
+ 	      ;;  (display* name " -> " (- (texmacs-time) start) " ms\n"))
+-	      (load fname)
++	      (primitive-load fname) ;; primitive-load suppress compilation of plugins
+ 	      ))
+ 	(if (plugin-all-initialized?) (plugin-save-setup)))))
+ 
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-secure.scm b/TeXmacs/progs/kernel/texmacs/tm-secure.scm
+index 09fa821a9..7fab9da82 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-secure.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-secure.scm
+@@ -19,8 +19,7 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (define-public-macro (define-secure-symbols . l)
+-  (for-each (lambda (x) (property-set! x :secure #t '())) l)
+-  '(noop))
++  `(for-each (lambda (x) (property-set! x :secure #t '())) ',l))
+ 
+ (define-secure-symbols
+   boolean? null? symbol? string? pair? list?
+diff --git a/TeXmacs/progs/kernel/texmacs/tm-states.scm b/TeXmacs/progs/kernel/texmacs/tm-states.scm
+index 84cc8de6f..020547cd3 100644
+--- a/TeXmacs/progs/kernel/texmacs/tm-states.scm
++++ b/TeXmacs/progs/kernel/texmacs/tm-states.scm
+@@ -32,8 +32,7 @@
+   (for (e l)
+      (eval
+         `(begin
+-	   (if (not (defined? ',(car e)))
+-	       (define-public ,(car e) #f))
++           (define-public-once ,(car e) #f)
+ 	   (set! ,(car e)
+ 		 ,(with val (cadr e)
+ 		     (if (and (pair? val) (eq? (car val) 'quote))
+@@ -41,10 +40,9 @@
+ 			`(quote ,(eval val)))))))))
+ 
+ (define (proplist-load l funcs b)
+- ;(display* "load[props]=" l "\n")
++;(display* "load[props]=" l "\n")
+   (for (e l)
+-     (if (not (defined? `,(car e)))
+-	 (eval `(define-public ,(car e) #f))))
++	 (eval `(define-public-once ,(car e) #f)))
+   (if b
+       (for (f funcs)
+ 	 (f))))
+@@ -131,8 +129,7 @@
+ 	 (slots (cadr (car theslots)))
+ 	 (props (cadr (cadr theslots))))
+     `(begin
+-	(if (not (defined? ',name))
+-	    (define-public ,name #f))
++        (define-public-once ,name #f)
+ 	(with cprops #f
+ 	  (set! cprops (map (lambda (x)
+ 			       (eval
+diff --git a/TeXmacs/progs/math/math-edit.scm b/TeXmacs/progs/math/math-edit.scm
+index ee69d9e52..da5a8dd01 100644
+--- a/TeXmacs/progs/math/math-edit.scm
++++ b/TeXmacs/progs/math/math-edit.scm
+@@ -16,8 +16,9 @@
+ 	(utils library cursor)
+ 	(utils edit auto-close)
+ 	(math math-drd)
+-        (generic format-geometry-edit)
+-        (convert tools tmconcat)))
++    (generic format-geometry-edit)
++    (convert tools tmconcat)
++    (version version-compare)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Some drd properties, which should go into table-drd.scm later on
+@@ -158,8 +159,8 @@
+ ;; Switching between inlined and displayed equations
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define-macro (concat-isolate! t)
+-  `(cond ((not (tree-is? t :up 'concat)) (noop))
++(define (concat-isolate! t)
++  (cond ((not (tree-is? t :up 'concat)) (noop))
+ 	 ((not (tree-is? t :up :up 'document)) (noop))
+ 	 ((= (tree-arity (tree-up t)) 1) (tree-set! t :up t))
+ 	 ((< (tree-index t) (- (tree-arity (tree-up t)) 1))
+diff --git a/TeXmacs/progs/math/math-sem-edit.scm b/TeXmacs/progs/math/math-sem-edit.scm
+index 8b6f7c58a..83db76bae 100644
+--- a/TeXmacs/progs/math/math-sem-edit.scm
++++ b/TeXmacs/progs/math/math-sem-edit.scm
+@@ -158,6 +158,7 @@
+ 		 (!= p (buffer-path))
+ 		 (math-correct? (cDr p)))))))
+ 
++(eval-when (expand load eval)
+ (define (try-correct-rewrite l)
+   (cond ((null? l) `#f)
+         ((and (null? (cdr l)) (func? (car l) 'else))
+@@ -167,7 +168,7 @@
+         (else
+           (let* ((h `(and ,@(car l) (math-correct?)))
+                  (r (try-correct-rewrite (cdr l))))
+-            `(or (try-modification ,h) ,r)))))
++            `(or (try-modification ,h) ,r))))))
+ 
+ (define-macro (try-correct . l)
+   (try-correct-rewrite l))
+diff --git a/TeXmacs/progs/prog/dot-edit.scm b/TeXmacs/progs/prog/dot-edit.scm
+index 521ff76cc..2da7020c5 100644
+--- a/TeXmacs/progs/prog/dot-edit.scm
++++ b/TeXmacs/progs/prog/dot-edit.scm
+@@ -37,6 +37,7 @@
+   (:mode in-prog-dot?)
+   (select-brackets-after-movement "([{" ")]}" "\\"))
+ 
++;;FIXME: remove-tabstop is not visible
+ (kbd-map
+   (:mode in-prog-dot?)
+   ("A-tab" (insert-tabstop))
+diff --git a/TeXmacs/progs/prog/scheme-tools.scm b/TeXmacs/progs/prog/scheme-tools.scm
+index ec9452016..3e1864a8e 100644
+--- a/TeXmacs/progs/prog/scheme-tools.scm
++++ b/TeXmacs/progs/prog/scheme-tools.scm
+@@ -22,7 +22,13 @@
+         (doc apidoc-collect)
+         (doc apidoc-widgets)
+         (kernel texmacs tm-preferences)
+-        (kernel gui kbd-handlers)))
++        (kernel gui kbd-handlers)
++        (link link-navigate)))
++     
++(cond-expand
++  (guile-2 #t)
++  (else (if (guile-b?)     ;; char-set-adjoin for guile-1.6.8
++    (use-modules (srfi srfi-14)))))
+ 
+ (tm-define char-set:stopmark
+            (char-set-adjoin char-set:whitespace #\( #\) #\" #\'))
+diff --git a/TeXmacs/progs/security/gpg/gpg-edit.scm b/TeXmacs/progs/security/gpg/gpg-edit.scm
+index 653aa1d53..abe347b39 100644
+--- a/TeXmacs/progs/security/gpg/gpg-edit.scm
++++ b/TeXmacs/progs/security/gpg/gpg-edit.scm
+@@ -51,12 +51,13 @@
+ ;; User id attached to document
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(eval-when (expand load eval)
+ (tm-define (tm-gpg-get-key-user-id t)
+   (:secure #t)
+   (:synopsis "Retrieve user id from fingerprint @t")
+   (with fingerprint (tree->string t)
+     (with l (gpg-get-ahash-ref-attachment "gpg" fingerprint)
+-      (if l (string->tree (first l)) t))))
++      (if l (string->tree (first l)) t)))))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Public key data attached to document
+@@ -393,16 +394,16 @@
+     (padded
+       (aligned
+         (for (x fingerprints)
+-          (item (text (tm-gpg-get-key-user-id (string->tree x))))))))
++          (text (tree->string (tm-gpg-get-key-user-id (string->tree x))))))))
+   ===
+   (bottom-buttons
+     ("Cancel" (cmd "Cancel"))
+     >>
+     ("Ok"
+-      (for (x fingerprints))
++      (for (x fingerprints)
+         (gpg-import-public-keys
+           (tree->string (tm-gpg-get-key-data (string->tree x)))))
+-      (cmd "Ok"))))
++      (cmd "Ok")))))
+ 
+ (tm-widget (gpg-widget-no-new-public-key-from-buffer cmd)
+   (resize ("400px" "400px" "400px") ("100px" "100px" "100px") 
+diff --git a/TeXmacs/progs/security/wallet/wallet-menu.scm b/TeXmacs/progs/security/wallet/wallet-menu.scm
+index 6e505b619..348a1f435 100644
+--- a/TeXmacs/progs/security/wallet/wallet-menu.scm
++++ b/TeXmacs/progs/security/wallet/wallet-menu.scm
+@@ -14,11 +14,13 @@
+ (texmacs-module (security wallet wallet-menu)
+   (:use (security wallet wallet-base)))
+ 
++(eval-when (expand load eval)
+ (when (os-macos?) 
+   (use-modules (security keychain macos-security)))
+ 
+ (when (or (os-mingw?) (os-win32?))
+   (use-modules (security keychain win-security)))
++)
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Remember wallet master passphrase
+@@ -180,11 +182,11 @@
+             ("Ok"
+              (with n (length (form-values))
+                (when (and (> n 0) (string? (first (form-values))))
+-                 (when (and (wallet-correct-passphrase? (first (form-values)))
++                 (when (wallet-correct-passphrase? (first (form-values)))
+                             (when (and (wallet-turn-on (first (form-values)))
+                                        (== (second (form-values)) "yes"))
+                               (wallet-save-passphrase (first (form-values))))
+-                            (cmd "Ok")))))
++                            (cmd "Ok"))))
+              (set! wallet-widget-wrong-passphrase? #t)
+              (refresh-now "wallet-widget-reask-passphrase"))))))))
+ 
+diff --git a/TeXmacs/progs/server/server-tmfs.scm b/TeXmacs/progs/server/server-tmfs.scm
+index 0142786a5..27d556d0e 100644
+--- a/TeXmacs/progs/server/server-tmfs.scm
++++ b/TeXmacs/progs/server/server-tmfs.scm
+@@ -270,6 +270,7 @@
+           (server-error envelope (cadr r))
+           (server-return envelope (cadr r))))))
+ 
++;;FIXME: the symbol 'envelope is not defined
+ (tm-define (server-file-save uid rname doc msg)
+   (let* ((fid (file-name->resource (tmfs-cdr rname)))
+          (vid (version-get-list fid))
+diff --git a/TeXmacs/progs/table/table-edit.scm b/TeXmacs/progs/table/table-edit.scm
+index 61af35317..d4b01b372 100644
+--- a/TeXmacs/progs/table/table-edit.scm
++++ b/TeXmacs/progs/table/table-edit.scm
+@@ -46,6 +46,16 @@
+ ;; Supplementary routines for cetting cell and table formats
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++(tm-define-macro (keep-table-selection . body)
++  `(with (sr1 sr2 sc1 sc2) (table-which-cells)
++     (with ktres (begin ,@body)
++       (if (or (!= sr2 sr1) (!= sc2 sc1))
++           ;; FIXME: find a robust way to keep the selection
++           (delayed
++             (:pause 10)
++             (table-select-cells sr1 sr2 sc1 sc2)))
++       ktres)))       
++
+ (tm-define (cell-set-format* var val)
+   (when val
+     (keep-table-selection
+diff --git a/TeXmacs/progs/texmacs/keyboard/latex-kbd.scm b/TeXmacs/progs/texmacs/keyboard/latex-kbd.scm
+index 6c15734e7..80b54741f 100644
+--- a/TeXmacs/progs/texmacs/keyboard/latex-kbd.scm
++++ b/TeXmacs/progs/texmacs/keyboard/latex-kbd.scm
+@@ -15,7 +15,8 @@
+   (:use (utils edit auto-close)
+ 	(generic format-edit)
+ 	(generic generic-edit)
+-	(text text-edit)))
++	(text text-edit)
++    (math math-edit)))
+ 
+ (kbd-symbols
+   "alpha" "beta" "gamma" "delta" "epsilon"
+diff --git a/TeXmacs/progs/texmacs/texmacs/tm-print.scm b/TeXmacs/progs/texmacs/texmacs/tm-print.scm
+index 9f5389152..f0d8edc38 100644
+--- a/TeXmacs/progs/texmacs/texmacs/tm-print.scm
++++ b/TeXmacs/progs/texmacs/texmacs/tm-print.scm
+@@ -12,7 +12,9 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (texmacs texmacs tm-print)
+-  (:use (texmacs texmacs tm-files)))
++  (:use (ice-9 rdelim)
++        (texmacs texmacs tm-files)
++        (dynamic fold-edit)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Try to obtain the papersize in this order from
+diff --git a/TeXmacs/progs/text/text-kbd.scm b/TeXmacs/progs/text/text-kbd.scm
+index 560dcae94..d4ff1e864 100644
+--- a/TeXmacs/progs/text/text-kbd.scm
++++ b/TeXmacs/progs/text/text-kbd.scm
+@@ -14,7 +14,8 @@
+ (texmacs-module (text text-kbd)
+   (:use (generic generic-kbd)
+ 	(utils edit auto-close)
+-	(text text-edit)))
++	(text text-edit)
++    (prog prog-edit)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Special symbols in text mode
+diff --git a/TeXmacs/progs/utils/automate/auto-build.scm b/TeXmacs/progs/utils/automate/auto-build.scm
+index 74b005df6..3348a6a6f 100644
+--- a/TeXmacs/progs/utils/automate/auto-build.scm
++++ b/TeXmacs/progs/utils/automate/auto-build.scm
+@@ -166,6 +166,7 @@
+ ;; Master routines
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
++;;FIXME: 'inline-assign below seems not be right
+ (define (build t)
+   ;;(display* "Building " t "\n")
+   (cond ((tm-atomic? t) t)
+diff --git a/TeXmacs/progs/utils/automate/auto-tmfs.scm b/TeXmacs/progs/utils/automate/auto-tmfs.scm
+index 33d491246..d9134c90a 100644
+--- a/TeXmacs/progs/utils/automate/auto-tmfs.scm
++++ b/TeXmacs/progs/utils/automate/auto-tmfs.scm
+@@ -12,7 +12,8 @@
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+ (texmacs-module (utils automate auto-tmfs)
+-  (:use (utils automate auto-build)))
++  (:use (utils automate auto-build)
++        (doc tmdoc)))
+ 
+ (tmfs-title-handler (automate name doc)
+   (let* ((question (tmfs-car name))
+@@ -35,9 +36,10 @@
+     (with-global auto-safe-mode? safe?
+       (apply build-document (cons doc bindings)))))
+ 
++;;FIXME: 'bindings is not defined
+ (tmfs-load-handler (automate name)
+   (let* ((q* (tmfs-car name))
+-	 (q (query-escape q*))
++         (q (query-escape q*))
+          (bs (query->assoc q))
+          (file-name (tmfs-cdr name))
+          (u (tmfs-string->url file-name))
+diff --git a/TeXmacs/progs/utils/edit/variants.scm b/TeXmacs/progs/utils/edit/variants.scm
+index 356f01ded..f8d28fbb5 100644
+--- a/TeXmacs/progs/utils/edit/variants.scm
++++ b/TeXmacs/progs/utils/edit/variants.scm
+@@ -18,8 +18,9 @@
+ ;; Definition of tag groups (could be done using drds in the future)
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(tm-define group-table (make-ahash-table))
+-(tm-define group-resolve-table (make-ahash-table))
++(eval-when (expand load eval)
++  (tm-define group-table (make-ahash-table))
++  (tm-define group-resolve-table (make-ahash-table)))
+ 
+ (define (group-resolve-one x)
+   (if (pair? x) (group-resolve (car x)) (list x)))
+@@ -32,18 +33,19 @@
+   (ahash-ref group-resolve-table which))
+ 
+ (tm-define-macro (define-group group . l)
++`(eval-when (expand load eval)
+   (set! group-resolve-table (make-ahash-table))
+-  (with old (ahash-ref group-table group)
++  (with old (ahash-ref group-table ',group)
+     (if old
+-	`(ahash-set! group-table ',group (append ',old ',l))
+-	`(begin
++	 (ahash-set! group-table ',group (append old ',l))
++	 (begin
+ 	   (ahash-set! group-table ',group ',l)
+ 	   (tm-define (,(symbol-append group '-list))
+ 	     (group-resolve ',group))
+ 	   (tm-define (,(symbol-append group '?) lab)
+ 	     (in? lab (group-resolve ',group)))
+ 	   (tm-define (,(symbol-append 'inside- group '?))
+-	     (not (not (inside-which (group-resolve ',group)))))))))
++	     (not (not (inside-which (group-resolve ',group))))))))))
+ 
+ (tm-define (group-find which group)
+   (:synopsis "Find subgroup of @group which contains @which")
+diff --git a/TeXmacs/progs/utils/library/cursor.scm b/TeXmacs/progs/utils/library/cursor.scm
+index 33854a384..bccf66fa5 100644
+--- a/TeXmacs/progs/utils/library/cursor.scm
++++ b/TeXmacs/progs/utils/library/cursor.scm
+@@ -273,17 +273,3 @@
+   (:argument what "Find text")
+   (:argument by "Replace by")
+   (replace-start what by #t))
+-
+-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-;; Selections
+-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-
+-(tm-define-macro (keep-table-selection . body)
+-  `(with (sr1 sr2 sc1 sc2) (table-which-cells)
+-     (with ktres (begin ,@body)
+-       (if (or (!= sr2 sr1) (!= sc2 sc1))
+-           ;; FIXME: find a robust way to keep the selection
+-           (delayed
+-             (:pause 10)
+-             (table-select-cells sr1 sr2 sc1 sc2)))
+-       ktres)))       
+diff --git a/TeXmacs/progs/utils/library/smart-table.scm b/TeXmacs/progs/utils/library/smart-table.scm
+index c8fe52958..702f3d94f 100644
+--- a/TeXmacs/progs/utils/library/smart-table.scm
++++ b/TeXmacs/progs/utils/library/smart-table.scm
+@@ -52,8 +52,7 @@
+ (tm-define-macro (smart-table t . l)
+   (:synopsis "Define a smart table @t with entries @l")
+   `(begin
+-     (when (not (defined? ',t))
+-       (tm-define ,t (make-ahash-table)))
++     (tm-define-once ,t (make-ahash-table))
+      ,@(smart-table-insert t '() l)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+diff --git a/TeXmacs/progs/utils/library/tree.scm b/TeXmacs/progs/utils/library/tree.scm
+index 405ae4bcd..16ef87309 100644
+--- a/TeXmacs/progs/utils/library/tree.scm
++++ b/TeXmacs/progs/utils/library/tree.scm
+@@ -78,6 +78,12 @@
+       (with r (tree-focus-index t l)
+ 	(if r r (tree-get-focus-index ref (tree-up t) l)))))
+ 
++(tm-define-macro (tree-set-diff! ref t)
++  (:synopsis "Assign @ref with @t.")
++  `(begin
++     (set! ,ref (tree-set-diff ,ref ,t))
++     ,ref))
++
+ (tm-define (tree-set-diff ref t)
+   (:type (-> tree content void))
+   (:synopsis "Assign @ref with @t.")
+@@ -125,11 +131,6 @@
+                    (set! ref (tree-set-diff ref mid))
+ 		   (tree-insert-node! ref pos merged))))))))
+ 
+-(tm-define-macro (tree-set-diff! ref t)
+-  (:synopsis "Assign @ref with @t.")
+-  `(begin
+-     (set! ,ref (tree-set-diff ,ref ,t))
+-     ,ref))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; High level tree access
+diff --git a/TeXmacs/progs/utils/misc/tm-keywords.scm b/TeXmacs/progs/utils/misc/tm-keywords.scm
+index 2f88ffec5..9ffa484a2 100644
+--- a/TeXmacs/progs/utils/misc/tm-keywords.scm
++++ b/TeXmacs/progs/utils/misc/tm-keywords.scm
+@@ -13,16 +13,24 @@
+ 
+ (texmacs-module (utils misc tm-keywords))
+ 
++(eval-when (expand load eval)
+ (define kws (string-load (unix->url "$TEXMACS_PATH/progs/tm-mode.el")))
+-(define kwo (string->object (string-append "(" kws ")")))
++(define kwo (string->object (string-append "(" kws ")"))))
+ 
++(eval-when (expand load eval)
+ (define (kw-transform l)
+   (cond ((null? l) l)
+ 	((func? (car l) 'setq)
+ 	 (cons (cons 'tm-define (cdar l)) (kw-transform (cdr l))))
+-	(else (kw-transform (cdr l)))))
++	(else (kw-transform (cdr l))))))
+ 
+-(eval (cons 'begin (kw-transform kwo)))
++
++; we prefer to use the macro expander, since this is compatible with Guile 2.2
++; (eval (cons 'begin (kw-transform kwo)))
++
++(define-macro (kw-macro)
++  (cons 'begin (kw-transform kwo)))
++(kw-macro)
+ 
+ (define indent-arity-table (make-ahash-table))
+ 
+diff --git a/TeXmacs/progs/utils/plugins/plugin-convert.scm b/TeXmacs/progs/utils/plugins/plugin-convert.scm
+index ecc611f83..d0a7aecd0 100644
+--- a/TeXmacs/progs/utils/plugins/plugin-convert.scm
++++ b/TeXmacs/progs/utils/plugins/plugin-convert.scm
+@@ -234,20 +234,24 @@
+ ;; Lazy input converters
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ 
+-(define lazy-input-converter-table (make-ahash-table))
+ 
+-(tm-define-macro (lazy-input-converter module plugin)
+-  (lazy-input-converter-force plugin)
+-  (ahash-set! lazy-input-converter-table plugin module)
+-  '(noop))
++(eval-when (expand load eval)
++(define lazy-input-converter-table (make-ahash-table)))
+ 
++(eval-when (expand load eval)
+ (define (lazy-input-converter-force plugin2)
+   (with plugin (if (string? plugin2) (string->symbol plugin2) plugin2)
+     (with module (ahash-ref lazy-input-converter-table plugin)
+       (if module
+ 	  (begin
+ 	    (ahash-remove! lazy-input-converter-table plugin)
+-	    (module-load module))))))
++	    (module-load module)))))))
++
++(tm-define-macro (lazy-input-converter module plugin)
++  (lazy-input-converter-force plugin)
++  (ahash-set! lazy-input-converter-table plugin module)
++  '(noop))
++
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; Initialization subroutines
+@@ -255,13 +259,14 @@
+ 
+ (define plugin-input-current-plugin "generic")
+ 
++(eval-when (expand load eval)
+ (define (plugin-input-converters-rules name l)
+   (if (null? l) '()
+       (cons (let* ((rule (car l))
+ 		   (key (car rule))
+ 		   (im (list 'unquote (cadr rule))))
+ 	      (list (list 'plugin-input-converter% (list name key) im)))
+-	    (plugin-input-converters-rules name (cdr l)))))
++	    (plugin-input-converters-rules name (cdr l))))))
+ 
+ (tm-define-macro (plugin-input-converters name2 . l)
+   (let ((name (if (string? name2) name2 (symbol->string name2))))
+diff --git a/TeXmacs/progs/utils/plugins/plugin-eval.scm b/TeXmacs/progs/utils/plugins/plugin-eval.scm
+index 5ce0bea52..eb67d1ade 100644
+--- a/TeXmacs/progs/utils/plugins/plugin-eval.scm
++++ b/TeXmacs/progs/utils/plugins/plugin-eval.scm
+@@ -13,7 +13,8 @@
+ 
+ (texmacs-module (utils plugins plugin-eval)
+   (:use (utils library tree)
+-	(utils library cursor)))
++	(utils library cursor)
++    (utils plugins plugin-cmd)))
+ 
+ ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ ;; evaluation + simplification of document fragments
+diff --git a/TeXmacs/progs/version/version-kbd.scm b/TeXmacs/progs/version/version-kbd.scm
+index 097d5da93..14b4d6bc6 100644
+--- a/TeXmacs/progs/version/version-kbd.scm
++++ b/TeXmacs/progs/version/version-kbd.scm
+@@ -15,6 +15,7 @@
+   (:use (generic generic-kbd)
+ 	(version version-compare)))
+ 
++;;FIXME: the symbols version-select-* seems not well defined
+ (kbd-map
+   (:mode with-versioning-tool?)
+   ("version home" (version-first-difference))
+diff --git a/TeXmacs/progs/version/version-tmfs.scm b/TeXmacs/progs/version/version-tmfs.scm
+index f760273a4..44066bc8a 100644
+--- a/TeXmacs/progs/version/version-tmfs.scm
++++ b/TeXmacs/progs/version/version-tmfs.scm
+@@ -47,9 +47,9 @@
+             (when (and tool (not (ahash-ref version-tool-loaded tool)))
+               (ahash-set! version-tool-loaded tool #t)
+               (cond ((== tool "svn")
+-                     (module-provide '(version version-svn)))
++                     (module-load '(version version-svn)))
+                     ((== tool "git")
+-                     (module-provide '(version version-git)))))
++                     (module-load '(version version-git)))))
+             (and (!= tool "") tool)))
+       (and-with base (url-wrap name)
+         (and (version-tool base) "wrap"))))
+diff --git a/cmake/FindGuile.cmake b/cmake/FindGuile.cmake
+index 12f8fa671..82add85dc 100644
+--- a/cmake/FindGuile.cmake
++++ b/cmake/FindGuile.cmake
+@@ -1,16 +1,23 @@
+ # - Locate the GNU Guile library
+ # Once done, this will define
+ #
+-#  Guile_FOUND - system has Freetype
+-#  Guile_INCLUDE_DIRS - the Freetype include directories
+-#  Guile_LIBRARIES - link these to use Freetype
+-#  Guile_VERSION_STRING - version of Guile
++#  Guile_FOUND - system has Guile
++#  Guile_INCLUDE_DIRS - the Guile include directories
++#  Guile_LIBRARIES - link these to use Guile
++#  Guile_VERSION - version of Guile
+ 
+ include (LibFindMacros)
+ 
+-libfind_pkg_check_modules (Guile guile-1.8)
+ 
+-set (Guile_VERSION_STRING 1.8.8)
++if (Guile_VERSION_STRING STREQUAL "1.8")
++  message (STATUS "Using GNU Guile 1.8 via -DGuile_VERSION_STRING=1.8")
++elseif (Guile_VERSION_STRING STREQUAL "3.0")
++  message (STATUS "Using GNU Guile 3.0 via -DGuile_VERSION_STRING=3.0")
++else (Guile_VERSION_STRING STREQUAL "1.8")
++  set (Guile_VERSION_STRING 3.0)
++endif (Guile_VERSION_STRING STREQUAL "1.8")
++
++libfind_pkg_check_modules (Guile guile-${Guile_VERSION_STRING})
+ 
+ string (REPLACE "-l" " " _guile_lib_list "${Guile_LIBRARIES}" )
+ string (REPLACE "-L" " " _guile_libdirs ${Guile_LIBRARY_DIRS} "")
+diff --git a/configure b/configure
+index 51a18748d..103d4141c 100755
+--- a/configure
++++ b/configure
+@@ -8448,7 +8448,7 @@ $as_echo "#define GUILE_B 1" >>confdefs.h
+       (1.8 | 1.9)
+ $as_echo "#define GUILE_C 1" >>confdefs.h
+  ;;
+-      (2.*)
++      (2.* | 3.*)
+ $as_echo "#define GUILE_D 1" >>confdefs.h
+ 
+             # Check whether --enable-guile2 was given.
+diff --git a/misc/m4/guile.m4 b/misc/m4/guile.m4
+index a0b5173a2..f589ea906 100644
+--- a/misc/m4/guile.m4
++++ b/misc/m4/guile.m4
+@@ -129,7 +129,7 @@ AC_DEFUN([LC_GUILE],[
+       (1.0 | 1.1 | 1.2 | 1.3 | 1.4 | 1.5) AC_DEFINE([GUILE_A],[1],[Guile version]) ;;
+       (1.6 | 1.7) AC_DEFINE(GUILE_B,[1],[Guile version]) ;;
+       (1.8 | 1.9) AC_DEFINE(GUILE_C,[1],[Guile version]) ;;
+-      (2.*) AC_DEFINE(GUILE_D,[1],[Guile version])
++      (2.* | 3.*) AC_DEFINE(GUILE_D,[1],[Guile version])
+             AC_ARG_ENABLE(guile2,
+               AS_HELP_STRING([--disable-guile2=[yes]],
+               [enable compilation with Guile 2, for development purposes]),
+diff --git a/packages/macos/TeXmacs.xcodeproj/xcshareddata/xcschemes/TeXmacsQt.xcscheme b/packages/macos/TeXmacs.xcodeproj/xcshareddata/xcschemes/TeXmacsQt.xcscheme
+index cfe02bb10..e7df688fb 100644
+--- a/packages/macos/TeXmacs.xcodeproj/xcshareddata/xcschemes/TeXmacsQt.xcscheme
++++ b/packages/macos/TeXmacs.xcodeproj/xcshareddata/xcschemes/TeXmacsQt.xcscheme
+@@ -26,10 +26,7 @@
+       buildConfiguration = "Debug"
+       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+-      language = ""
+       shouldUseLaunchSchemeArgsEnv = "YES">
+-      <Testables>
+-      </Testables>
+       <MacroExpansion>
+          <BuildableReference
+             BuildableIdentifier = "primary"
+@@ -39,14 +36,13 @@
+             ReferencedContainer = "container:TeXmacs.xcodeproj">
+          </BuildableReference>
+       </MacroExpansion>
+-      <AdditionalOptions>
+-      </AdditionalOptions>
++      <Testables>
++      </Testables>
+    </TestAction>
+    <LaunchAction
+       buildConfiguration = "Debug"
+       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
+       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+-      language = ""
+       launchStyle = "0"
+       useCustomWorkingDirectory = "NO"
+       ignoresPersistentStateOnLaunch = "NO"
+@@ -77,8 +73,6 @@
+             isEnabled = "YES">
+          </EnvironmentVariable>
+       </EnvironmentVariables>
+-      <AdditionalOptions>
+-      </AdditionalOptions>
+    </LaunchAction>
+    <ProfileAction
+       buildConfiguration = "Release"
+diff --git a/packages/macos/TeXmacsQt.xcconfig b/packages/macos/TeXmacsQt.xcconfig
+index 22b0c4c2a..7ef4f5082 100644
+--- a/packages/macos/TeXmacsQt.xcconfig
++++ b/packages/macos/TeXmacsQt.xcconfig
+@@ -2,7 +2,7 @@
+ 
+ #include "Base"
+ 
+-OTHER_CFLAGS = -DQTTEXMACS $(TM_CPPFLAGS) $(TM_QTCPPFLAGS)
+-OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) $(TM_CXXQT) $(TM_CXXFREETYPE) $(TM_CXXGUILE) $(TM_CXXSPARKLE) $(TM_CXXPDF)
++OTHER_CFLAGS = -DQTTEXMACS $(TM_CXXGUILE) $(TM_CPPFLAGS) $(TM_QTCPPFLAGS)
++OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) $(TM_CXXQT) $(TM_CXXFREETYPE) $(TM_CXXSPARKLE) $(TM_CXXPDF)
+ OTHER_LDFLAGS = -Wl,-stack_size,0x1000000,-headerpad_max_install_names $(TM_LDFLAGS) $(TM_LIBS) $(TM_LDQT)
+ PRODUCT_NAME = TeXmacsQt
+diff --git a/plugins/asymptote/progs/init-asymptote.scm b/plugins/asymptote/progs/init-asymptote.scm
+index 19ca6aee1..b550e6716 100644
+--- a/plugins/asymptote/progs/init-asymptote.scm
++++ b/plugins/asymptote/progs/init-asymptote.scm
+@@ -34,6 +34,6 @@
+   (:session "Asymptote")
+   (:scripts "Asymptote"))
+ 
+-(when (supports-asymptote?)
++(tm-cond-expand (supports-asymptote?)
+   (import-from (asymptote-menus))
+   (import-from (utils plugins plugin-convert)))
+diff --git a/plugins/axiom/progs/init-axiom.scm b/plugins/axiom/progs/init-axiom.scm
+index 8488cdd8b..2cdf641b8 100644
+--- a/plugins/axiom/progs/init-axiom.scm
++++ b/plugins/axiom/progs/init-axiom.scm
+@@ -16,5 +16,5 @@
+   (:launch "tm_axiom")
+   (:session "Axiom"))
+ 
+-(when (supports-axiom?)
++(tm-cond-expand (supports-axiom?)
+   (lazy-input-converter (axiom-input) axiom))
+diff --git a/plugins/caas/progs/init-caas.scm b/plugins/caas/progs/init-caas.scm
+index defc5ab54..e94b76889 100644
+--- a/plugins/caas/progs/init-caas.scm
++++ b/plugins/caas/progs/init-caas.scm
+@@ -34,7 +34,7 @@
+ 
+ (lazy-keyboard (caas-edit) in-prog-caas?)
+ 
+-(when (supports-caas?)
++(tm-cond-expand (supports-caas?)
+   (import-from (utils plugins plugin-convert))
+   (lazy-input-converter (caas-input) caas)
+   (import-from (dynamic session-menu))
+diff --git a/plugins/coq/progs/init-coq.scm b/plugins/coq/progs/init-coq.scm
+index e9a82951c..9d1cb9125 100644
+--- a/plugins/coq/progs/init-coq.scm
++++ b/plugins/coq/progs/init-coq.scm
+@@ -19,7 +19,7 @@
+ (when (url-exists-in-path? "coqtop")
+   (lazy-format (convert coq init-coqml) vernac))
+ 
+-(when (supports-coq?)
++(tm-cond-expand (supports-coq?)
+   (texmacs-modes
+     (in-coq-style% (style-has? "coq-style")))
+ 
+diff --git a/plugins/fricas/progs/init-fricas.scm b/plugins/fricas/progs/init-fricas.scm
+index 3c4c916be..74a4825a0 100644
+--- a/plugins/fricas/progs/init-fricas.scm
++++ b/plugins/fricas/progs/init-fricas.scm
+@@ -19,7 +19,7 @@
+   (:session "FriCAS")
+   (:scripts "FriCAS"))
+ 
+-(when (supports-fricas?)
++(tm-cond-expand (supports-fricas?)
+   (import-from (fricas-kbd))
+   (import-from (fricas-menus))
+   (lazy-input-converter (fricas-input) fricas))
+diff --git a/plugins/giac/progs/init-giac.scm b/plugins/giac/progs/init-giac.scm
+index 577a655e4..1bec44849 100644
+--- a/plugins/giac/progs/init-giac.scm
++++ b/plugins/giac/progs/init-giac.scm
+@@ -21,7 +21,7 @@
+   (:session "Giac")
+   (:scripts "Giac"))
+ 
+-(when (supports-giac?)
++(tm-cond-expand (supports-giac?)
+   (import-from (giac-kbd))
+   (import-from (giac-menus))
+   (lazy-input-converter (giac-input) giac)
+diff --git a/plugins/gnuplot/progs/init-gnuplot.scm b/plugins/gnuplot/progs/init-gnuplot.scm
+index 5718dcd8b..5837b7771 100644
+--- a/plugins/gnuplot/progs/init-gnuplot.scm
++++ b/plugins/gnuplot/progs/init-gnuplot.scm
+@@ -37,5 +37,5 @@
+   (:session "Gnuplot")
+   (:scripts "Gnuplot"))
+ 
+-(when (supports-gnuplot?)
++(tm-cond-expand (supports-gnuplot?)
+   (lazy-input-converter (gnuplot-input) gnuplot))
+diff --git a/plugins/lisp/progs/init-lisp.scm b/plugins/lisp/progs/init-lisp.scm
+index 55f245b56..795f3a01e 100644
+--- a/plugins/lisp/progs/init-lisp.scm
++++ b/plugins/lisp/progs/init-lisp.scm
+@@ -37,5 +37,5 @@
+   ,@(lisp-launchers)
+   (:session "Lisp"))
+ 
+-(when (supports-lisp?)
++(tm-cond-expand (supports-lisp?)
+   (plugin-input-converters lisp))
+diff --git a/plugins/lush/progs/init-lush.scm b/plugins/lush/progs/init-lush.scm
+index b64eebe38..3015a5215 100644
+--- a/plugins/lush/progs/init-lush.scm
++++ b/plugins/lush/progs/init-lush.scm
+@@ -16,5 +16,5 @@
+   (:launch "tm_lush")
+   (:session "Lush"))
+ 
+-(when (supports-lush?)
++(tm-cond-expand (supports-lush?)
+   (plugin-input-converters lush))
+diff --git a/plugins/macaulay2/progs/init-macaulay2.scm b/plugins/macaulay2/progs/init-macaulay2.scm
+index 5da02b033..84fdccb43 100644
+--- a/plugins/macaulay2/progs/init-macaulay2.scm
++++ b/plugins/macaulay2/progs/init-macaulay2.scm
+@@ -17,7 +17,7 @@
+   (:launch "M2 --texmacs")
+   (:session "Macaulay 2"))
+ 
+-(when (supports-macaulay2?)
++(tm-cond-expand (supports-macaulay2?)
+   (import-from (doc help-funcs))
+   (lazy-input-converter (m2-input) macaulay2)
+ 
+diff --git a/plugins/maple/progs/init-maple.scm b/plugins/maple/progs/init-maple.scm
+index 68c71e5cd..cd144abf2 100644
+--- a/plugins/maple/progs/init-maple.scm
++++ b/plugins/maple/progs/init-maple.scm
+@@ -17,5 +17,5 @@
+   (:launch "tm_maple")
+   (:session "Maple"))
+ 
+-(when (supports-maple?)
++(tm-cond-expand (supports-maple?)
+   (lazy-input-converter (maple-input) maple))
+diff --git a/plugins/mathemagix/progs/init-mathemagix.scm b/plugins/mathemagix/progs/init-mathemagix.scm
+index ed6f9e3e4..e30b9918a 100644
+--- a/plugins/mathemagix/progs/init-mathemagix.scm
++++ b/plugins/mathemagix/progs/init-mathemagix.scm
+@@ -34,7 +34,7 @@
+ 
+ (lazy-keyboard (mathemagix-edit) in-prog-mathemagix?)
+ 
+-(when (supports-mathemagix?)
++(tm-cond-expand (supports-mathemagix?)
+   (import-from (mathemagix-menus))
+   (lazy-input-converter (mathemagix-input) mathemagix)
+   (lazy-keyboard (mathemagix-kbd) in-mathemagix?)
+diff --git a/plugins/matlab/progs/init-matlab.scm b/plugins/matlab/progs/init-matlab.scm
+index 0697f2c06..97698f0d8 100644
+--- a/plugins/matlab/progs/init-matlab.scm
++++ b/plugins/matlab/progs/init-matlab.scm
+@@ -16,5 +16,5 @@
+   (:launch "tm_matlab")
+   (:session "Matlab"))
+ 
+-(when (supports-matlab?)
++(tm-cond-expand (supports-matlab?)
+   (plugin-input-converters matlab))
+diff --git a/plugins/maxima/progs/init-maxima.scm b/plugins/maxima/progs/init-maxima.scm
+index d2fb6abf1..4d816beec 100644
+--- a/plugins/maxima/progs/init-maxima.scm
++++ b/plugins/maxima/progs/init-maxima.scm
+@@ -62,7 +62,15 @@
+   (:session "Maxima")
+   (:scripts "Maxima"))
+ 
+-(when (supports-maxima?)
++(tm-cond-expand (supports-maxima?)
++  (define maxima-help #f)
++  (let ((help-list (string->object (var-eval-system "maxima_detect help"))))
++    (if help-list
++	(cond ((pair? help-list)
++	       (set! maxima-help (car help-list)))
++	      ((string? help-list)
++	       (set! maxima-help help-list)))))
++
+   (import-from (maxima-kbd))
+   (import-from (maxima-menus))
+   (lazy-input-converter (maxima-input) maxima)
+diff --git a/plugins/mmi/progs/init-mmi.scm b/plugins/mmi/progs/init-mmi.scm
+index 29f5da98b..1a392104d 100644
+--- a/plugins/mmi/progs/init-mmi.scm
++++ b/plugins/mmi/progs/init-mmi.scm
+@@ -35,7 +35,7 @@
+ 
+ (lazy-keyboard (mmi-edit) in-prog-mmi?)
+ 
+-(when (supports-mmi?)
++(tm-cond-expand (supports-mmi?)
+   (import-from (utils plugins plugin-convert))
+   (lazy-input-converter (mmi-input) mmi)
+   (import-from (dynamic session-menu))
+diff --git a/plugins/mupad/progs/init-mupad.scm b/plugins/mupad/progs/init-mupad.scm
+index 975047298..d6e44e465 100644
+--- a/plugins/mupad/progs/init-mupad.scm
++++ b/plugins/mupad/progs/init-mupad.scm
+@@ -21,7 +21,7 @@
+   (:session "Mupad")
+   (:scripts "Mupad"))
+ 
+-(when (supports-mupad?)
++(tm-cond-expand (supports-mupad?)
+   (import-from (mupad-menus))
+   (lazy-input-converter (mupad-input) mupad)
+ 
+diff --git a/plugins/octave/progs/init-octave.scm b/plugins/octave/progs/init-octave.scm
+index 23f6e50f3..059e17edc 100644
+--- a/plugins/octave/progs/init-octave.scm
++++ b/plugins/octave/progs/init-octave.scm
+@@ -49,5 +49,5 @@
+   (:tab-completion #t)
+   (:session "Octave"))
+ 
+-(when (supports-octave?)
++(tm-cond-expand (supports-octave?)
+   (plugin-input-converters octave))
+diff --git a/plugins/pari/progs/init-pari.scm b/plugins/pari/progs/init-pari.scm
+index 8a682f9cc..29b0037da 100644
+--- a/plugins/pari/progs/init-pari.scm
++++ b/plugins/pari/progs/init-pari.scm
+@@ -29,6 +29,6 @@
+   (:tab-completion #t)
+   (:commander ,pari-commander))
+ 
+-(when (supports-pari?)
++(tm-cond-expand (supports-pari?)
+   (import-from (pari-menus))
+   (plugin-input-converters pari))
+diff --git a/plugins/python/progs/init-python.scm b/plugins/python/progs/init-python.scm
+index e740876fa..2e61d5de9 100644
+--- a/plugins/python/progs/init-python.scm
++++ b/plugins/python/progs/init-python.scm
+@@ -56,5 +56,5 @@
+ ;(set-session-multiline-input "python" "default" #t)
+ ;(set-program-multiline-input "python" "default" #t)
+ 
+-(when (supports-python?)
++(tm-cond-expand (supports-python?)
+   (import-from (python-widgets) (python-menus)))
+diff --git a/plugins/qcl/progs/init-qcl.scm b/plugins/qcl/progs/init-qcl.scm
+index 4e2756b97..d49b33d0b 100644
+--- a/plugins/qcl/progs/init-qcl.scm
++++ b/plugins/qcl/progs/init-qcl.scm
+@@ -16,5 +16,5 @@
+   (:launch "qcl --texmacs")
+   (:session "Qcl"))
+ 
+-(when (supports-qcl?)
++(tm-cond-expand (supports-qcl?)
+   (lazy-input-converter (qcl-input) qcl))
+diff --git a/plugins/r/progs/init-r.scm b/plugins/r/progs/init-r.scm
+index 5817389ab..f5575c54a 100644
+--- a/plugins/r/progs/init-r.scm
++++ b/plugins/r/progs/init-r.scm
+@@ -39,7 +39,7 @@
+ 
+ (lazy-keyboard (r-edit) in-prog-r?)
+ 
+-(when (supports-r?)
++(tm-cond-expand (supports-r?)
+   (lazy-input-converter (r-input) r)
+ 
+   (menu-bind r-menu
+diff --git a/plugins/reduce/progs/init-reduce.scm b/plugins/reduce/progs/init-reduce.scm
+index f28238327..5dbd9636b 100644
+--- a/plugins/reduce/progs/init-reduce.scm
++++ b/plugins/reduce/progs/init-reduce.scm
+@@ -25,7 +25,7 @@
+   (:session "Reduce")
+   (:scripts "Reduce"))
+ 
+-(when (supports-reduce?)
++(tm-cond-expand (supports-reduce?)
+   (define reduce-help #f)
+   (import-from (reduce-kbd))
+   (import-from (reduce-menus))
+diff --git a/plugins/sage/progs/init-sage.scm b/plugins/sage/progs/init-sage.scm
+index c47abdea9..8b83099dc 100644
+--- a/plugins/sage/progs/init-sage.scm
++++ b/plugins/sage/progs/init-sage.scm
+@@ -94,5 +94,5 @@
+ ;(set-session-multiline-input "sage" "default" #t)
+ ;(set-program-multiline-input "sage" "default" #t)
+ 
+-(when (supports-sage?)
++(tm-cond-expand (supports-sage?)
+   (lazy-input-converter (sage-input) sage))
+diff --git a/plugins/scilab/bin/add_to_insert_menu.sci b/plugins/scilab/bin/add_to_insert_menu.sci
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/bin/init-scilab.sce b/plugins/scilab/bin/init-scilab.sce
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/bin/plotout.sci b/plugins/scilab/bin/plotout.sci
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/bin/populates_demo_menu.sci b/plugins/scilab/bin/populates_demo_menu.sci
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/bin/rm_from_insert_menu.sci b/plugins/scilab/bin/rm_from_insert_menu.sci
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/bin/scilab-demo.sce b/plugins/scilab/bin/scilab-demo.sce
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/bin/tmstree.sci b/plugins/scilab/bin/tmstree.sci
+old mode 100644
+new mode 100755
+diff --git a/plugins/scilab/progs/init-scilab.scm b/plugins/scilab/progs/init-scilab.scm
+index ea7dc5f1b..06c077658 100644
+--- a/plugins/scilab/progs/init-scilab.scm
++++ b/plugins/scilab/progs/init-scilab.scm
+@@ -45,7 +45,7 @@
+          (s (string-replace s "\\\\" "\\")))
+     (stree->tree (string->object s))))
+ 
+-(when (supports-scilab?)
++(tm-cond-expand (supports-scilab?)
+   (import-from (scilab-menus))
+   (with f (url-concretize 
+            "$TEXMACS_PATH/plugins/scilab/bin/scilab-demo.sce")
+diff --git a/plugins/texgraph/progs/init-texgraph.scm b/plugins/texgraph/progs/init-texgraph.scm
+index 796e64a22..d611a3d9a 100644
+--- a/plugins/texgraph/progs/init-texgraph.scm
++++ b/plugins/texgraph/progs/init-texgraph.scm
+@@ -31,7 +31,7 @@
+   (:session "Texgraph")
+   (:scripts "Texgraph"))
+ 
+-(when (supports-texgraph?)
++(tm-cond-expand (supports-texgraph?)
+   (import-from (texgraph-menus))
+   (lazy-input-converter (texgraph-input) texgraph) ;; uniquement pour le script plot-curve
+   )
+diff --git a/src/Scheme/Guile/guile_tm.cpp b/src/Scheme/Guile/guile_tm.cpp
+index b2dd4c7bf..4defc1e1f 100644
+--- a/src/Scheme/Guile/guile_tm.cpp
++++ b/src/Scheme/Guile/guile_tm.cpp
+@@ -2,7 +2,7 @@
+ /******************************************************************************
+ * MODULE     : guile_tm.cpp
+ * DESCRIPTION: Interface to Guile
+-* COPYRIGHT  : (C) 1999-2011  Joris van der Hoeven and Massimiliano Gubinelli
++* COPYRIGHT  : (C) 1999-2019  Joris van der Hoeven and Massimiliano Gubinelli
+ *******************************************************************************
+ * This software falls under the GNU general public license version 3 or later.
+ * It comes WITHOUT ANY WARRANTY WHATSOEVER. For details, see the file LICENSE
+@@ -85,9 +85,15 @@ TeXmacs_catcher (void *data, SCM tag, SCM args) {
+ #ifndef DEBUG_ON
+ static SCM
+ TeXmacs_lazy_eval_file (char *file) {
++#if (defined(GUILE_D))
++  return scm_c_with_throw_handler (SCM_BOOL_T,
++                                  (scm_t_catch_body) scm_c_primitive_load, file,
++                                  (scm_t_catch_handler) TeXmacs_lazy_catcher, file, 0);
++#else
+   return scm_internal_lazy_catch (SCM_BOOL_T,
+                                   (scm_t_catch_body) scm_c_primitive_load, file,
+                                   (scm_t_catch_handler) TeXmacs_lazy_catcher, file);
++#endif
+ }
  #endif
-   TeXmacs_init_paths (argc, argv);
- #ifdef QTTEXMACS
--  qtmapp->set_window_icon("/misc/images/texmacs-512.png");
-+  qtmapp->set_window_icon("/misc/images/xmacs-512.png");
+ 
+@@ -98,7 +104,7 @@ TeXmacs_eval_file (char *file) {
+                              (scm_t_catch_body) TeXmacs_lazy_eval_file, file,
+                              (scm_t_catch_handler) TeXmacs_catcher, file);
+ #else
+-  return 	scm_c_primitive_load (file);										 
++  return 	scm_c_primitive_load (file);
  #endif
-   //cout << "Bench  ] Started TeXmacs\n";
-   the_et     = tuple ();
+ }
+ 
+@@ -121,9 +127,15 @@ eval_scheme_file (string file) {
+ #ifndef DEBUG_ON
+ static SCM
+ TeXmacs_lazy_eval_string (char *s) {
++#if (defined(GUILE_D))
++  return scm_c_with_throw_handler (SCM_BOOL_T,
++                                  (scm_t_catch_body) scm_c_eval_string, s,
++                                  (scm_t_catch_handler) TeXmacs_lazy_catcher, s, 0);
++#else
+   return scm_internal_lazy_catch (SCM_BOOL_T,
+                                   (scm_t_catch_body) scm_c_eval_string, s,
+                                   (scm_t_catch_handler) TeXmacs_lazy_catcher, s);
++#endif
+ }
+ #endif
+ 
+@@ -180,9 +192,15 @@ TeXmacs_call (arg_list* args) {
+ #ifndef DEBUG_ON
+ static SCM
+ TeXmacs_lazy_call_scm (arg_list* args) {
++#if (defined(GUILE_D))
++  return scm_c_with_throw_handler (SCM_BOOL_T,
++                                  (scm_t_catch_body) TeXmacs_call, (void*) args,
++                                  (scm_t_catch_handler) TeXmacs_lazy_catcher, (void*) args, 0);
++#else
+   return scm_internal_lazy_catch (SCM_BOOL_T,
+                                   (scm_t_catch_body) TeXmacs_call, (void*) args,
+                                   (scm_t_catch_handler) TeXmacs_lazy_catcher, (void*) args);
++#endif
+ }
+ #endif
+ 
+@@ -309,12 +327,20 @@ scm_to_bool (SCM flag) {
+ 
+ SCM
+ int_to_scm (int i) {
++#if (defined(GUILE_D))
++  return scm_from_int (i);
++#else
+   return scm_long2scm ((long) i);
++#endif
+ }
+ 
+ SCM
+ long_to_scm (long l) {
++#if (defined(GUILE_D))
++  return scm_from_long (l);
++#else
+   return scm_long2scm (l);
++#endif
+ }
+ 
+ #if (defined(GUILE_A) || defined(GUILE_B))
+@@ -368,18 +394,79 @@ string_to_tmscm (string s) {
+ #endif
+ }
+ 
++#ifdef GUILE_D
++
++// Guile-2 uses proper encoding of strings...
++//
++//  we have to hardcode some implementation details from libguile
++// since we need to peek at the internals of strings
++// in order to understand if they have a wide representation
++// or can be smuggled into a latin1 encoding
++
++// situation with strings is currently quite messy since TeXmacs uses its own
++// encoding while guile >1.8 want an explicit standard exconding
++// so we just inject everything into a latin1 (which allow to use 8-bits)
++// with this default we have the problem of scheme strings which contains
++// unicode chars, for example. They do not fit in 8-bit and some conversions is needed.
++// in this case we just convert them into a proper latin1
++
++
++#define STRINGBUF_F_WIDE        SCM_I_STRINGBUF_F_WIDE
++#define STRINGBUF_F_MUTABLE     SCM_I_STRINGBUF_F_MUTABLE
++
++#define STRINGBUF_WIDE(buf)     (SCM_CELL_WORD_0(buf) & STRINGBUF_F_WIDE)
++#define STRING_STRINGBUF(str) (SCM_CELL_OBJECT_1(str))
++
++/* (from libguile) True if the string is 'narrow', meaning it has a 8-bit Latin-1
++   encoding.  False if it is 'wide', having a 32-bit UCS-4
++   encoding.  */
++int
++scm_i_is_narrow_string (SCM str)
++{
++  return !STRINGBUF_WIDE (STRING_STRINGBUF (str));
++}
++
++string
++tmscm_to_string (tmscm s) {
++  guile_str_size_t len_r;
++  char* _r;
++  
++  if (scm_i_is_narrow_string(s)) {
++    _r = scm_scm2str (s, &len_r);
++    string r (_r, len_r);
++    #ifdef OS_WIN32
++      scm_must_free(_r);
++    #else
++      free (_r);
++    #endif
++    return r;
++  } else {
++    _r = scm_to_utf8_stringn (s, &len_r);
++    string r (_r, len_r);
++    string rr= utf8_to_cork (r);
++    #ifdef OS_WIN32
++      scm_must_free(_r);
++    #else
++      free (_r);
++    #endif
++    return rr;
++  }
++}
++#else
+ string
+ tmscm_to_string (tmscm s) {
+   guile_str_size_t len_r;
+   char* _r= scm_scm2str (s, &len_r);
+   string r (_r, len_r);
+-#ifdef OS_WIN32
+-  scm_must_free(_r);
+-#else
+-  free (_r);
+-#endif
++  #ifdef OS_WIN32
++    scm_must_free(_r);
++  #else
++    free (_r);
++  #endif
+   return r;
+ }
++#endif // #ifdef GUILE_D
++
+ 
+ /******************************************************************************
+  * Symbols
+@@ -428,6 +515,11 @@ tmscm_is_blackbox (tmscm t) {
+ tmscm
+ blackbox_to_tmscm (blackbox b) {
+   SCM blackbox_smob;
++#if (defined(GUILE_D))
++  // we run finalizers on the main thread periodically since our memory allocation scheme
++  // is not thread safe.
++  scm_run_finalizers ();
++#endif
+   SET_SMOB (blackbox_smob, (void*) (tm_new<blackbox> (b)), (SCM) blackbox_tag);
+   return blackbox_smob;
+ }
+@@ -532,10 +624,21 @@ tmscm object_stack;
+ 
+ void
+ initialize_scheme () {
++  
++#if (defined(GUILE_D))
++  // we do not want finalizers to be called in concurrent threads...
++  scm_set_automatic_finalization_enabled (0);
++#endif
++  
+   const char* init_prg =
++//  "(display (current-module)) (display \"\\n\")\n"
++//  "(set-current-module the-root-module)\n"
++//  "(display (current-module)) (display \"\\n\")\n"
+   "(read-set! keywords 'prefix)\n"
+   "(read-enable 'positions)\n"
++#if (!defined(GUILE_D))
+   "(debug-enable 'debug)\n"
++#endif
+ #ifdef DEBUG_ON
+   "(debug-enable 'backtrace)\n"
+ #endif
+@@ -555,7 +658,7 @@ initialize_scheme () {
+   initialize_glue ();
+   object_stack= scm_lookup_string ("object-stack");
+   
+-    // uncomment to have a guile repl available at startup	
++    // uncomment to have a guile repl available at startup
+     //	gh_repl(guile_argc, guile_argv);
+     //scm_shell (guile_argc, guile_argv);
+   
+diff --git a/src/Scheme/Guile/guile_tm.hpp b/src/Scheme/Guile/guile_tm.hpp
+index 75a5ccbc9..7c4db2290 100644
+--- a/src/Scheme/Guile/guile_tm.hpp
++++ b/src/Scheme/Guile/guile_tm.hpp
+@@ -87,10 +87,11 @@
+ #define scm_scm2long(x) scm_num2long(x,SCM_ARG1,"scm2long")
+ #define scm_double2scm scm_from_double
+ #define scm_scm2double scm_to_double
+-#define scm_str2scm scm_from_locale_stringn
+-#define scm_scm2str scm_to_locale_stringn
++#define scm_str2scm scm_from_latin1_stringn
++#define scm_scm2str scm_to_latin1_stringn
+ #define scm_symbol2scm scm_from_locale_symbol
+ #define scm_scm2symbol(x,y) scm_to_locale_stringn(scm_symbol_to_string(x),y)
++#define scm_sizet size_t //FIXME: deprecated, maybe change in our code
+ 
+ #else
+ #ifdef GUILE_C
