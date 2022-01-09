@@ -1,4 +1,4 @@
-# Xmacs
+# Xmacs has been migrated to [Mogan](https://github.com/XmacsLabs/mogan)/[墨干编辑器](https://gitee.com/XmacsLabs/mogan)
 Xmacs is a fork of GNU TeXmacs:
 + based on a certain release of GNU TeXmacs
 + bug fixes are backported
